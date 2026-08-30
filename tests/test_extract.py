@@ -1,5 +1,6 @@
 """Full extraction wizard against a generated PDF (sandbox runs for real)."""
 import io
+import html
 
 import pytest
 
@@ -30,6 +31,13 @@ def test_render_routes(loaded):
         assert len(r.data) > 100
 
 
+def test_continue_interstitial_thumbnail_links_to_choose_page(loaded):
+    body = loaded.get("/extract/pdf").data.decode()
+    assert "Continue with this PDF?" in body                 # interstitial, not the dropzone
+    assert 'class="pdf-thumbnail-link"' in body
+    assert body.count('href="/extract/page"') == 2           # thumbnail + button, same target
+
+
 def test_page_thumbnail_out_of_range_is_404(loaded):
     assert loaded.get("/extract/page-thumbnail?page=999").status_code == 404
 
@@ -57,6 +65,17 @@ def test_extract_paragraph_splits_on_gap(loaded):
     assert body.count("&lt;para&gt;") == 2                       # one per paragraph
     assert "line one of three, line two continues" in body       # 3 source lines joined
     assert "A second paragraph, clearly separated." in body
+
+
+def test_extract_paragraph_keeps_bold_and_italic(loaded):
+    assert loaded.post("/extract/page", data={"page_number": "3"},
+                       follow_redirects=True).status_code == 200
+    r = loaded.post("/extract/select",
+                    data={"element_type": "paragraph", "x0": "60", "y0": "120", "x1": "870", "y1": "300"},
+                    follow_redirects=True)
+    xml = html.unescape(r.data.decode())               # fragment is HTML-escaped in a textarea
+    assert '<emphasis role="strong">Enter</emphasis>' in xml
+    assert '<emphasis>Esc</emphasis>' in xml
 
 
 def test_extract_list(loaded):

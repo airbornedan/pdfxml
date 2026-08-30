@@ -10,6 +10,7 @@ import re
 
 import fitz
 from lxml import etree
+from markupsafe import escape
 
 SCHEMA_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "schema", "docbook.rng")
 DOCBOOK_NS = "http://docbook.org/ns/docbook"
@@ -49,12 +50,26 @@ def _serialize(elem):
 _ROTATED_DIR_THRESHOLD = 0.01
 
 
+### bold/italic per span -- the flag, or the font name as a fallback
+def _span_style(span):
+    font = span.get("font", "").lower()
+    flags = span.get("flags", 0)
+    bold = bool(flags & fitz.TEXT_FONT_BOLD) or "bold" in font
+    italic = bool(flags & fitz.TEXT_FONT_ITALIC) or "italic" in font or "oblique" in font
+    return bold, italic
+
+
+def _line_text(spans):
+    return "".join(t for t, _, _ in spans).strip()
+
+
 ### clip= can corrupt line reconstruction near a rotated watermark --
 ### fetch the whole page once, filter by line center in Python instead.
 ### Split from the fetch so callers needing many regions (table cells)
 ### fetch once and filter many times.
 def _lines_in_region(text_dict, rect):
-    ### (y0, y1, block index, text) for axis-aligned lines centered in rect
+    ### (y0, y1, block index, [(text, bold, italic), ...]) per axis-aligned
+    ### line whose centre is in rect
     rows = []
     for bnum, block in enumerate(text_dict["blocks"]):
         for line in block.get("lines", []):
@@ -65,14 +80,14 @@ def _lines_in_region(text_dict, rect):
             dir_x, dir_y = line["dir"]
             if abs(dir_x * dir_y) > _ROTATED_DIR_THRESHOLD:
                 continue
-            text = "".join(span["text"] for span in line["spans"]).strip()
-            if text:
-                rows.append((bbox[1], bbox[3], bnum, text))
+            spans = [(s["text"], *_span_style(s)) for s in line["spans"] if s["text"]]
+            if _line_text(spans):
+                rows.append((bbox[1], bbox[3], bnum, spans))
     return rows
 
 
 def _filter_lines(text_dict, rect):
-    return [text for _, _, _, text in _lines_in_region(text_dict, rect)]
+    return [_line_text(spans) for _, _, _, spans in _lines_in_region(text_dict, rect)]
 
 
 def _region_lines(page, rect):
@@ -91,9 +106,11 @@ def _join_lines(lines):
     return result
 
 
-### group a region's lines into paragraphs, then join each
+### group a region's lines into paragraphs; each paragraph a list of its
+### line span-lists (a new block or a gap over para_gap starts one; a gap
+### that reads as a wrap never does)
 def _region_paragraphs(page, rect):
-    rows = sorted(_lines_in_region(page.get_text("dict"), rect))
+    rows = sorted(_lines_in_region(page.get_text("dict"), rect), key=lambda r: r[:3])
     if not rows:
         return []
     heights = sorted(y1 - y0 for y0, y1, _, _ in rows)
@@ -101,71 +118,151 @@ def _region_paragraphs(page, rect):
 
     paras, current = [], [rows[0][3]]
     for i in range(1, len(rows)):
-        _, prev_y1, prev_bnum, prev_text = rows[i - 1]
-        y0, _, bnum, text = rows[i]
+        _, prev_y1, prev_bnum, prev_spans = rows[i - 1]
+        y0, _, bnum, spans = rows[i]
         big_gap = (y0 - prev_y1) > para_gap
-        wrap = not _SENTENCE_END_RE.search(prev_text) and text[:1].islower()
+        wrap = not _SENTENCE_END_RE.search(_line_text(prev_spans)) and _line_text(spans)[:1].islower()
         if (big_gap or bnum != prev_bnum) and not (wrap and not big_gap):
-            paras.append(_join_lines(current))
-            current = [text]
+            paras.append(current)
+            current = [spans]
         else:
-            current.append(text)
-    paras.append(_join_lines(current))
+            current.append(spans)
+    paras.append(current)
     return paras
 
 
+### one paragraph's line span-lists -> a flat [(text, bold, italic)] run:
+### EOL-hyphen de-wrap at a line join (see _join_lines), else a joining
+### space -- styled to match when both sides agree, so the run stays one
+### <emphasis>
+def _para_tokens(lines):
+    tokens = []
+    for i, spans in enumerate(lines):
+        if i and tokens:
+            prev_text, prev_b, prev_i = tokens[-1]
+            first = spans[0] if spans else ("", False, False)
+            if _EOL_HYPHEN_RE.search(prev_text) and first[0][:1].islower():
+                tokens[-1] = (prev_text[:-1], prev_b, prev_i)
+            elif not prev_text[-1:].isspace():
+                style = (prev_b, prev_i) if (prev_b, prev_i) == first[1:] else (False, False)
+                tokens.append((" ", *style))
+        tokens.extend(spans)
+    return tokens
+
+
+### merge same-style neighbours, push whitespace off the edge of a styled
+### run out to a plain token, trim the ends
+def _merge_tokens(tokens):
+    out = []
+    for text, bold, italic in tokens:
+        if not text:
+            continue
+        if out and out[-1][1:] == (bold, italic):
+            out[-1] = (out[-1][0] + text, bold, italic)
+        else:
+            out.append((text, bold, italic))
+
+    shifted = []
+    for text, bold, italic in out:
+        if (bold or italic) and text.strip() and text.strip() != text:
+            lead, core, trail = text[:len(text) - len(text.lstrip())], text.strip(), text[len(text.rstrip()):]
+            shifted += [(lead, False, False), (core, bold, italic), (trail, False, False)]
+        else:
+            shifted.append((text, bold, italic))
+
+    if shifted:
+        shifted[0] = (shifted[0][0].lstrip(), *shifted[0][1:])
+        shifted[-1] = (shifted[-1][0].rstrip(), *shifted[-1][1:])
+    return [t for t in shifted if t[0]]
+
+
+### <para> mixed content: bold -> <emphasis role="strong">, italic -> <emphasis>
+def _para_element(tokens):
+    para = etree.Element("para")
+    last = None
+    for text, bold, italic in tokens:
+        if (bold or italic) and text.strip():
+            last = etree.SubElement(para, "emphasis")
+            if bold:
+                last.set("role", "strong")
+            last.text = text
+        elif last is None:
+            para.text = (para.text or "") + text
+        else:
+            last.tail = (last.tail or "") + text
+    return para
+
+
+### same run, as preview HTML: bold -> <strong>, italic -> <em>, text escaped
+def _tokens_html(tokens):
+    parts = []
+    for text, bold, italic in tokens:
+        piece = str(escape(text))
+        if bold:
+            piece = f"<strong>{piece}</strong>"
+        elif italic:
+            piece = f"<em>{piece}</em>"
+        parts.append(piece)
+    return "".join(parts)
+
+
 ########################################################################
-### PARAGRAPH -- wrapped lines joined per paragraph; a multi-paragraph
-### selection yields one <para> each, not one run-on block.
+### PARAGRAPH -- wrapped lines joined per paragraph, one <para> each for a
+### multi-paragraph selection; bold/italic spans kept as <emphasis>.
 def extract_paragraph(page, rect):
-    paras = _region_paragraphs(page, rect)
-    fragments = []
-    for text in paras:
-        elem = etree.Element("para")
-        elem.text = text
-        fragments.append(_serialize(elem))
-    return paras, "\n".join(fragments)
+    previews, fragments = [], []
+    for lines in _region_paragraphs(page, rect):
+        tokens = _merge_tokens(_para_tokens(lines))
+        previews.append(_tokens_html(tokens))
+        fragments.append(_serialize(_para_element(tokens)))
+    return previews, "\n".join(fragments)
 
 
 ########################################################################
 ### LISTS -- a marker line starts a new item; continuation lines join
 ### it until the next marker. Lines before the first marker are dropped.
-def _split_list_items(lines):
-    items = []
-    current = []
-    in_list = False
-    ordered = False
-    for line in lines:
-        if _MARKER_ONLY_RE.match(line):
+### Each item carries its lines' span-lists so <emphasis> survives too.
+def _strip_marker(spans):
+    if not spans:
+        return spans
+    text, bold, italic = spans[0]
+    return [(_MARKER_PREFIX_RE.sub("", text, count=1), bold, italic), *spans[1:]]
+
+
+def _split_list_items(rows):
+    items, current, in_list, ordered = [], [], False, False
+    for _, _, _, spans in rows:
+        text = _line_text(spans)
+        if _MARKER_ONLY_RE.match(text):
             if not items and not current:
-                ordered = bool(_ORDERED_MARKER_RE.match(line))
+                ordered = bool(_ORDERED_MARKER_RE.match(text))
             if current:
-                items.append(_join_lines(current))
-            current = []
-            in_list = True
-        elif _MARKER_PREFIX_RE.match(line):
+                items.append(current)
+            current, in_list = [], True
+        elif _MARKER_PREFIX_RE.match(text):
             if not items and not current:
-                ordered = bool(_ORDERED_MARKER_RE.match(line))
+                ordered = bool(_ORDERED_MARKER_RE.match(text))
             if current:
-                items.append(_join_lines(current))
-            current = [_MARKER_PREFIX_RE.sub("", line, count=1)]
-            in_list = True
+                items.append(current)
+            current, in_list = [_strip_marker(spans)], True
         elif in_list:
-            current.append(line)
+            current.append(spans)
     if current:
-        items.append(_join_lines(current))
+        items.append(current)
     return items, ordered
 
 
 def extract_list(page, rect):
-    items, ordered = _split_list_items(_region_lines(page, rect))
+    rows = _lines_in_region(page.get_text("dict"), rect)
+    items, ordered = _split_list_items(rows)
     element_type = "orderedlist" if ordered else "itemizedlist"
     root = etree.Element(element_type)
-    for item_text in items:
-        listitem = etree.SubElement(root, "listitem")
-        para = etree.SubElement(listitem, "para")
-        para.text = item_text
-    return element_type, items, _serialize(root)
+    previews = []
+    for lines in items:
+        tokens = _merge_tokens(_para_tokens(lines))
+        etree.SubElement(root, "listitem").append(_para_element(tokens))
+        previews.append(_tokens_html(tokens))
+    return element_type, previews, _serialize(root)
 
 
 ########################################################################

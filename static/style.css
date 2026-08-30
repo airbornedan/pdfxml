@@ -276,6 +276,19 @@ button:disabled {
 	margin: 8px 0;
 }
 
+/* whole thumbnail is a shortcut for "Continue with this PDF" */
+.pdf-thumbnail-link {
+	display: inline-block;
+}
+.pdf-thumbnail-link:hover .pdf-thumbnail {
+	border-color: #0056b3;
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+.pdf-thumbnail-link:focus-visible {
+	outline: 2px solid #0056b3;
+	outline-offset: 2px;
+}
+
 /* must be display:block -- inline gives the percentage max-width
    below nothing to resolve against */
 .image-link {

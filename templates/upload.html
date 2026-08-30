@@ -6,7 +6,9 @@
 	{% if error %}<p class="error-text">{{ error }}</p>{% endif %}
 
 	{% if pdf_filename %}
-	<img src="{{ url_for('extract.thumbnail') }}" alt="First page of {{ pdf_filename }}" class="pdf-thumbnail">
+	<a href="{{ url_for('extract.choose_page') }}" class="pdf-thumbnail-link" title="Continue with this PDF">
+		<img src="{{ url_for('extract.thumbnail') }}" alt="First page of {{ pdf_filename }}" class="pdf-thumbnail">
+	</a>
 	<p class="subtitle">{{ pdf_filename }} ({{ page_count }} page{{ "s" if page_count != 1 }})</p>
 	<div class="actions">
 		<a href="{{ url_for('extract.choose_page') }}" class="btn">Continue with this PDF</a>

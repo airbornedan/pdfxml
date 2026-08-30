@@ -42,9 +42,9 @@ def trusted_client(monkeypatch):
 
 @pytest.fixture(scope="session")
 def sample_pdf(tmp_path_factory):
-    """A 2-page PDF: a paragraph in the top half of page 1, a bulleted
-    list (ASCII '-' markers) in the bottom half; page 2 has a 3-line
-    paragraph then, after a clear gap, a one-line second paragraph."""
+    """A 3-page PDF: page 1 a paragraph over a bulleted list ('-' markers);
+    page 2 a 3-line paragraph then, after a clear gap, a one-line second
+    paragraph; page 3 a sentence with a bold and an italic word."""
     path = tmp_path_factory.mktemp("pdf") / "sample.pdf"
     doc = fitz.open()
     p1 = doc.new_page(width=612, height=792)
@@ -57,6 +57,9 @@ def sample_pdf(tmp_path_factory):
                               "and line three wraps it up."]):
         p2.insert_text((72, 120 + i * 15), line, fontsize=11)
     p2.insert_text((72, 210), "A second paragraph, clearly separated.", fontsize=11)
+    p3 = doc.new_page(width=612, height=792)
+    p3.insert_htmlbox(fitz.Rect(72, 100, 540, 180),
+                      "Press <b>Enter</b> to confirm or <i>Esc</i> to cancel.")
     doc.save(str(path))
     doc.close()
     return str(path)

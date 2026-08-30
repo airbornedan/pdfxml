@@ -85,7 +85,7 @@ def test_sandbox_runs_and_wraps_errors(sample_pdf):
     from app import pdfops, sandbox
 
     n = sandbox.run(pdfops.page_count, sample_pdf)
-    assert n == 2
+    assert n == 3
     with pytest.raises(sandbox.SandboxError):
         sandbox.run(pdfops.page_count, "/no/such/file.pdf")
 
