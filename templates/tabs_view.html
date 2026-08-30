@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-container">
+	{% include "_breadcrumbs.html" %}
+	<h1 class="tools-heading">{{ title }}</h1>
+
+	<div class="tab-list" role="tablist" aria-label="{{ title }} tabs">
+		{% for tab in tabs %}
+		<button class="tab-button{% if loop.first %} active{% endif %}" type="button" role="tab"
+			aria-selected="{{ 'true' if loop.first else 'false' }}" data-tab-target="tab-{{ loop.index }}">{{ tab.label }}</button>
+		{% endfor %}
+	</div>
+	{% for tab in tabs %}
+	<article class="tab-panel{% if loop.first %} active{% endif %}" id="tab-{{ loop.index }}" role="tabpanel" aria-label="{{ tab.label }}">
+		{{ tab.content|safe }}
+	</article>
+	{% endfor %}
+</div>
+<script nonce="{{ g.csp_nonce }}">
+document.querySelectorAll(".tab-button").forEach((button) => {
+	button.addEventListener("click", () => {
+		document.querySelectorAll(".tab-button").forEach((b) => {
+			b.classList.toggle("active", b === button);
+			b.setAttribute("aria-selected", b === button ? "true" : "false");
+		});
+		document.querySelectorAll(".tab-panel").forEach((p) => p.classList.toggle("active", p.id === button.dataset.tabTarget));
+	});
+});
+</script>
+{% endblock %}

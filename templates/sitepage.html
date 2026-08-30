@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-container">
+	<h1 class="tools-heading">{{ title }}</h1>
+	<article class="tab-panel active prose">{{ body|safe }}</article>
+</div>
+{% endblock %}

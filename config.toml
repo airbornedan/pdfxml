@@ -1,0 +1,32 @@
+# PDFXML runtime configuration -- everyday behavior tuning, not
+# deployment. Deployment concerns (proxy, trusted-network profile,
+# upload dir, port, worker count) stay environment variables; see
+# pdfxml.md. Missing file or missing keys fall back to these defaults.
+
+[upload]
+max_bytes = 52428800     # 50 MB
+max_age_minutes = 20     # sweep threshold for an abandoned upload
+
+[processing]
+max_concurrent = 3       # concurrent PDF renders per worker; PDFXML_MAX_CONCURRENT env overrides
+
+[render]
+preview_zoom = 1.5       # on-screen page preview / region-select
+image_dpi = 600          # final extracted-image resolution (zoom = dpi / 72)
+thumbnail_zoom = 0.3     # first-page sanity-check thumbnail on upload.html
+page_grid_zoom = 0.5     # page-select thumbnail grid on choose_page.html
+max_megapixels = 50      # render ceiling; larger drops dpi (Letter@600dpi is ~34)
+
+[watermark]
+text = "SurePoint Ag Systems"   # exact text redacted from extracted images
+
+[sandbox]
+# per-render child-process limits (POSIX server only); PDFXML_SANDBOX=0 disables
+timeout_seconds = 25    # wall-clock kill
+memory_mb = 1536        # address-space ceiling (a 600-dpi page needs ~250)
+cpu_seconds = 20        # CPU-time kill -- catches a parser loop
+
+[ratelimit]
+# per-IP sliding window; only active when PDFXML_TRUSTED_NETWORK is unset
+upload_per_minute = 10
+render_per_minute = 60

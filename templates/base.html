@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>PDFXML Tools</title>
+<link rel="stylesheet" href="{{ static_url('style.css') }}">
+</head>
+<body>
+<header class="topbar">
+	<a href="{{ url_for('extract.index') }}" class="brand icon-link" title="Home" aria-label="Home">
+		<img src="{{ url_for('static', filename='images/home.svg') }}" alt="Home">
+	</a>
+	{% if trusted_network %}
+	<a href="{{ url_for('static', filename='style_guide.pdf') }}" class="icon-link style-guide-link" title="Style Guide" aria-label="Style Guide" target="_blank" rel="noopener noreferrer">
+		<img src="{{ url_for('static', filename='images/style_guide.svg') }}" alt="Style Guide">
+	</a>
+	{% endif %}
+</header>
+{% block content %}{% endblock %}
+{% if not trusted_network %}
+<footer class="site-footer">
+	<a href="{{ url_for('site.terms') }}">Terms</a>
+	<span aria-hidden="true">&middot;</span>
+	<a href="{{ url_for('site.privacy') }}">Privacy</a>
+</footer>
+{% endif %}
+</body>
+</html>

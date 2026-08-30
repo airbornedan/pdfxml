@@ -1,0 +1,5 @@
+# Windows-target files: keep CRLF no matter the platform or a
+# contributor's core.autocrlf -- Win8.1 Notepad and cmd.exe both choke
+# on LF-only .bat / readme files.
+*.bat              text eol=crlf
+windows_readme.txt text eol=crlf

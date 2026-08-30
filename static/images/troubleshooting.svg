@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   width="24"
+   height="24"
+   viewBox="0 0 24 24"
+   fill="none"
+   stroke="#0056b3"
+   stroke-width="1.5"
+   version="1.1"
+   id="svg5546"
+   sodipodi:docname="troubleshooting2.svg"
+   inkscape:version="1.2.2 (b0a8486541, 2022-12-01)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs5550" />
+  <sodipodi:namedview
+     id="namedview5548"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     showgrid="false"
+     inkscape:zoom="13.906433"
+     inkscape:cx="14.59756"
+     inkscape:cy="16.107653"
+     inkscape:window-width="1920"
+     inkscape:window-height="1120"
+     inkscape:window-x="1920"
+     inkscape:window-y="1200"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg5546" />
+  <path
+     stroke-linecap="round"
+     stroke-linejoin="round"
+     d="M 11.699661,15.297119 17.25,21 c 2.499675,2.419791 6.169791,-1.250325 3.75,-3.75 L 15.351814,11.703508 M 9.7871864,11.429034 5.909,7.5 H 4.5 L 2.25,3.75 3.75,2.25 7.5,4.5 v 1.409 l 4.107458,4.0566102 M 18.375,18.375 15.75,15.75"
+     id="path5669"
+     style="stroke:#ff6600;stroke-linecap:round"
+     sodipodi:nodetypes="cccccccccccccc" />
+  <path
+     stroke-linecap="round"
+     stroke-linejoin="round"
+     d="m 11.42,15.17 2.496,-3.03 c 0.317,-0.384 0.74,-0.626 1.208,-0.766 M 11.42,15.17 6.765,20.823 C 4.3871481,23.721503 0.28049717,19.614852 3.179,17.237 l 6.837,-5.63 m 5.108,-0.233 c 0.55,-0.164 1.163,-0.188 1.743,-0.14 3.424238,0.294036 5.900832,-3.2038892 4.486,-6.336 L 18.077,8.175 C 16.958751,7.9164216 16.085578,7.0432493 15.827,5.925 l 3.276,-3.276 c -3.132111,-1.4148317 -6.630036,1.0617615 -6.336,4.486 0.091,1.076 -0.071,2.264 -0.904,2.95 l -0.102,0.085 m -1.745,1.437 1.744,-1.438 m -1.745,1.437 1.745,-1.437 m -6.893,8.956 h 0.008 v 0.008 H 4.867 Z"
+     id="path5544"
+     sodipodi:nodetypes="ccccccccccccccccccccccccc" />
+</svg>

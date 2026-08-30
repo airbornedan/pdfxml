@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-container wide">
+	{% include "_breadcrumbs.html" %}
+	<h1>Which page?</h1>
+	<p class="subtitle">{{ page_count }} page{{ "s" if page_count != 1 }} total</p>
+	{% if error %}<p class="error-text">{{ error }}</p>{% endif %}
+	<form method="post">
+		<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+		<div class="field">
+			<label for="page_number">Page number</label>
+			<input type="number" id="page_number" name="page_number" min="1" max="{{ page_count }}" autofocus>
+		</div>
+		<button type="submit">Show page</button>
+
+		<p class="subtitle">Or click a page below</p>
+		<div class="page-thumb-grid">
+			{% for n in range(1, page_count + 1) %}
+			<button type="submit" name="thumb_page_number" value="{{ n }}" class="page-thumb-btn" formnovalidate>
+				<img src="{{ url_for('extract.page_thumbnail', page=n) }}" alt="Page {{ n }}" loading="lazy">
+				<span class="page-thumb-label">Page {{ n }}</span>
+			</button>
+			{% endfor %}
+		</div>
+	</form>
+</div>
+{% endblock %}

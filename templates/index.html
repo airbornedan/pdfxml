@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-container wide">
+	<h1 class="tools-heading">PDF to XML Tools</h1>
+	<div class="card-grid">
+		<a href="{{ url_for('pages.process') }}" class="card">
+			<img class="card-icon" src="{{ url_for('static', filename='images/process.svg') }}" alt="">
+			<span class="card-title">Process</span>
+			<hr class="card-divider">
+			<span class="card-desc">{% if trusted_network %}Convert PDF to Paligo{% else %}How to use these tools{% endif %}</span>
+		</a>
+		<a href="{{ url_for('extract.choose_pdf') }}" class="card">
+			<img class="card-icon" src="{{ url_for('static', filename='images/extract.svg') }}" alt="">
+			<span class="card-title">Extract</span>
+			<hr class="card-divider">
+			<span class="card-desc">Pull text, lists, tables, or images from a PDF</span>
+		</a>
+		<a href="{{ url_for('imagecrop.image_crop') }}" class="card">
+			<img class="card-icon" src="{{ url_for('static', filename='images/crop.svg') }}" alt="">
+			<span class="card-title">Crop</span>
+			<hr class="card-divider">
+			<span class="card-desc">Crop an image.</span>
+		</a>
+		{% if trusted_network %}
+		<a href="{{ url_for('pages.troubleshooting') }}" class="card">
+			<img class="card-icon" src="{{ url_for('static', filename='images/troubleshooting.svg') }}" alt="">
+			<span class="card-title">Troubleshoot</span>
+			<hr class="card-divider">
+			<span class="card-desc">Information on solving problems.</span>
+		</a>
+		{% endif %}
+	</div>
+</div>
+{% endblock %}

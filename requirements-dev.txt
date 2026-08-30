@@ -1,0 +1,6 @@
+# Dev + test tooling on top of the runtime deps.
+-r requirements.txt
+
+pytest==9.1.1
+playwright==1.62.0   # headless-browser UI tests (tests/test_crop_ui.py, tests/test_upload_ui.py)
+#   one-time: .venv/bin/python -m playwright install chromium

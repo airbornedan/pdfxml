@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-container">
+	{% include "_breadcrumbs.html" %}
+	<h1>{% if pdf_filename %}Continue with this PDF?{% else %}Upload a PDF{% endif %}</h1>
+	{% if error %}<p class="error-text">{{ error }}</p>{% endif %}
+
+	{% if pdf_filename %}
+	<img src="{{ url_for('extract.thumbnail') }}" alt="First page of {{ pdf_filename }}" class="pdf-thumbnail">
+	<p class="subtitle">{{ pdf_filename }} ({{ page_count }} page{{ "s" if page_count != 1 }})</p>
+	<div class="actions">
+		<a href="{{ url_for('extract.choose_page') }}" class="btn">Continue with this PDF</a>
+		<form method="post" action="{{ url_for('extract.clear_pdf') }}">
+			<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+			<button type="submit" class="link-btn">Upload a different PDF</button>
+		</form>
+	</div>
+	{% else %}
+	<form method="post" action="{{ url_for('extract.upload') }}" enctype="multipart/form-data" id="upload-form">
+		<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+		<div class="upload-box" id="drop-zone">
+			<input type="file" id="pdf-file" name="pdf" accept="application/pdf" required class="file-input">
+			<label for="pdf-file">Drag and drop a PDF here, or click to choose</label>
+		</div>
+		<p class="error-text is-hidden" id="file-error"></p>
+	</form>
+	{% endif %}
+
+	<form method="post" action="{{ url_for('extract.new_upload') }}" class="actions">
+		<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+		<button type="submit" class="link-btn">Start over</button>
+	</form>
+</div>
+
+{% if not pdf_filename %}
+<script nonce="{{ g.csp_nonce }}">
+(function () {
+	const form = document.getElementById("upload-form");
+	const dropZone = document.getElementById("drop-zone");
+	const fileInput = document.getElementById("pdf-file");
+	const fileError = document.getElementById("file-error");
+	const label = dropZone.querySelector("label");
+
+	// choosing (or dropping) a file is the upload trigger -- no button
+	function submitWith(file) {
+		if (!file) return;
+		// accept= only filters the picker, not a drop or "All files"
+		if (file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf")) {
+			fileError.textContent = "That doesn't look like a PDF. Please choose another file.";
+			fileError.classList.remove("is-hidden");
+			fileInput.value = "";
+			return;
+		}
+		fileError.classList.add("is-hidden");
+		label.textContent = "Uploading…";
+		dropZone.classList.add("uploading");
+		form.requestSubmit();
+	}
+
+	fileInput.addEventListener("change", () => submitWith(fileInput.files[0]));
+
+	["dragenter", "dragover"].forEach((name) =>
+		dropZone.addEventListener(name, (e) => { e.preventDefault(); dropZone.classList.add("dragover"); }));
+	dropZone.addEventListener("dragleave", (e) => { e.preventDefault(); dropZone.classList.remove("dragover"); });
+	dropZone.addEventListener("drop", (e) => {
+		e.preventDefault();
+		dropZone.classList.remove("dragover");
+		fileInput.files = e.dataTransfer.files;
+		submitWith(e.dataTransfer.files[0]);
+	});
+})();
+</script>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,6 @@
+# PyInstaller build for the standalone pdfxml.exe (shape A). Core runtime
+# deps + PyInstaller. No gunicorn -- desktop_launcher.py calls Flask's
+# app.run() directly. Used by build_windows.bat.
+-r ../../requirements.txt
+
+pyinstaller

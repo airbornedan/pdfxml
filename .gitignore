@@ -1,0 +1,52 @@
+# The actual database -- real user accounts, never committed.
+# schema.sql is the tracked source of truth instead.
+*.db
+*.db.bak*
+*.sqlite3
+
+# Session-signing secret (regenerated automatically on first run)
+.secret_key
+
+# Per-session uploaded PDFs -- ephemeral, never committed
+/uploads/
+
+# Sample PDFs used for local testing -- real company documents
+*.pdf
+# ...except the style guide, a real shipped static asset, not a test sample
+!static/style_guide.pdf
+
+# Python
+__pycache__/
+*.pyc
+
+# Virtual environments
+.venv/
+.venv-build/
+
+# PyInstaller build output (deploy/windows/build_windows.bat)
+/build/
+/dist/
+
+# Editor / local scratch
+*.swp
+*~
+.pytest_cache/
+
+# Personal backlog
+TODO.md
+
+# Local dev launcher (private/trusted profile) -- convenience only
+pdfxml_launch.py
+
+# Lint config/cache -- dev-machine-only
+deploy/tools/ruff.toml
+deploy/tools/.ruff_cache
+
+# Old sibling app kept for reference -- bundled Windows binaries and
+# PyInstaller build output, ~730MB, doesn't belong in git regardless
+/old_pdf_xml/
+
+# Local working area for source art -- SVGs, icon-pack downloads, .blend
+# /.fig sources, exports-in-progress. Only the finished asset copied into
+# static/ gets committed.
+/assets/

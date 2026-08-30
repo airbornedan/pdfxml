@@ -1,0 +1,240 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-container">
+	<p>Select an image file, then draw a rectangle around the area to crop.</p>
+
+	<div class="upload-box" id="drop-zone">
+		<input type="file" id="image-loader" accept="image/png,image/jpeg" class="file-input">
+		<label for="image-loader">Drag and drop an image here, or click to choose</label>
+	</div>
+
+	<p class="error-text is-hidden" id="file-error"></p>
+	<p class="subtitle" id="status-tip">Select an image to begin.</p>
+
+	<p class="controls is-hidden" id="top-controls">
+		<button type="button" class="btn" data-action="crop">Crop selection</button>
+		<button type="button" class="btn-reset" data-action="reset">Clear selection</button>
+	</p>
+
+	<div class="canvas-wrap is-hidden" id="canvas-wrap">
+		<canvas id="crop-canvas"></canvas>
+	</div>
+
+	<p class="controls is-hidden" id="bottom-controls">
+		<button type="button" class="btn" data-action="crop">Crop selection</button>
+		<button type="button" class="btn-reset" data-action="reset">Clear selection</button>
+	</p>
+
+</div>
+
+<div class="result-modal is-hidden" id="result-modal" role="dialog" aria-modal="true" aria-label="Cropped image">
+	<div class="result-modal__card">
+		<img id="result-img" alt="Cropped image">
+		<div class="result-modal__actions">
+			<span class="result-filename-wrap">
+				<input type="text" id="result-filename" class="result-filename" spellcheck="false" autocomplete="off" placeholder="file name" aria-label="File name">
+				<span class="result-filename-ext">.png</span>
+			</span>
+			<a id="result-download" class="btn" download="cropped.png">Save PNG</a>
+			<button type="button" class="btn-reset" data-action="close-result">Close</button>
+		</div>
+	</div>
+</div>
+
+<script nonce="{{ g.csp_nonce }}">
+(function () {
+	const imageLoader = document.getElementById("image-loader");
+	const canvas = document.getElementById("crop-canvas");
+	const ctx = canvas.getContext("2d");
+	const canvasWrap = document.getElementById("canvas-wrap");
+	const panels = [document.getElementById("top-controls"), document.getElementById("bottom-controls")];
+	const statusTip = document.getElementById("status-tip");
+	const fileError = document.getElementById("file-error");
+	const resultModal = document.getElementById("result-modal");
+	const resultImg = document.getElementById("result-img");
+	const resultDownload = document.getElementById("result-download");
+	const filenameField = document.getElementById("result-filename");
+	const closeResultBtn = resultModal.querySelector('[data-action="close-result"]');
+
+	const ACCEPTED = ["image/png", "image/jpeg"];
+	const BAD_FILE = "That file type isn't an image the tool can accept. Please choose another.";
+	const DRAW_TIP = "Click and drag over the image to select an area.";
+	const NO_SELECTION = "Draw a rectangle on the image first.";
+	const MIN_PX = 5;
+	const SAFE_NAME = /[\\/:*?"<>|\x00-\x1f]+/g;
+
+	let sourceBaseName = "";  // loaded file's name, sans extension and path chars
+
+	// strip a trailing extension and anything illegal in a filename
+	const baseFrom = (name) => name.replace(/\.[^./\\]+$/, "").replace(SAFE_NAME, "").trim();
+
+	function applyDownloadName() {
+		resultDownload.download = (baseFrom(filenameField.value) || "cropped") + ".png";
+	}
+
+	const img = new Image();
+	let anchor = null;      // {x, y} where the current drag began (image-pixel space)
+	let dragMoved = false;  // did the pointer actually move since anchor?
+	let selection = null;   // {x, y, w, h} committed selection (image-pixel space) or null
+
+	const show = (el) => el.classList.remove("is-hidden");
+	const hide = (el) => el.classList.add("is-hidden");
+	const setError = (msg) => { fileError.textContent = msg; show(fileError); };
+	const clearError = () => hide(fileError);
+
+	// pointer position in the image's own pixel space, clamped to the canvas
+	function toImageXY(e) {
+		const r = canvas.getBoundingClientRect();
+		return {
+			x: Math.min(Math.max((e.clientX - r.left) * (canvas.width / r.width), 0), canvas.width),
+			y: Math.min(Math.max((e.clientY - r.top) * (canvas.height / r.height), 0), canvas.height),
+		};
+	}
+
+	function paint() {
+		ctx.clearRect(0, 0, canvas.width, canvas.height);
+		ctx.drawImage(img, 0, 0);
+		if (selection) {
+			ctx.fillStyle = "rgba(0, 86, 179, 0.25)";
+			ctx.strokeStyle = "#0056b3";
+			ctx.lineWidth = 3;
+			ctx.fillRect(selection.x, selection.y, selection.w, selection.h);
+			ctx.strokeRect(selection.x, selection.y, selection.w, selection.h);
+		}
+	}
+
+	function resetSelection() {
+		anchor = null;
+		selection = null;
+		closeResult();
+		clearError();
+		statusTip.textContent = DRAW_TIP;
+		paint();
+	}
+
+	function closeResult() {
+		if (resultModal.classList.contains("is-hidden")) return;
+		hide(resultModal);
+		resultImg.removeAttribute("src");
+	}
+
+	// --- load an image (from the picker or a drop) ---
+	function loadFile(file) {
+		if (!file) return;
+		clearError();
+		if (!ACCEPTED.includes(file.type)) {
+			setError(BAD_FILE);
+			imageLoader.value = "";
+			return;
+		}
+		sourceBaseName = baseFrom(file.name);
+		const reader = new FileReader();
+		reader.onload = (ev) => {
+			img.onload = () => {
+				canvas.width = img.width;
+				canvas.height = img.height;
+				selection = null;
+				anchor = null;
+				closeResult();
+				show(canvasWrap);
+				panels.forEach(show);
+				statusTip.textContent = DRAW_TIP;
+				paint();
+			};
+			// a file can claim image/png and still fail to decode
+			img.onerror = () => { setError(BAD_FILE); imageLoader.value = ""; };
+			img.src = ev.target.result;
+		};
+		reader.readAsDataURL(file);
+	}
+	imageLoader.addEventListener("change", (e) => loadFile(e.target.files[0]));
+
+	const dropZone = document.getElementById("drop-zone");
+	["dragenter", "dragover"].forEach((n) => dropZone.addEventListener(n, (e) => {
+		e.preventDefault();
+		dropZone.classList.add("dragover");
+	}));
+	["dragleave", "drop"].forEach((n) => dropZone.addEventListener(n, (e) => {
+		e.preventDefault();
+		dropZone.classList.remove("dragover");
+	}));
+	dropZone.addEventListener("drop", (e) => loadFile(e.dataTransfer.files[0]));
+
+	// --- drag to select. move/up on window so a release outside the
+	// canvas can't strand the gesture. ---
+	canvas.addEventListener("pointerdown", (e) => {
+		e.preventDefault();
+		anchor = toImageXY(e);
+		dragMoved = false;
+		clearError();
+	});
+
+	window.addEventListener("pointermove", (e) => {
+		if (!anchor) return;
+		dragMoved = true;
+		const p = toImageXY(e);
+		selection = {
+			x: Math.min(anchor.x, p.x),
+			y: Math.min(anchor.y, p.y),
+			w: Math.abs(p.x - anchor.x),
+			h: Math.abs(p.y - anchor.y),
+		};
+		paint();
+	});
+
+	window.addEventListener("pointerup", () => {
+		if (!anchor) return;
+		anchor = null;
+		// a tiny drag = a click = not a selection; a plain click keeps
+		// any earlier selection
+		if (dragMoved && selection && (selection.w < MIN_PX || selection.h < MIN_PX)) {
+			selection = null;
+			paint();
+		}
+	});
+
+	// --- buttons ---
+	document.querySelectorAll('[data-action="reset"]').forEach((b) =>
+		b.addEventListener("click", resetSelection));
+
+	document.querySelectorAll('[data-action="crop"]').forEach((b) =>
+		b.addEventListener("click", () => {
+			if (!selection || selection.w < MIN_PX || selection.h < MIN_PX) {
+				setError(NO_SELECTION);
+				return;
+			}
+			clearError();
+			const out = document.createElement("canvas");
+			out.width = Math.round(selection.w);
+			out.height = Math.round(selection.h);
+			out.getContext("2d").drawImage(
+				img, selection.x, selection.y, selection.w, selection.h,
+				0, 0, out.width, out.height);
+			const dataUrl = out.toDataURL("image/png");
+			resultImg.src = dataUrl;
+			resultDownload.href = dataUrl;
+			filenameField.value = sourceBaseName;
+			applyDownloadName();
+			show(resultModal);
+			filenameField.focus();
+			filenameField.select();
+			statusTip.textContent = "Cropped -- name it, then Save PNG.";
+		}));
+
+	// --- filename field ---
+	filenameField.addEventListener("input", applyDownloadName);
+	filenameField.addEventListener("keydown", (e) => {
+		if (e.key === "Enter") { e.preventDefault(); resultDownload.click(); }
+	});
+
+	// --- result modal dismissal ---
+	closeResultBtn.addEventListener("click", closeResult);
+	resultModal.addEventListener("pointerdown", (e) => {
+		if (e.target === resultModal) closeResult();   // click on the backdrop
+	});
+	window.addEventListener("keydown", (e) => {
+		if (e.key === "Escape") closeResult();
+	});
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,8 @@
+# Server deploy (shapes B and C): core + the production WSGI server.
+# requirements.lock is compiled from THIS file -- after any change here
+# or in requirements.txt, regenerate it:
+#   uv pip compile requirements-server.txt --generate-hashes -o requirements.lock
+-r requirements.txt
+
+# Production WSGI server (Unix only; the desktop build never uses it)
+gunicorn==26.0.0

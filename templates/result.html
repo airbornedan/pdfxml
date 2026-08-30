@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-container">
+	{% include "_breadcrumbs.html" %}
+	<h1>{{ element_label }} extracted</h1>
+
+	<div class="actions">
+		<form method="post" action="{{ url_for('extract.extract_another') }}">
+			<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+			<button type="submit" class="btn">Extract another</button>
+		</form>
+		<form method="post" action="{{ url_for('extract.new_upload') }}">
+			<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+			<button type="submit" class="link-btn">Upload a different PDF</button>
+		</form>
+	</div>
+
+	{% if result.element_type != "image" and result.empty %}
+	<p class="error-text">Nothing could be converted from that selection.</p>
+	<p><a href="{{ url_for('extract.select_region') }}" class="btn">Retry</a></p>
+	{% else %}
+	<div class="preview-box">
+		{% if result.element_type == "paragraph" %}
+		<p>{{ result.preview }}</p>
+		{% elif result.element_type == "orderedlist" %}
+		<ol>{% for item in result.preview %}<li>{{ item }}</li>{% endfor %}</ol>
+		{% elif result.element_type == "itemizedlist" %}
+		<ul>{% for item in result.preview %}<li>{{ item }}</li>{% endfor %}</ul>
+		{% elif result.element_type == "table" %}
+		<table>
+			{% if result.preview.header %}
+			<thead>
+				<tr>{% for cell in result.preview.header %}<th>{{ cell }}</th>{% endfor %}</tr>
+			</thead>
+			{% endif %}
+			<tbody>
+				{% for row in result.preview.body %}
+				<tr>{% for cell in row %}<td>{{ cell }}</td>{% endfor %}</tr>
+				{% endfor %}
+			</tbody>
+		</table>
+		{% elif result.element_type == "image" %}
+		<p><a href="{{ url_for('extract.extracted_image') }}" class="btn" download>Save PNG</a></p>
+		<a class="image-link" href="{{ url_for('extract.extracted_image') }}" target="_blank">
+			<img class="extracted-image" src="{{ url_for('extract.extracted_image') }}" alt="Extracted image">
+		</a>
+		{% endif %}
+	</div>
+
+	{% if result.element_type != "image" %}
+	<p>
+		{% if result.valid %}
+		<span class="validation-pass">&#10003; Valid</span>
+		{% else %}
+		<span class="validation-fail">&#10007; Invalid</span>
+		{% endif %}
+	</p>
+
+	<p><button type="button" id="select-all-btn" class="btn">Copy all</button></p>
+	<textarea class="xml-output" id="xml-output" readonly onclick="this.select();">{{ result.xml }}</textarea>
+	<script nonce="{{ g.csp_nonce }}">
+	document.getElementById("select-all-btn").addEventListener("click", async () => {
+		const button = document.getElementById("select-all-btn");
+		const xmlOutput = document.getElementById("xml-output");
+		xmlOutput.focus();
+		xmlOutput.select();
+
+		let copied = false;
+		try {
+			await navigator.clipboard.writeText(xmlOutput.value);
+			copied = true;
+		} catch {
+			// clipboard API unavailable/blocked -- fall back to the
+			// already-selected textarea's own copy command
+			copied = document.execCommand("copy");
+		}
+		button.textContent = copied ? "Copied" : "Copy failed";
+		setTimeout(() => { button.textContent = "Copy all"; }, 1500);
+	});
+	</script>
+	{% endif %}
+	{% endif %}
+
+	<div class="actions">
+		<form method="post" action="{{ url_for('extract.extract_another') }}">
+			<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+			<button type="submit" class="btn">Extract another</button>
+		</form>
+		<form method="post" action="{{ url_for('extract.new_upload') }}">
+			<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+			<button type="submit" class="link-btn">Upload a different PDF</button>
+		</form>
+	</div>
+</div>
+{% endblock %}

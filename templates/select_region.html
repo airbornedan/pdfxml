@@ -1,0 +1,244 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-container">
+	{% include "_breadcrumbs.html" %}
+	<h1>Draw a region, then choose what to extract</h1>
+	<div class="page-nav">
+		<form method="post" action="{{ url_for('extract.page_prev') }}">
+			<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+			<button type="submit" class="chevron-btn" aria-label="Previous page" title="Previous page" {% if page_number <= 1 %}disabled{% endif %}><img src="{{ url_for('static', filename='images/chevron-left.svg') }}" alt=""></button>
+		</form>
+		<p class="page-indicator">Page {{ page_number }}{% if page_count %} of {{ page_count }}{% endif %}</p>
+		<form method="post" action="{{ url_for('extract.page_next') }}">
+			<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+			<button type="submit" class="chevron-btn" aria-label="Next page" title="Next page" {% if page_count and page_number >= page_count %}disabled{% endif %}><img src="{{ url_for('static', filename='images/chevron-right.svg') }}" alt=""></button>
+		</form>
+	</div>
+	{% if error %}<p class="error-text">{{ error }}</p>{% endif %}
+	<p class="error-text is-hidden" id="image-error"></p>
+
+	<p class="controls">
+		<button type="submit" form="select-form" name="element_type" value="paragraph" class="extract-btn" disabled>Text</button>
+		<button type="submit" form="select-form" name="element_type" value="list" class="extract-btn" disabled>List</button>
+		<button type="submit" form="select-form" name="element_type" value="table" class="extract-btn" disabled>Table</button>
+		<button type="submit" form="select-form" name="element_type" value="image" class="extract-btn" disabled>Image</button>
+		<button type="button" class="btn-reset clear-btn">Clear selection</button>
+	</p>
+
+	<div id="page-image-wrap">
+		<img id="page-image" src="{{ url_for('extract.page_image') }}" alt="Page {{ page_number }}" draggable="false">
+		<div id="select-box"></div>
+	</div>
+
+	<form method="post" id="select-form">
+		<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+		<input type="hidden" name="x0" id="x0">
+		<input type="hidden" name="y0" id="y0">
+		<input type="hidden" name="x1" id="x1">
+		<input type="hidden" name="y1" id="y1">
+		<p class="controls">
+			<button type="submit" name="element_type" value="paragraph" class="extract-btn" disabled>Text</button>
+			<button type="submit" name="element_type" value="list" class="extract-btn" disabled>List</button>
+			<button type="submit" name="element_type" value="table" class="extract-btn" disabled>Table</button>
+			<button type="submit" name="element_type" value="image" class="extract-btn" disabled>Image</button>
+			<button type="button" class="btn-reset clear-btn">Clear selection</button>
+		</p>
+	</form>
+
+	<div class="page-nav">
+		<form method="post" action="{{ url_for('extract.page_prev') }}">
+			<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+			<button type="submit" class="chevron-btn" aria-label="Previous page" title="Previous page" {% if page_number <= 1 %}disabled{% endif %}><img src="{{ url_for('static', filename='images/chevron-left.svg') }}" alt=""></button>
+		</form>
+		<p class="page-indicator">Page {{ page_number }}{% if page_count %} of {{ page_count }}{% endif %}</p>
+		<form method="post" action="{{ url_for('extract.page_next') }}">
+			<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+			<button type="submit" class="chevron-btn" aria-label="Next page" title="Next page" {% if page_count and page_number >= page_count %}disabled{% endif %}><img src="{{ url_for('static', filename='images/chevron-right.svg') }}" alt=""></button>
+		</form>
+	</div>
+</div>
+
+<script nonce="{{ g.csp_nonce }}">
+(function () {
+	const img = document.getElementById("page-image");
+	const wrap = document.getElementById("page-image-wrap");
+	const box = document.getElementById("select-box");
+	const extractBtns = document.querySelectorAll(".extract-btn"); // 4 above the image, 4 below
+	const clearBtns = document.querySelectorAll(".clear-btn"); // one above the image, one below
+	let startX, startY, dragging = false;
+
+	function pointerPos(e) {
+		const rect = img.getBoundingClientRect();
+		return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+	}
+
+	wrap.addEventListener("mousedown", function (e) {
+		e.preventDefault(); // stop the browser's native image-drag from hijacking the gesture
+		const p = pointerPos(e);
+		startX = p.x;
+		startY = p.y;
+		dragging = true;
+		box.style.left = startX + "px";
+		box.style.top = startY + "px";
+		box.style.width = "0px";
+		box.style.height = "0px";
+		box.style.display = "block";
+		extractBtns.forEach((btn) => btn.disabled = true);
+	});
+
+	wrap.addEventListener("mousemove", function (e) {
+		if (!dragging) return;
+		const p = pointerPos(e);
+		const x = Math.min(startX, p.x);
+		const y = Math.min(startY, p.y);
+		box.style.left = x + "px";
+		box.style.top = y + "px";
+		box.style.width = Math.abs(p.x - startX) + "px";
+		box.style.height = Math.abs(p.y - startY) + "px";
+	});
+
+	wrap.addEventListener("mouseup", function (e) {
+		if (!dragging) return;
+		dragging = false;
+		const p = pointerPos(e);
+
+		// convert from CSS-scaled display size to natural pixel space --
+		// PREVIEW_ZOOM on the server expects that
+		const scaleX = img.naturalWidth / img.clientWidth;
+		const scaleY = img.naturalHeight / img.clientHeight;
+
+		const x0 = Math.min(startX, p.x) * scaleX;
+		const y0 = Math.min(startY, p.y) * scaleY;
+		const x1 = Math.max(startX, p.x) * scaleX;
+		const y1 = Math.max(startY, p.y) * scaleY;
+
+		document.getElementById("x0").value = x0;
+		document.getElementById("y0").value = y0;
+		document.getElementById("x1").value = x1;
+		document.getElementById("y1").value = y1;
+
+		extractBtns.forEach((btn) => btn.disabled = (x1 - x0 < 2 || y1 - y0 < 2));
+	});
+
+	clearBtns.forEach((btn) => btn.addEventListener("click", () => {
+		box.style.display = "none";
+		box.style.width = "0px";
+		box.style.height = "0px";
+		["x0", "y0", "x1", "y1"].forEach((id) => document.getElementById(id).value = "");
+		extractBtns.forEach((b) => b.disabled = true);
+	}));
+})();
+</script>
+
+<div class="result-modal is-hidden" id="image-modal" role="dialog" aria-modal="true" aria-label="Extracted image">
+	<div class="result-modal__card">
+		<img id="image-modal-img" alt="Extracted image">
+		<p class="error-text is-hidden" id="image-modal-error"></p>
+		<div class="result-modal__actions">
+			<span class="result-filename-wrap">
+				<input type="text" id="image-modal-name" class="result-filename" spellcheck="false" autocomplete="off" placeholder="file name" aria-label="File name">
+				<span class="result-filename-ext">.png</span>
+			</span>
+			<button type="button" class="btn" id="image-modal-watermark">Watermark <span class="watermark-symbol">*</span></button>
+			<a id="image-modal-download" class="btn" download>Save PNG</a>
+			<button type="button" class="btn-reset" data-action="close-image-modal">Close</button>
+		</div>
+	</div>
+</div>
+
+<script nonce="{{ g.csp_nonce }}">
+(function () {
+	const SELECT_URL = "{{ url_for('extract.select_region') }}";
+	const IMAGE_URL = "{{ url_for('extract.extracted_image') }}";
+	const SAFE_NAME = /[\\/:*?"<>|\x00-\x1f]+/g;
+	const form = document.getElementById("select-form");
+	const pageError = document.getElementById("image-error");
+	const modal = document.getElementById("image-modal");
+	const modalImg = document.getElementById("image-modal-img");
+	const nameField = document.getElementById("image-modal-name");
+	const download = document.getElementById("image-modal-download");
+	const modalError = document.getElementById("image-modal-error");
+	const closeBtn = modal.querySelector('[data-action="close-image-modal"]');
+
+	const baseFrom = (s) => s.replace(/\.[^./\\]+$/, "").replace(SAFE_NAME, "").trim();
+	const DEFAULT_NAME = (baseFrom({{ (pdf_filename or "")|tojson }}) || "image") + "-p{{ page_number }}";
+	let cleanUrl = IMAGE_URL;   // the un-watermarked server render of the current crop
+
+	const applyName = () => {
+		download.download = (baseFrom(nameField.value) || DEFAULT_NAME) + ".png";
+	};
+	const closeModal = () => {
+		modal.classList.add("is-hidden");
+		modalImg.removeAttribute("src");
+	};
+
+	// the Image buttons open the modal in place; text/list/table submit normally
+	document.querySelectorAll('.extract-btn[value="image"]').forEach((btn) =>
+		btn.addEventListener("click", async (e) => {
+			e.preventDefault();
+			const fd = new FormData(form);
+			fd.set("element_type", "image");
+			let resp;
+			try {
+				resp = await fetch(SELECT_URL, { method: "POST", body: fd,
+					headers: { "X-Requested-With": "fetch" } });
+			} catch {
+				resp = null;
+			}
+			if (!resp || !resp.ok) {
+				pageError.textContent = "Couldn't extract that region -- try a different selection.";
+				pageError.classList.remove("is-hidden");
+				return;
+			}
+			pageError.classList.add("is-hidden");
+			modalError.classList.add("is-hidden");
+			cleanUrl = IMAGE_URL + "?t=" + Date.now();
+			modalImg.src = cleanUrl;
+			download.href = cleanUrl;
+			nameField.value = DEFAULT_NAME;
+			applyName();
+			modal.classList.remove("is-hidden");
+			nameField.focus();
+			nameField.select();
+		}));
+
+	nameField.addEventListener("input", applyName);
+	nameField.addEventListener("keydown", (e) => {
+		if (e.key === "Enter") { e.preventDefault(); download.click(); }
+	});
+
+	document.getElementById("image-modal-watermark").addEventListener("click", () => {
+		// stamp a fresh copy of the clean render -- re-clicking re-derives, never doubles
+		const original = new Image();
+		original.onload = () => {
+			const w = original.naturalWidth, h = original.naturalHeight;
+			if (h < 400) {
+				modalError.textContent = "The image must be at least 400 pixels high for a watermark.";
+				modalError.classList.remove("is-hidden");
+				return;
+			}
+			modalError.classList.add("is-hidden");
+			const canvas = document.createElement("canvas");
+			canvas.width = w;
+			canvas.height = h;
+			const ctx = canvas.getContext("2d");
+			ctx.drawImage(original, 0, 0, w, h);
+			ctx.fillStyle = "#d00000";
+			ctx.font = `bold ${Math.max(40, Math.floor(h * 0.2))}px Arial`;
+			ctx.textBaseline = "top";
+			ctx.fillText("*", 12, 12);
+			const dataUrl = canvas.toDataURL("image/png");
+			modalImg.src = dataUrl;
+			download.href = dataUrl;
+		};
+		original.src = cleanUrl;
+	});
+
+	closeBtn.addEventListener("click", closeModal);
+	modal.addEventListener("pointerdown", (e) => { if (e.target === modal) closeModal(); });
+	window.addEventListener("keydown", (e) => {
+		if (e.key === "Escape" && !modal.classList.contains("is-hidden")) closeModal();
+	});
+})();
+</script>
+{% endblock %}

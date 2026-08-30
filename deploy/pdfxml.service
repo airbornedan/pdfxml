@@ -1,0 +1,43 @@
+# systemd unit for PDFXML, gunicorn-served, loopback-only -- nginx
+# (deploy/pdfxml.nginx.conf) is the thing that actually faces the
+# network and terminates TLS.
+#
+# install:
+#   sudo cp deploy/pdfxml.service /etc/systemd/system/pdfxml.service
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now pdfxml
+#
+# adjust User/Group, WorkingDirectory, and the venv path below for
+# wherever this actually lives on the host. --workers is 1: the PDF
+# processing concurrency cap (app/extensions.py's PDF_PROCESSING_SLOTS)
+# is an in-process semaphore, so more workers would each get their own
+# and silently multiply the real cap.
+[Unit]
+Description=PDFXML
+After=network.target
+
+[Service]
+Type=simple
+User=dan
+Group=dan
+WorkingDirectory=/home/dan/PDFXML
+Environment=PDFXML_BEHIND_PROXY=1
+Environment=PDFXML_WORKERS=1
+# internal / AD-gated deployment (trusted). The public VM uses
+# deploy/pdfxml.public.service and does NOT set this.
+Environment=PDFXML_TRUSTED_NETWORK=1
+# ${PDFXML_WORKERS} workers; the render cap is per-process, so effective
+# concurrency = workers x cap. --timeout is a backstop kill (real
+# containment is app/sandbox.py).
+ExecStart=/home/dan/PDFXML/.venv/bin/gunicorn --workers ${PDFXML_WORKERS} --timeout 90 --graceful-timeout 20 --bind 127.0.0.1:8089 run:app
+Restart=on-failure
+RestartSec=5
+
+# no privilege to gain, no reason to touch the rest of the filesystem
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ReadWritePaths=/home/dan/PDFXML
+
+[Install]
+WantedBy=multi-user.target

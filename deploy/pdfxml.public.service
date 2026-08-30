@@ -1,0 +1,67 @@
+# systemd unit for the PUBLIC, internet-facing deployment of PDFXML.
+# gunicorn binds loopback only; deploy/pdfxml.public.nginx.conf is the
+# thing that faces the internet and terminates TLS.
+#
+# Differs from deploy/pdfxml.service (the internal / AD-gated unit):
+#   - PDFXML_TRUSTED_NETWORK is NOT set  -> hardened profile
+#     (no Process/Troubleshooting pages, per-IP rate limiting on)
+#   - dedicated pdfxml user, /srv/pdfxml, state under /var/lib/pdfxml
+#   - tighter systemd sandboxing and cgroup caps
+#
+# install:
+#   sudo useradd --system --home /srv/pdfxml --shell /usr/sbin/nologin pdfxml
+#   sudo cp -r <checkout> /srv/pdfxml && sudo chown -R pdfxml:pdfxml /srv/pdfxml
+#   sudo -u pdfxml python3 -m venv /srv/pdfxml/.venv
+#   sudo -u pdfxml /srv/pdfxml/.venv/bin/pip install --require-hashes -r /srv/pdfxml/requirements.lock
+#   sudo cp deploy/pdfxml.public.service /etc/systemd/system/pdfxml.service
+#   sudo systemctl daemon-reload && sudo systemctl enable --now pdfxml
+#
+# adjust paths, user, and the caps at the bottom for the actual host.
+
+[Unit]
+Description=PDFXML (public)
+After=network.target
+
+[Service]
+Type=simple
+User=pdfxml
+Group=pdfxml
+WorkingDirectory=/srv/pdfxml
+
+Environment=PDFXML_BEHIND_PROXY=1
+# NO PDFXML_TRUSTED_NETWORK here -- unset is the hardened profile.
+Environment=PDFXML_WORKERS=2
+Environment=PDFXML_MAX_CONCURRENT=2
+# effective renders = WORKERS x MAX_CONCURRENT = 4; size MemoryMax to
+# ([sandbox] memory_mb x that + slack).
+Environment=PDFXML_UPLOAD_DIR=/var/lib/pdfxml/uploads
+
+ExecStart=/srv/pdfxml/.venv/bin/gunicorn --workers ${PDFXML_WORKERS} --timeout 90 --graceful-timeout 20 --bind 127.0.0.1:8089 run:app
+Restart=on-failure
+RestartSec=5
+
+# --- filesystem / privilege isolation ---
+NoNewPrivileges=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+RestrictRealtime=true
+LockPersonality=true
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+# AF_UNIX + default syscalls: the app/sandbox.py forkserver needs them.
+# MemoryDenyWriteExecute left off -- breaks lxml.
+StateDirectory=pdfxml
+ReadWritePaths=/var/lib/pdfxml
+
+# --- cgroup resource caps (size to the box) ---
+MemoryMax=4G
+TasksMax=256
+CPUQuota=200%
+
+[Install]
+WantedBy=multi-user.target
