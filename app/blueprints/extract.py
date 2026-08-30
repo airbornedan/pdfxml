@@ -229,7 +229,7 @@ def page_next():
 ### flag it instead of showing a false "Valid"
 def _extraction_is_empty(element_type, preview):
     if element_type == "paragraph":
-        return not preview.strip()
+        return not any(p.strip() for p in preview)
     if element_type in ("orderedlist", "itemizedlist"):
         return not preview
     if element_type == "table":

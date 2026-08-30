@@ -21,7 +21,7 @@
 	{% else %}
 	<div class="preview-box">
 		{% if result.element_type == "paragraph" %}
-		<p>{{ result.preview }}</p>
+		{% for p in result.preview %}<p>{{ p }}</p>{% endfor %}
 		{% elif result.element_type == "orderedlist" %}
 		<ol>{% for item in result.preview %}<li>{{ item }}</li>{% endfor %}</ol>
 		{% elif result.element_type == "itemizedlist" %}

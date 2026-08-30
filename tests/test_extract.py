@@ -44,6 +44,19 @@ def test_extract_paragraph(loaded):
     # result page shows the preview text; the XML fragment is HTML-escaped in a textarea
     assert b"plain paragraph of body text" in r.data
     assert b"&lt;para&gt;" in r.data
+    assert r.data.count(b"&lt;para&gt;") == 1
+
+
+def test_extract_paragraph_splits_on_gap(loaded):
+    assert loaded.post("/extract/page", data={"page_number": "2"},
+                       follow_redirects=True).status_code == 200
+    r = loaded.post("/extract/select",
+                    data={"element_type": "paragraph", "x0": "60", "y0": "120", "x1": "870", "y1": "420"},
+                    follow_redirects=True)
+    body = r.data.decode()
+    assert body.count("&lt;para&gt;") == 2                       # one per paragraph
+    assert "line one of three, line two continues" in body       # 3 source lines joined
+    assert "A second paragraph, clearly separated." in body
 
 
 def test_extract_list(loaded):

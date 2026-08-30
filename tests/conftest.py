@@ -43,14 +43,20 @@ def trusted_client(monkeypatch):
 @pytest.fixture(scope="session")
 def sample_pdf(tmp_path_factory):
     """A 2-page PDF: a paragraph in the top half of page 1, a bulleted
-    list (ASCII '-' markers) in the bottom half, page 2 near-empty."""
+    list (ASCII '-' markers) in the bottom half; page 2 has a 3-line
+    paragraph then, after a clear gap, a one-line second paragraph."""
     path = tmp_path_factory.mktemp("pdf") / "sample.pdf"
     doc = fitz.open()
     p1 = doc.new_page(width=612, height=792)
     p1.insert_text((72, 100), "This is a plain paragraph of body text on the first page.", fontsize=12)
     p1.insert_text((72, 400), "- first bullet item\n- second bullet item\n- third bullet item",
                    fontsize=12)
-    doc.new_page(width=612, height=792).insert_text((72, 100), "Second page.", fontsize=12)
+    p2 = doc.new_page(width=612, height=792)
+    for i, line in enumerate(["First paragraph, line one of three,",
+                              "line two continues the thought,",
+                              "and line three wraps it up."]):
+        p2.insert_text((72, 120 + i * 15), line, fontsize=11)
+    p2.insert_text((72, 210), "A second paragraph, clearly separated.", fontsize=11)
     doc.save(str(path))
     doc.close()
     return str(path)

@@ -26,6 +26,13 @@ _MARKER_PREFIX_RE = re.compile(r"^\s*(?:[•\-\*◦▪‣]|\(?[a-zA-Z0-9]{1,4}[\
 ### compound word breaking at a line end.
 _EOL_HYPHEN_RE = re.compile(r"(?<=[a-z])-$")
 
+### paragraph split: a vertical gap over this fraction of a line's height
+### (these PDFs set wrapped lines near-flush, ~0pt, and paragraphs ~1
+### line-height apart), or a new text block. A gap that also reads as a
+### wrap -- no sentence end + next line lowercase -- never splits.
+_PARA_GAP_FRACTION = 0.5
+_SENTENCE_END_RE = re.compile(r"""[.!?:;)"']\s*$""")
+
 ### classifies a marker as ordered ("1.", "a)") vs a bullet symbol --
 ### used to auto-detect ordered vs unordered from the first marker
 ### found in a selection. Mixed markers within one selection classify
@@ -46,9 +53,10 @@ _ROTATED_DIR_THRESHOLD = 0.01
 ### fetch the whole page once, filter by line center in Python instead.
 ### Split from the fetch so callers needing many regions (table cells)
 ### fetch once and filter many times.
-def _filter_lines(text_dict, rect):
-    lines = []
-    for block in text_dict["blocks"]:
+def _lines_in_region(text_dict, rect):
+    ### (y0, y1, block index, text) for axis-aligned lines centered in rect
+    rows = []
+    for bnum, block in enumerate(text_dict["blocks"]):
         for line in block.get("lines", []):
             bbox = line["bbox"]
             center = ((bbox[0] + bbox[2]) / 2, (bbox[1] + bbox[3]) / 2)
@@ -59,8 +67,12 @@ def _filter_lines(text_dict, rect):
                 continue
             text = "".join(span["text"] for span in line["spans"]).strip()
             if text:
-                lines.append(text)
-    return lines
+                rows.append((bbox[1], bbox[3], bnum, text))
+    return rows
+
+
+def _filter_lines(text_dict, rect):
+    return [text for _, _, _, text in _lines_in_region(text_dict, rect)]
 
 
 def _region_lines(page, rect):
@@ -79,14 +91,40 @@ def _join_lines(lines):
     return result
 
 
+### group a region's lines into paragraphs, then join each
+def _region_paragraphs(page, rect):
+    rows = sorted(_lines_in_region(page.get_text("dict"), rect))
+    if not rows:
+        return []
+    heights = sorted(y1 - y0 for y0, y1, _, _ in rows)
+    para_gap = heights[len(heights) // 2] * _PARA_GAP_FRACTION
+
+    paras, current = [], [rows[0][3]]
+    for i in range(1, len(rows)):
+        _, prev_y1, prev_bnum, prev_text = rows[i - 1]
+        y0, _, bnum, text = rows[i]
+        big_gap = (y0 - prev_y1) > para_gap
+        wrap = not _SENTENCE_END_RE.search(prev_text) and text[:1].islower()
+        if (big_gap or bnum != prev_bnum) and not (wrap and not big_gap):
+            paras.append(_join_lines(current))
+            current = [text]
+        else:
+            current.append(text)
+    paras.append(_join_lines(current))
+    return paras
+
+
 ########################################################################
-### PARAGRAPH -- wrapped lines joined into one block, not one <para>
-### per line.
+### PARAGRAPH -- wrapped lines joined per paragraph; a multi-paragraph
+### selection yields one <para> each, not one run-on block.
 def extract_paragraph(page, rect):
-    text = _join_lines(_region_lines(page, rect))
-    elem = etree.Element("para")
-    elem.text = text
-    return text, _serialize(elem)
+    paras = _region_paragraphs(page, rect)
+    fragments = []
+    for text in paras:
+        elem = etree.Element("para")
+        elem.text = text
+        fragments.append(_serialize(elem))
+    return paras, "\n".join(fragments)
 
 
 ########################################################################

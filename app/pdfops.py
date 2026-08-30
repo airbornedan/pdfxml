@@ -67,8 +67,8 @@ def extract_region(pdf_path, page_index, rect, element_type):
     with fitz.open(pdf_path) as doc:
         page = doc[page_index]
         if element_type == "paragraph":
-            text, xml = docbook.extract_paragraph(page, r)
-            return {"element_type": "paragraph", "preview": text, "xml": xml}
+            paras, xml = docbook.extract_paragraph(page, r)
+            return {"element_type": "paragraph", "preview": paras, "xml": xml}
         if element_type == "list":
             resolved_type, items, xml = docbook.extract_list(page, r)
             return {"element_type": resolved_type, "preview": items, "xml": xml}
