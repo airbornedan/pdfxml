@@ -17,7 +17,7 @@ _render_markdown = mistune.create_markdown(escape=True, plugins=["table"])
 
 ### key -> (file under content/, page title)
 _PAGES = {
-    "terms": ("legal/terms.md", "Terms of Use"),
+    "terms": ("legal/terms.md", "Terms of use"),
     "privacy": ("legal/privacy.md", "Privacy"),
 }
 

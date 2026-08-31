@@ -162,6 +162,19 @@ input[type="text"], input[type="password"], input[type="number"], input[type="fi
 	box-sizing: border-box;
 }
 
+/* no up/down stepper on number inputs -- nobody clicks through 100 pages
+   to reach page 40, they type it */
+input[type="number"] {
+	-moz-appearance: textfield;
+	appearance: textfield;
+}
+
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+	-webkit-appearance: none;
+	margin: 0;
+}
+
 button, .btn {
 	font-size: 1rem;
 	padding: 8px 16px;

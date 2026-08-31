@@ -1,4 +1,4 @@
-# Troubleshooting
+# XML validation
 
 If you're editing a topic in the XML view and it won't validate, there are several steps you can take.
 
