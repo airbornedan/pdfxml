@@ -5,7 +5,7 @@ fragments** (or a PNG), ready to paste into a CMS. Built for technical
 writers recovering content from PDFs where the editable source is lost
 or awkward to convert.
 
-- Flask + PyMuPDF, no external binaries (no Ghostscript / poppler / ImageMagick).
+- Flask + PyMuPDF, no external binaries.
 - No accounts, no database. An uploaded PDF is processed in an isolated
   sandbox and deleted within ~20 minutes.
 - One codebase, three ways to run.
@@ -15,7 +15,7 @@ or awkward to convert.
 | | Who | How |
 |---|---|---|
 | **Desktop** | one user, Windows | ship the single `pdfxml.exe` — build with `deploy/windows/build_windows.bat` |
-| **Internal server** | a team, private network | gunicorn + nginx behind an AD-gated proxy — `deploy/pdfxml.service` |
+| **Internal server** | a team, private network | iis or gunicorn + nginx behind an AD-gated proxy |
 | **Public server** | anyone, internet-facing | hardened profile — `deploy/pdfxml.public.service` |
 
 Which behaviours are on (Process/Troubleshooting pages, rate limiting,
