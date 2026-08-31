@@ -1,7 +1,5 @@
-# PDFXML runtime configuration -- everyday behavior tuning, not
-# deployment. Deployment concerns (proxy, trusted-network profile,
-# upload dir, port, worker count) stay environment variables; see
-# pdfxml.md. Missing file or missing keys fall back to these defaults.
+# PDFXML runtime configuration. Missing file or missing keys fall back to
+# these defaults.
 
 [upload]
 max_bytes = 52428800     # 50 MB
