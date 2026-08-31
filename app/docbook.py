@@ -15,6 +15,22 @@ from markupsafe import escape
 SCHEMA_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "schema", "docbook.rng")
 DOCBOOK_NS = "http://docbook.org/ns/docbook"
 
+### a regex to strip bullet glyphs
+_STRIP_LIST_MARKER_RE = re.compile(
+    r"^\s*(?:[•\-\*◦▪‣]|\(?[a-zA-Z0-9]{1,4}[\.\)])\s*"
+)
+
+### Tools to strip out page references which cannot point to the correct
+### section/page in new XML books
+_PAGE_REF_RE = re.compile(
+    r"\s*\(page\s+\d+\)",
+    re.IGNORECASE,
+)
+
+def _cleanup_text(text):
+    text = _PAGE_REF_RE.sub("", text)
+    return text
+
 ### a bullet/number marker, alone on its own line or prefixing text
 ### ("•", "1. First item"). Capped at 4 chars so a word ending in a
 ### period ("bracket.") isn't mistaken for a marker.
@@ -135,18 +151,28 @@ def _region_paragraphs(page, rect):
 ### EOL-hyphen de-wrap at a line join (see _join_lines), else a joining
 ### space -- styled to match when both sides agree, so the run stays one
 ### <emphasis>
+
+
 def _para_tokens(lines):
     tokens = []
     for i, spans in enumerate(lines):
         if i and tokens:
             prev_text, prev_b, prev_i = tokens[-1]
             first = spans[0] if spans else ("", False, False)
+
             if _EOL_HYPHEN_RE.search(prev_text) and first[0][:1].islower():
                 tokens[-1] = (prev_text[:-1], prev_b, prev_i)
+
             elif not prev_text[-1:].isspace():
                 style = (prev_b, prev_i) if (prev_b, prev_i) == first[1:] else (False, False)
                 tokens.append((" ", *style))
-        tokens.extend(spans)
+
+        for text, bold, italic in spans:
+            text = _cleanup_text(text)
+
+            if text:
+                tokens.append((text, bold, italic))
+
     return tokens
 
 
@@ -222,11 +248,30 @@ def extract_paragraph(page, rect):
 ### LISTS -- a marker line starts a new item; continuation lines join
 ### it until the next marker. Lines before the first marker are dropped.
 ### Each item carries its lines' span-lists so <emphasis> survives too.
+
+###def _strip_marker(spans):
+###    if not spans:
+###        return spans
+###    text, bold, italic = spans[0]
+###    return [(_MARKER_PREFIX_RE.sub("", text, count=1), bold, italic), *spans[1:]]
+
 def _strip_marker(spans):
     if not spans:
         return spans
+
     text, bold, italic = spans[0]
-    return [(_MARKER_PREFIX_RE.sub("", text, count=1), bold, italic), *spans[1:]]
+
+    # Marker embedded in first span
+    cleaned = _STRIP_LIST_MARKER_RE.sub("", text, count=1)
+
+    if cleaned != text:
+        return [(cleaned, bold, italic), *spans[1:]]
+
+    # Marker exists as its own span
+    if _MARKER_ONLY_RE.match(text):
+        return spans[1:]
+
+    return spans
 
 
 def _split_list_items(rows):
