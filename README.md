@@ -25,6 +25,9 @@ default. Full setup, configuration, and deployment steps are in
 
 ## Local development
 
+This is developed in VSC on Windows and Linux. The instructions below are for working
+and testing on Linux.
+
 ```
 python3 -m venv .venv
 .venv/bin/pip install -r requirements.txt
