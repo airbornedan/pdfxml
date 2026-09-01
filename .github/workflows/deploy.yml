@@ -1,0 +1,63 @@
+name: Deploy to fatwxsweb1
+
+# Every push to main deploys to E:\PDFXML on the self-hosted runner
+# (fatwxsweb1, NETWORK SERVICE -- no admin rights). The app is stopped by
+# renaming web.config away, files are synced, deps updated, then web.config
+# is restored and IIS restarts the app on the next request.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-prod
+  cancel-in-progress: false
+
+env:
+  APP_ROOT: E:\PDFXML
+
+jobs:
+  deploy:
+    runs-on: [self-hosted, Windows, pdfxml]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Stop app
+        shell: powershell
+        run: |
+          if (Test-Path "$env:APP_ROOT\web.config") {
+            Move-Item "$env:APP_ROOT\web.config" "$env:APP_ROOT\web.config.off" -Force
+            Start-Sleep -Seconds 5   # let IIS terminate the python child process
+          }
+
+      - name: Sync files
+        shell: powershell
+        run: |
+          robocopy "$env:GITHUB_WORKSPACE" "$env:APP_ROOT" /MIR /NFL /NDL /NP `
+            /XD .git .venv uploads logs `
+            /XF web.config web.config.off .secret_key restart.trigger
+          if ($LASTEXITCODE -ge 8) { exit 1 } else { exit 0 }
+
+      - name: Update dependencies
+        shell: powershell
+        run: |
+          & "$env:APP_ROOT\.venv\Scripts\python.exe" -m pip install --quiet -r "$env:APP_ROOT\deploy\iis\requirements-iis.txt"
+
+      - name: Start app
+        shell: powershell
+        run: |
+          Copy-Item "$env:GITHUB_WORKSPACE\web.config" "$env:APP_ROOT\web.config" -Force
+          Remove-Item "$env:APP_ROOT\web.config.off" -ErrorAction SilentlyContinue
+
+      - name: Smoke test
+        shell: powershell
+        run: |
+          $ok = $false
+          foreach ($i in 1..12) {
+            try {
+              $r = Invoke-WebRequest 'http://localhost:5055/' -UseDefaultCredentials -UseBasicParsing -TimeoutSec 10
+              if ($r.StatusCode -eq 200) { $ok = $true; break }
+            } catch { Start-Sleep -Seconds 5 }
+          }
+          if (-not $ok) { throw 'App did not return 200 on http://localhost:5055/ after deploy' }

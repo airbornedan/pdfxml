@@ -1,0 +1,7 @@
+# Windows/IIS server deploy: core + waitress (gunicorn does not run on Windows).
+# Installed into E:\PDFXML\.venv by deploy/iis/setup-server.ps1 and by the
+# "Update dependencies" step of .github/workflows/deploy.yml.
+-r ../../requirements.txt
+
+# Production WSGI server for Windows
+waitress==3.0.2
