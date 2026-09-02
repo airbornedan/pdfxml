@@ -85,9 +85,74 @@ def test_sandbox_runs_and_wraps_errors(sample_pdf):
     from app import pdfops, sandbox
 
     n = sandbox.run(pdfops.page_count, sample_pdf)
-    assert n == 3
+    assert n == 5
     with pytest.raises(sandbox.SandboxError):
         sandbox.run(pdfops.page_count, "/no/such/file.pdf")
+
+
+# --- docbook: page-ref flagging + list-marker stripping --------------
+def test_page_refs_flagged_in_preview_not_removed():
+    """Preview flags "(see page N)"; the XML keeps it verbatim."""
+    from app.docbook import _tokens_html, _para_element, _serialize
+
+    tokens = [("check the module (see page 40) before starting", False, False)]
+    html = _tokens_html(tokens)
+    assert '<span class="page-ref-flag">(see page 40)</span>' in html
+    # text on either side is untouched
+    assert "check the module " in html and " before starting" in html
+    # the XML fragment keeps the literal reference -- nothing stripped
+    xml = _serialize(_para_element(tokens))
+    assert "(see page 40)" in xml and "page-ref-flag" not in xml
+
+
+def test_page_ref_variants_flagged():
+    from app.docbook import _tokens_html
+
+    for src in ["do X (see pages 29-31) then Y",
+                "the valve (page 29, Fig. 4) opens",
+                "refer to (Page 7) now",
+                "touch the row on the chart (see pg. 40) then",   # abbreviation
+                "set the value (p. 12) before running"]:
+        assert 'class="page-ref-flag"' in _tokens_html([(src, False, False)])
+    # a digit must follow -- ordinary prose / other parentheticals are not flagged
+    for src in ["pages are numbered 1 to 99",
+                "replace the part (part 40) if worn",
+                "check the pin (pin 4) seating"]:
+        assert 'page-ref-flag' not in _tokens_html([(src, False, False)])
+
+
+def test_list_markers_accept_dot_paren_style():
+    """A period+close-paren marker (1.) must register, else no list items."""
+    from app.docbook import _split_list_items
+
+    def row(text):                       # (y0, y1, block, spans)
+        return (0.0, 10.0, 0, [(text, False, False)])
+
+    items, ordered = _split_list_items(
+        [row("1.) Press the HOME button"),
+         row("2.)  Open the settings page"),
+         row("3.) Choose the device")]
+    )
+    assert ordered is True
+    assert len(items) == 3
+    assert items[0][0][0][0] == "Press the HOME button"    # marker peeled off
+    # the plain-"1." and "(1)" styles still work
+    items2, ordered2 = _split_list_items([row("1. plain step"), row("2. next step")])
+    assert ordered2 is True and len(items2) == 2
+
+
+def test_list_marker_glyph_stripped_even_as_its_own_span():
+    from app.docbook import _merge_tokens, _strip_marker
+
+    # bare glyph in its own span -> emptied, then dropped by _merge_tokens
+    stripped = _strip_marker([("•", False, False), ("First item", False, False)])
+    assert stripped[0][0] == ""
+    assert _merge_tokens(stripped) == [("First item", False, False)]
+    # glyph glued to the text, ordered marker, and a legit "e.g." start
+    assert _strip_marker([("•First item", False, False)]) == [("First item", False, False)]
+    assert _strip_marker([("1. Step one", False, False)]) == [("Step one", False, False)]
+    assert _strip_marker([("• e.g. keep this", False, False)]) == \
+        [("e.g. keep this", False, False)]
 
 
 # --- markdown Process pages --------------------------------------------

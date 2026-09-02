@@ -15,27 +15,25 @@ from markupsafe import escape
 SCHEMA_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "schema", "docbook.rng")
 DOCBOOK_NS = "http://docbook.org/ns/docbook"
 
-### a regex to strip bullet glyphs
-_STRIP_LIST_MARKER_RE = re.compile(
-    r"^\s*(?:[•\-\*◦▪‣]|\(?[a-zA-Z0-9]{1,4}[\.\)])\s*"
-)
+### one list marker -- a bullet glyph, or an alnum ordinal ("1.", "1)",
+### "(1)", "1.)"). Ordinal capped at 4 chars so "bracket." isn't a marker.
+_MARKER = r"(?:[•\-\*◦▪‣]|\(?[a-zA-Z0-9]{1,4}(?:\.\)|[.)]))"
 
-### Tools to strip out page references which cannot point to the correct
-### section/page in new XML books
+### marker alone on its line / prefixing the text / peeled off a span.
+### strip form uses \s* so a glued or bare glyph is caught; count=1 at
+### the call site keeps a leading "e.g." intact.
+_MARKER_ONLY_RE = re.compile(rf"^\s*{_MARKER}\s*$")
+_MARKER_PREFIX_RE = re.compile(rf"^\s*{_MARKER}\s+")
+_STRIP_LIST_MARKER_RE = re.compile(rf"^\s*{_MARKER}\s*")
+
+### page cross-reference -- "(page 29)", "(see pg. 40)", "(pages 29-31)".
+### Plain text in the source, not a link. Kept verbatim in the XML;
+### _tokens_html flags it in the preview. A digit must follow the word,
+### so "(pages are numbered...)" is left alone.
 _PAGE_REF_RE = re.compile(
-    r"\s*\(page\s+\d+\)",
+    r"\(\s*(?:see\s+)?(?:pages?|pgs?\.?|pp?\.?)\s*\d+(?:\s*[-–—]\s*\d+)?[^)]*\)",
     re.IGNORECASE,
 )
-
-def _cleanup_text(text):
-    text = _PAGE_REF_RE.sub("", text)
-    return text
-
-### a bullet/number marker, alone on its own line or prefixing text
-### ("•", "1. First item"). Capped at 4 chars so a word ending in a
-### period ("bracket.") isn't mistaken for a marker.
-_MARKER_ONLY_RE = re.compile(r"^\s*(?:[•\-\*◦▪‣]|\(?[a-zA-Z0-9]{1,4}[\.\)])\s*$")
-_MARKER_PREFIX_RE = re.compile(r"^\s*(?:[•\-\*◦▪‣]|\(?[a-zA-Z0-9]{1,4}[\.\)])\s+")
 
 ### these PDFs don't mark line-wrap hyphens differently from real ones
 ### (no soft hyphens, plain "-"). Lowercase before the hyphen + lowercase
@@ -50,11 +48,9 @@ _EOL_HYPHEN_RE = re.compile(r"(?<=[a-z])-$")
 _PARA_GAP_FRACTION = 0.5
 _SENTENCE_END_RE = re.compile(r"""[.!?:;)"']\s*$""")
 
-### classifies a marker as ordered ("1.", "a)") vs a bullet symbol --
-### used to auto-detect ordered vs unordered from the first marker
-### found in a selection. Mixed markers within one selection classify
-### by the first one only.
-_ORDERED_MARKER_RE = re.compile(r"^\s*\(?[a-zA-Z0-9]{1,4}[\.\)]")
+### ordinal marker ("1.", "a)", "1.)") vs a bullet glyph -- picks
+### ordered/unordered from the first marker in the selection.
+_ORDERED_MARKER_RE = re.compile(r"^\s*\(?[a-zA-Z0-9]{1,4}(?:\.\)|[.)])")
 
 
 def _serialize(elem):
@@ -151,28 +147,18 @@ def _region_paragraphs(page, rect):
 ### EOL-hyphen de-wrap at a line join (see _join_lines), else a joining
 ### space -- styled to match when both sides agree, so the run stays one
 ### <emphasis>
-
-
 def _para_tokens(lines):
     tokens = []
     for i, spans in enumerate(lines):
         if i and tokens:
             prev_text, prev_b, prev_i = tokens[-1]
             first = spans[0] if spans else ("", False, False)
-
             if _EOL_HYPHEN_RE.search(prev_text) and first[0][:1].islower():
                 tokens[-1] = (prev_text[:-1], prev_b, prev_i)
-
             elif not prev_text[-1:].isspace():
                 style = (prev_b, prev_i) if (prev_b, prev_i) == first[1:] else (False, False)
                 tokens.append((" ", *style))
-
-        for text, bold, italic in spans:
-            text = _cleanup_text(text)
-
-            if text:
-                tokens.append((text, bold, italic))
-
+        tokens.extend(spans)
     return tokens
 
 
@@ -219,11 +205,17 @@ def _para_element(tokens):
     return para
 
 
+### wrap "(see page N)" in a flag span for the preview. Input is already
+### escaped; the span markup is ours.
+def _flag_page_refs(escaped_html):
+    return _PAGE_REF_RE.sub(r'<span class="page-ref-flag">\g<0></span>', escaped_html)
+
+
 ### same run, as preview HTML: bold -> <strong>, italic -> <em>, text escaped
 def _tokens_html(tokens):
     parts = []
     for text, bold, italic in tokens:
-        piece = str(escape(text))
+        piece = _flag_page_refs(str(escape(text)))
         if bold:
             piece = f"<strong>{piece}</strong>"
         elif italic:
@@ -248,29 +240,15 @@ def extract_paragraph(page, rect):
 ### LISTS -- a marker line starts a new item; continuation lines join
 ### it until the next marker. Lines before the first marker are dropped.
 ### Each item carries its lines' span-lists so <emphasis> survives too.
-
-###def _strip_marker(spans):
-###    if not spans:
-###        return spans
-###    text, bold, italic = spans[0]
-###    return [(_MARKER_PREFIX_RE.sub("", text, count=1), bold, italic), *spans[1:]]
-
 def _strip_marker(spans):
     if not spans:
         return spans
-
     text, bold, italic = spans[0]
-
-    # Marker embedded in first span
+    ### marker is the whole span ("•" -> "", dropped later) or glued
+    ### ("• Foo" -> "Foo"). count=1 keeps a leading "e.g." intact.
     cleaned = _STRIP_LIST_MARKER_RE.sub("", text, count=1)
-
     if cleaned != text:
         return [(cleaned, bold, italic), *spans[1:]]
-
-    # Marker exists as its own span
-    if _MARKER_ONLY_RE.match(text):
-        return spans[1:]
-
     return spans
 
 

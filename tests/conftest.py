@@ -42,9 +42,11 @@ def trusted_client(monkeypatch):
 
 @pytest.fixture(scope="session")
 def sample_pdf(tmp_path_factory):
-    """A 3-page PDF: page 1 a paragraph over a bulleted list ('-' markers);
+    """A 5-page PDF: page 1 a paragraph over a bulleted list ('-' markers);
     page 2 a 3-line paragraph then, after a clear gap, a one-line second
-    paragraph; page 3 a sentence with a bold and an italic word."""
+    paragraph; page 3 a sentence with a bold and an italic word; page 4 a
+    sentence carrying a "(page NN)" cross-reference; page 5 an ordered
+    list using "1.)" markers (period + close paren)."""
     path = tmp_path_factory.mktemp("pdf") / "sample.pdf"
     doc = fitz.open()
     p1 = doc.new_page(width=612, height=792)
@@ -60,6 +62,12 @@ def sample_pdf(tmp_path_factory):
     p3 = doc.new_page(width=612, height=792)
     p3.insert_htmlbox(fitz.Rect(72, 100, 540, 180),
                       "Press <b>Enter</b> to confirm or <i>Esc</i> to cancel.")
+    p4 = doc.new_page(width=612, height=792)
+    p4.insert_text((72, 100), "Tighten the clamp (page 29) before moving to the next row.",
+                   fontsize=12)
+    p5 = doc.new_page(width=612, height=792)
+    p5.insert_text((72, 100), "1.) Press the HOME button\n2.)  Open the settings page\n"
+                              "3.) Choose the device", fontsize=12)
     doc.save(str(path))
     doc.close()
     return str(path)

@@ -78,6 +78,18 @@ def test_extract_paragraph_keeps_bold_and_italic(loaded):
     assert '<emphasis>Esc</emphasis>' in xml
 
 
+def test_extract_paragraph_flags_page_refs(loaded):
+    assert loaded.post("/extract/page", data={"page_number": "4"},
+                       follow_redirects=True).status_code == 200
+    r = loaded.post("/extract/select",
+                    data={"element_type": "paragraph", "x0": "60", "y0": "60", "x1": "870", "y1": "260"},
+                    follow_redirects=True)
+    body = r.data.decode()
+    # flagged in the preview, kept verbatim in the copyable XML
+    assert '<span class="page-ref-flag">(page 29)</span>' in body
+    assert "Tighten the clamp (page 29) before moving" in html.unescape(body)
+
+
 def test_extract_list(loaded):
     r = loaded.post("/extract/select",
                     data={"element_type": "list", "x0": "60", "y0": "500", "x1": "870", "y1": "1000"},
@@ -85,6 +97,20 @@ def test_extract_list(loaded):
     assert r.status_code == 200
     assert b"itemizedlist" in r.data
     assert b"first bullet item" in r.data
+
+
+def test_extract_ordered_list_with_dot_paren_markers(loaded):
+    assert loaded.post("/extract/page", data={"page_number": "5"},
+                       follow_redirects=True).status_code == 200
+    r = loaded.post("/extract/select",
+                    data={"element_type": "list", "x0": "60", "y0": "60", "x1": "870", "y1": "360"},
+                    follow_redirects=True)
+    body = r.data.decode()
+    assert "orderedlist" in body
+    assert "Nothing could be converted" not in body
+    for step in ("Press the HOME button", "Open the settings page", "Choose the device"):
+        assert step in body
+    assert body.count("&lt;listitem&gt;") == 3
 
 
 def test_extract_image_returns_png(loaded):

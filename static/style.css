@@ -491,6 +491,13 @@ button:disabled {
 	padding-top: 6px;
 }
 
+/* "(see page 29)" left in the extracted text -- flag it so the intern
+   makes a real xref; the copied XML keeps the literal text */
+.page-ref-flag {
+	color: #c00;
+	font-weight: bold;
+}
+
 textarea.xml-output {
 	width: 100%;
 	height: 200px;
