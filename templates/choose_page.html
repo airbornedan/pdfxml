@@ -17,11 +17,33 @@
 		<div class="page-thumb-grid">
 			{% for n in range(1, page_count + 1) %}
 			<button type="submit" name="thumb_page_number" value="{{ n }}" class="page-thumb-btn" formnovalidate>
-				<img src="{{ url_for('extract.page_thumbnail', page=n) }}" alt="Page {{ n }}" loading="lazy">
+				<img class="page-thumb-img" width="306" height="396"
+				     data-src="{{ url_for('extract.page_thumbnail', page=n, v=thumb_version) }}" alt="Page {{ n }}">
 				<span class="page-thumb-label">Page {{ n }}</span>
 			</button>
 			{% endfor %}
 		</div>
 	</form>
 </div>
+
+<script nonce="{{ g.csp_nonce }}">
+(function () {
+	const imgs = document.querySelectorAll("img.page-thumb-img[data-src]");
+	const load = (img) => { img.src = img.dataset.src; img.removeAttribute("data-src"); };
+	if (!("IntersectionObserver" in window)) {
+		imgs.forEach(load);
+		return;
+	}
+	// start fetching ~a screen ahead of the viewport so a normal scroll
+	// never outruns the loads; a fast fling still shows sized placeholders
+	const io = new IntersectionObserver((entries, obs) => {
+		for (const e of entries) {
+			if (!e.isIntersecting) continue;
+			load(e.target);
+			obs.unobserve(e.target);
+		}
+	}, { rootMargin: "800px 0px" });
+	imgs.forEach((img) => io.observe(img));
+})();
+</script>
 {% endblock %}

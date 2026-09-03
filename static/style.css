@@ -334,6 +334,11 @@ button:disabled {
 	display: block;
 	width: 100%;
 	height: auto;
+	/* reserve the box before load so lazy loading can gauge distance and
+	   an unloaded tile looks intentional (sized grey placeholder) */
+	aspect-ratio: 306 / 396;
+	object-fit: contain;
+	background: #f0f0f0;
 	border: 1px solid #ddd;
 }
 
@@ -850,8 +855,9 @@ textarea.xml-output {
 
 .image-modal-hint {
 	margin: 0;
-	font-size: 0.9em;
-	color: #666;
+	font-size: 1rem;
+	font-weight: 600;
+	text-align: center;
 }
 .result-modal__actions {
 	display: flex;

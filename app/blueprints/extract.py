@@ -161,6 +161,9 @@ def choose_page():
         breadcrumbs=_breadcrumbs("Choose page"),
         page_count=page_count,
         error=error,
+        ### namespaces the cached thumbnail URLs to this upload so a later
+        ### re-upload doesn't show the previous PDF's grid from cache
+        thumb_version=(session.get("pdf_token") or "")[:16],
     )
 
 
@@ -405,8 +408,14 @@ def result():
     )
 
 
-def _png_response(png_bytes):
-    return Response(png_bytes, mimetype="image/png")
+def _png_response(png_bytes, max_age=None):
+    resp = Response(png_bytes, mimetype="image/png")
+    if max_age:
+        ### the URL carries a ?v=<token> so this only ever names one
+        ### PDF's render -- safe to treat as immutable for its lifetime.
+        ### private: AD-authed, per-user, never a shared cache.
+        resp.headers["Cache-Control"] = f"private, max-age={max_age}, immutable"
+    return resp
 
 
 @bp.route("/extract/thumbnail")
@@ -443,7 +452,9 @@ def page_thumbnail():
         abort(404)
     except Exception:
         abort(500)
-    return _png_response(png)
+    ### grid thumbnails are the heavy repeat request -- let the browser
+    ### keep them so scrolling back doesn't re-render (see the ?v= URL).
+    return _png_response(png, max_age=1800)
 
 
 @bp.route("/extract/page-image")
