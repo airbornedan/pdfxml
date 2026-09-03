@@ -67,11 +67,13 @@ def extract_region(pdf_path, page_index, rect, element_type):
     with fitz.open(pdf_path) as doc:
         page = doc[page_index]
         if element_type == "paragraph":
-            paras, xml = docbook.extract_paragraph(page, r)
-            return {"element_type": "paragraph", "preview": paras, "xml": xml}
+            paras, fragments = docbook.extract_paragraph(page, r)
+            xml = docbook.wrap_paragraphs(fragments)
+            return {"element_type": "paragraph", "preview": paras, "xml": xml, "items": fragments}
         if element_type == "list":
-            resolved_type, items, xml = docbook.extract_list(page, r)
-            return {"element_type": resolved_type, "preview": items, "xml": xml}
+            resolved_type, items, items_xml = docbook.extract_list(page, r)
+            xml = docbook.wrap_list(resolved_type, items_xml)
+            return {"element_type": resolved_type, "preview": items, "xml": xml, "items": items_xml}
         if element_type == "table":
             rows, xml = docbook.extract_table(page, r)
             return {"element_type": "table", "preview": rows, "xml": xml}

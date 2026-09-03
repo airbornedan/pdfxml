@@ -5,6 +5,12 @@
 	<h1>{{ element_label }} extracted</h1>
 
 	<div class="actions">
+		{% if can_continue %}
+		<form method="post" action="{{ url_for('extract.continue_more') }}">
+			<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+			<button type="submit" class="btn">Extract more (continues on the next page)</button>
+		</form>
+		{% endif %}
 		<form method="post" action="{{ url_for('extract.extract_another') }}">
 			<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 			<button type="submit" class="btn">Extract another</button>
@@ -82,6 +88,12 @@
 	{% endif %}
 
 	<div class="actions">
+		{% if can_continue %}
+		<form method="post" action="{{ url_for('extract.continue_more') }}">
+			<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+			<button type="submit" class="btn">Extract more (continues on the next page)</button>
+		</form>
+		{% endif %}
 		<form method="post" action="{{ url_for('extract.extract_another') }}">
 			<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 			<button type="submit" class="btn">Extract another</button>

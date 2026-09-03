@@ -227,13 +227,22 @@ def _tokens_html(tokens):
 ########################################################################
 ### PARAGRAPH -- wrapped lines joined per paragraph, one <para> each for a
 ### multi-paragraph selection; bold/italic spans kept as <emphasis>.
+### Returns (previews, fragments) -- fragments is one serialized <para>
+### per item, unjoined, so a "continue on next page" extraction can be
+### concatenated onto it later (see wrap_paragraphs / extract.py).
 def extract_paragraph(page, rect):
     previews, fragments = [], []
     for lines in _region_paragraphs(page, rect):
         tokens = _merge_tokens(_para_tokens(lines))
         previews.append(_tokens_html(tokens))
         fragments.append(_serialize(_para_element(tokens)))
-    return previews, "\n".join(fragments)
+    return previews, fragments
+
+
+### join per-paragraph fragments (this page's, or several pages' worth
+### concatenated) into the pasteable block.
+def wrap_paragraphs(fragments):
+    return "\n".join(fragments)
 
 
 ########################################################################
@@ -275,17 +284,31 @@ def _split_list_items(rows):
     return items, ordered
 
 
+### Returns (element_type, previews, items_xml) -- items_xml is one
+### serialized <listitem> per item, unjoined. wrap_list() assembles the
+### root element; kept separate so a continuation extraction on a later
+### page can hand back more items_xml to append before the final wrap.
 def extract_list(page, rect):
     rows = _lines_in_region(page.get_text("dict"), rect)
     items, ordered = _split_list_items(rows)
     element_type = "orderedlist" if ordered else "itemizedlist"
-    root = etree.Element(element_type)
-    previews = []
+    previews, items_xml = [], []
     for lines in items:
         tokens = _merge_tokens(_para_tokens(lines))
-        etree.SubElement(root, "listitem").append(_para_element(tokens))
+        item_elem = etree.Element("listitem")
+        item_elem.append(_para_element(tokens))
+        items_xml.append(_serialize(item_elem))
         previews.append(_tokens_html(tokens))
-    return element_type, previews, _serialize(root)
+    return element_type, previews, items_xml
+
+
+### wrap listitem fragments (this page's, or several pages' worth
+### concatenated) in the root <orderedlist>/<itemizedlist>.
+def wrap_list(element_type, items_xml):
+    root = etree.Element(element_type)
+    for item_xml in items_xml:
+        root.append(etree.fromstring(item_xml))
+    return _serialize(root)
 
 
 ########################################################################

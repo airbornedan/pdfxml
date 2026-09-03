@@ -14,14 +14,26 @@
 			<button type="submit" class="chevron-btn" aria-label="Next page" title="Next page" {% if page_count and page_number >= page_count %}disabled{% endif %}><img src="{{ url_for('static', filename='images/chevron-right.svg') }}" alt=""></button>
 		</form>
 	</div>
+	{% if continue_type %}
+	<p class="continue-banner">
+		Continuing {{ "the paragraph" if continue_type == "paragraph" else "the list" }} from before --
+		draw the matching content on this page. It'll be appended to what you already extracted.
+	</p>
+	{% endif %}
 	{% if error %}<p class="error-text">{{ error }}</p>{% endif %}
 	<p class="error-text is-hidden" id="image-error"></p>
 
 	<p class="controls">
+		{% if not continue_type or continue_type == "paragraph" %}
 		<button type="submit" form="select-form" name="element_type" value="paragraph" class="extract-btn" disabled>Text</button>
+		{% endif %}
+		{% if not continue_type or continue_type != "paragraph" %}
 		<button type="submit" form="select-form" name="element_type" value="list" class="extract-btn" disabled>List</button>
+		{% endif %}
+		{% if not continue_type %}
 		<button type="submit" form="select-form" name="element_type" value="table" class="extract-btn" disabled>Table</button>
 		<button type="submit" form="select-form" name="element_type" value="image" class="extract-btn" disabled>Image</button>
+		{% endif %}
 		<button type="button" class="btn-reset clear-btn">Clear selection</button>
 	</p>
 
@@ -37,10 +49,16 @@
 		<input type="hidden" name="x1" id="x1">
 		<input type="hidden" name="y1" id="y1">
 		<p class="controls">
+			{% if not continue_type or continue_type == "paragraph" %}
 			<button type="submit" name="element_type" value="paragraph" class="extract-btn" disabled>Text</button>
+			{% endif %}
+			{% if not continue_type or continue_type != "paragraph" %}
 			<button type="submit" name="element_type" value="list" class="extract-btn" disabled>List</button>
+			{% endif %}
+			{% if not continue_type %}
 			<button type="submit" name="element_type" value="table" class="extract-btn" disabled>Table</button>
 			<button type="submit" name="element_type" value="image" class="extract-btn" disabled>Image</button>
+			{% endif %}
 			<button type="button" class="btn-reset clear-btn">Clear selection</button>
 		</p>
 	</form>

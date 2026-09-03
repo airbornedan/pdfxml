@@ -200,6 +200,14 @@ button:disabled {
 	color: #b00020;
 }
 
+.continue-banner {
+	background-color: #e8f1fb;
+	border: 1px solid #0056b3;
+	border-radius: 4px;
+	padding: 8px 12px;
+	color: #003d80;
+}
+
 /* card grid, colors, and hover treatment borrowed from */
 /* old_pdf_xml/templates/tools.html */
 .tools-heading {

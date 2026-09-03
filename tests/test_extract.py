@@ -113,6 +113,60 @@ def test_extract_ordered_list_with_dot_paren_markers(loaded):
     assert body.count("&lt;listitem&gt;") == 3
 
 
+def test_extract_more_appends_across_pages(loaded):
+    # first pass: the 3-item bullet list on page 1
+    r = loaded.post("/extract/select",
+                    data={"element_type": "list", "x0": "60", "y0": "500", "x1": "870", "y1": "1000"},
+                    follow_redirects=True)
+    body = r.data.decode()
+    assert body.count("&lt;listitem&gt;") == 3
+    assert "Extract more" in body
+
+    # "Extract more" arms continuation and moves to page 2
+    r = loaded.post("/extract/continue-more", follow_redirects=True)
+    body = r.data.decode()
+    assert "Continuing" in body
+    assert 'value="list"' in body
+    assert 'name="element_type" value="table"' not in body    # locked out while continuing
+    assert 'name="element_type" value="image"' not in body
+
+    # step back to page 1 (continue_type survives page navigation) and
+    # re-select the same list -- simulates the list resuming there
+    assert loaded.post("/extract/page/prev", follow_redirects=True).status_code == 200
+    r = loaded.post("/extract/select",
+                    data={"element_type": "list", "x0": "60", "y0": "500", "x1": "870", "y1": "1000"},
+                    follow_redirects=True)
+    body = r.data.decode()
+    assert body.count("&lt;listitem&gt;") == 6                 # 3 + 3, concatenated
+    assert body.count("first bullet item") == 4          # preview + XML, each now duplicated
+    assert "&lt;itemizedlist&gt;" in body
+    assert "Extract more" in body                               # still continuable (not last page)
+
+
+def test_extract_more_type_mismatch_is_rejected(loaded):
+    loaded.post("/extract/select",
+               data={"element_type": "list", "x0": "60", "y0": "500", "x1": "870", "y1": "1000"},
+               follow_redirects=True)
+    loaded.post("/extract/continue-more", follow_redirects=True)
+    r = loaded.post("/extract/select",
+                    data={"element_type": "paragraph", "x0": "60", "y0": "60", "x1": "870", "y1": "450"})
+    assert r.status_code == 400
+
+
+def test_extract_more_hidden_without_prior_result(loaded):
+    r = loaded.post("/extract/continue-more")
+    assert r.status_code == 400
+
+
+def test_extract_more_not_offered_on_last_page(loaded):
+    assert loaded.post("/extract/page", data={"page_number": "5"},
+                       follow_redirects=True).status_code == 200
+    r = loaded.post("/extract/select",
+                    data={"element_type": "list", "x0": "60", "y0": "60", "x1": "870", "y1": "360"},
+                    follow_redirects=True)
+    assert "Extract more" not in r.data.decode()
+
+
 def test_extract_image_returns_png(loaded):
     r = loaded.post("/extract/select",
                     data={"element_type": "image", "x0": "40", "y0": "40", "x1": "870", "y1": "1000"},

@@ -56,6 +56,7 @@ def _clear_pdf():
     session.pop("pdf_filename", None)
     session.pop("page_count", None)
     session.pop("page_number", None)
+    session.pop("continue_type", None)
 
 
 @bp.route("/extract/pdf")
@@ -150,6 +151,7 @@ def choose_page():
             error = f"Enter a page number between 1 and {page_count}."
         else:
             session["page_number"] = page_number
+            session.pop("continue_type", None)  # jumping to a page directly, not continuing
             return redirect(url_for("extract.select_region"))
 
     return render_template(
@@ -160,6 +162,38 @@ def choose_page():
     )
 
 
+### merges a newly-extracted page onto the in-progress result named by
+### continue_type ("paragraph"/"orderedlist"/"itemizedlist"). Returns
+### (merged_result, error_message) -- exactly one is None.
+def _merge_continuation(token, continue_type, new_result):
+    base = load_result(token)
+    if base is None or "items" not in base:
+        return None, "Lost track of what you were continuing -- start over with \"Extract another\"."
+    if new_result["element_type"] != continue_type:
+        return None, "That selection doesn't match what you're continuing -- draw the same kind of content."
+
+    merged_items = base["items"] + new_result["items"]
+    merged_preview = base["preview"] + new_result["preview"]
+    xml = (
+        docbook.wrap_paragraphs(merged_items)
+        if continue_type == "paragraph"
+        else docbook.wrap_list(continue_type, merged_items)
+    )
+    merged = {
+        "element_type": continue_type,
+        "rect": base["rect"],
+        "page_number": base["page_number"],
+        "preview": merged_preview,
+        "items": merged_items,
+        "xml": xml,
+    }
+    merged["empty"] = _extraction_is_empty(continue_type, merged_preview)
+    merged["valid"], merged["validation_message"] = (
+        (None, None) if merged["empty"] else docbook.validate_fragment(xml)
+    )
+    return merged, None
+
+
 @bp.route("/extract/select", methods=["GET", "POST"])
 @ratelimit.limit("render")
 @pdf_processing_limit
@@ -168,6 +202,8 @@ def select_region():
     if path is None or "page_number" not in session:
         return redirect(url_for("extract.index"))
 
+    continue_type = session.get("continue_type")
+
     def _page(error):
         return render_template(
             "select_region.html",
@@ -175,12 +211,20 @@ def select_region():
             page_number=session["page_number"],
             page_count=session.get("page_count"),
             pdf_filename=session.get("pdf_filename"),
+            continue_type=continue_type,
             error=error,
         )
 
     if request.method == "POST":
         element_type = request.form.get("element_type")
-        if element_type not in ALLOWED_ELEMENT_TYPES:
+        if continue_type:
+            ### locked to whatever's being continued -- "list" still
+            ### covers both ordered/itemized, resolved type is checked
+            ### against continue_type after extraction runs.
+            expected = "paragraph" if continue_type == "paragraph" else "list"
+            if element_type != expected:
+                abort(400)
+        elif element_type not in ALLOWED_ELEMENT_TYPES:
             abort(400)
         try:
             x0 = float(request.form["x0"]) / PREVIEW_ZOOM
@@ -196,6 +240,14 @@ def select_region():
             result = _run_extraction(path, session["page_number"], (x0, y0, x1, y1), element_type)
         except sandbox.SandboxError:
             return _page("Couldn't read that region -- try a different selection.")
+
+        if continue_type:
+            merged, error = _merge_continuation(session["pdf_token"], continue_type, result)
+            if error:
+                return _page(error)
+            result = merged
+            session.pop("continue_type", None)
+
         save_result(session["pdf_token"], result)
         ### image goes straight to an in-page modal (fetch) -- no result
         ### page. text/list/table still have XML to show there.
@@ -204,6 +256,25 @@ def select_region():
         return redirect(url_for("extract.result"))
 
     return _page(None)
+
+
+### "Extract more" on the result page -- advances to the next page and
+### arms continue_type so select_region locks to the same kind of
+### content and select_region's POST concatenates onto the current result.
+@bp.route("/extract/continue-more", methods=["POST"])
+def continue_more():
+    result_data = load_result(session.get("pdf_token"))
+    if result_data is None or result_data.get("element_type") not in CONTINUABLE_TYPES:
+        abort(400)
+    if result_data.get("empty"):
+        abort(400)
+    page_count = session.get("page_count", 0)
+    page_number = session.get("page_number", 0)
+    if page_number >= page_count:
+        return redirect(url_for("extract.result"))
+    session["page_number"] = page_number + 1
+    session["continue_type"] = result_data["element_type"]
+    return redirect(url_for("extract.select_region"))
 
 
 ### moves to the adjacent page without going back through choose_page --
@@ -222,6 +293,11 @@ def page_next():
     if session.get("page_number", 0) < session.get("page_count", 0):
         session["page_number"] += 1
     return redirect(url_for("extract.select_region"))
+
+
+### element_type values that can be continued across a page break --
+### each item (para/listitem) stands alone, so pages can be concatenated.
+CONTINUABLE_TYPES = {"paragraph", "orderedlist", "itemizedlist"}
 
 
 ### an empty selection still produces well-formed, schema-valid XML
@@ -250,6 +326,8 @@ def _run_extraction(path, page_number, rect, element_type):
     result["element_type"] = raw["element_type"]
     result["preview"] = raw["preview"]
     result["xml"] = raw["xml"]
+    if "items" in raw:  # paragraph/list only -- what "Extract more" concatenates onto
+        result["items"] = raw["items"]
 
     result["empty"] = _extraction_is_empty(result["element_type"], result["preview"])
     if result["empty"]:
@@ -265,11 +343,17 @@ def result():
     result_data = load_result(session.get("pdf_token"))
     if result_data is None:
         return redirect(url_for("extract.index"))
+    can_continue = (
+        result_data["element_type"] in CONTINUABLE_TYPES
+        and not result_data.get("empty")
+        and session.get("page_number", 0) < session.get("page_count", 0)
+    )
     return render_template(
         "result.html",
         breadcrumbs=_breadcrumbs("Result"),
         result=result_data,
         element_label=TYPE_LABELS.get(result_data["element_type"], ""),
+        can_continue=can_continue,
     )
 
 
@@ -359,6 +443,7 @@ def extracted_image():
 ### itself falls back to index if either is no longer in session
 @bp.route("/extract/another", methods=["POST"])
 def extract_another():
+    session.pop("continue_type", None)  # a fresh extraction, not a continuation
     return redirect(url_for("extract.select_region"))
 
 
