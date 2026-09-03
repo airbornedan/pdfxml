@@ -170,7 +170,7 @@ def choose_page():
 def _merge_continuation(token, continue_type, new_result):
     base = load_result(token)
     if base is None or "items" not in base:
-        return None, "Lost track of what you were continuing -- start over with \"Extract another\"."
+        return None, "Lost track of what you were continuing -- start over with \"Select new\"."
     if new_result["element_type"] != continue_type:
         return None, "That selection doesn't match what you're continuing -- draw the same kind of content."
 
@@ -205,15 +205,22 @@ def select_region():
         return redirect(url_for("extract.index"))
 
     continue_type = session.get("continue_type")
+    ### while a continuation is armed, the builder panel shows what's been
+    ### gathered so far -- that's just the in-progress saved result.
+    continuation = load_result(session.get("pdf_token")) if continue_type else None
+    step_label = "Select region"
+    if continue_type:
+        step_label = "Add to text" if continue_type == "paragraph" else "Add to list"
 
     def _page(error):
         return render_template(
             "select_region.html",
-            breadcrumbs=_breadcrumbs("Select region"),
+            breadcrumbs=_breadcrumbs(step_label),
             page_number=session["page_number"],
             page_count=session.get("page_count"),
             pdf_filename=session.get("pdf_filename"),
             continue_type=continue_type,
+            continuation=continuation,
             error=error,
         )
 
@@ -250,8 +257,10 @@ def select_region():
             merged, error = _merge_continuation(session["pdf_token"], continue_type, result)
             if error:
                 return _page(error)
-            result = merged
-            session.pop("continue_type", None)
+            save_result(session["pdf_token"], merged)
+            ### stay in the builder -- continue_type stays armed so the
+            ### next region appends too. "Done" (continue_done) ends it.
+            return redirect(url_for("extract.select_region"))
 
         save_result(session["pdf_token"], result)
         ### image goes straight to an in-page modal (fetch) -- no result
@@ -263,9 +272,11 @@ def select_region():
     return _page(None)
 
 
-### "Extract more" on the result page -- advances to the next page and
-### arms continue_type so select_region locks to the same kind of
-### content and select_region's POST concatenates onto the current result.
+### "Select more" on the result page -- arms continue_type so the next
+### select_region extraction concatenates onto the current result. Stays
+### on the SAME page: a list/paragraph often continues in another column
+### or around a figure on the same page. The page arrows still work to
+### carry a continuation onto later pages.
 @bp.route("/extract/continue-more", methods=["POST"])
 def continue_more():
     result_data = load_result(session.get("pdf_token"))
@@ -273,13 +284,17 @@ def continue_more():
         abort(400)
     if result_data.get("empty"):
         abort(400)
-    page_count = session.get("page_count", 0)
-    page_number = session.get("page_number", 0)
-    if page_number >= page_count:
-        return redirect(url_for("extract.result"))
-    session["page_number"] = page_number + 1
     session["continue_type"] = result_data["element_type"]
     return redirect(url_for("extract.select_region"))
+
+
+### "Done" in the builder panel -- stop appending and show the assembled
+### fragment. The merged result is saved after every append, so this just
+### clears the flag and lands on the result page.
+@bp.route("/extract/continue-done", methods=["POST"])
+def continue_done():
+    session.pop("continue_type", None)
+    return redirect(url_for("extract.result"))
 
 
 ### moves to the adjacent page without going back through choose_page --
@@ -358,7 +373,7 @@ def _run_extraction(path, page_number, rect, element_type, erase_rects=None):
     result["element_type"] = raw["element_type"]
     result["preview"] = raw["preview"]
     result["xml"] = raw["xml"]
-    if "items" in raw:  # paragraph/list only -- what "Extract more" concatenates onto
+    if "items" in raw:  # paragraph/list only -- what "Select more" concatenates onto
         result["items"] = raw["items"]
 
     result["empty"] = _extraction_is_empty(result["element_type"], result["preview"])
@@ -375,10 +390,11 @@ def result():
     result_data = load_result(session.get("pdf_token"))
     if result_data is None:
         return redirect(url_for("extract.index"))
+    ### offered for any non-empty list/paragraph -- "Select more" adds
+    ### another region (this page or, via the page arrows, a later one).
     can_continue = (
         result_data["element_type"] in CONTINUABLE_TYPES
         and not result_data.get("empty")
-        and session.get("page_number", 0) < session.get("page_count", 0)
     )
     return render_template(
         "result.html",

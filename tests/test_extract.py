@@ -114,34 +114,51 @@ def test_extract_ordered_list_with_dot_paren_markers(loaded):
     assert body.count("&lt;listitem&gt;") == 3
 
 
-def test_extract_more_appends_across_pages(loaded):
+def test_select_more_appends_without_leaving_the_page(loaded):
     # first pass: the 3-item bullet list on page 1
     r = loaded.post("/extract/select",
                     data={"element_type": "list", "x0": "60", "y0": "500", "x1": "870", "y1": "1000"},
                     follow_redirects=True)
     body = r.data.decode()
     assert body.count("&lt;listitem&gt;") == 3
-    assert "Extract more" in body
+    assert "Add to list" in body
 
-    # "Extract more" arms continuation and moves to page 2
+    # "Add to list" arms continuation and returns to select_region on the
+    # SAME page -- the builder panel appears, Table/Image are locked out
     r = loaded.post("/extract/continue-more", follow_redirects=True)
     body = r.data.decode()
-    assert "Continuing" in body
+    assert "3 items so far" in body                            # the builder panel
+    assert "first bullet item" in body                         # its preview
     assert 'value="list"' in body
-    assert 'name="element_type" value="table"' not in body    # locked out while continuing
+    assert 'name="element_type" value="table"' not in body
     assert 'name="element_type" value="image"' not in body
+    assert "Page 1 of" in body                                 # did not advance a page
 
-    # step back to page 1 (continue_type survives page navigation) and
-    # re-select the same list -- simulates the list resuming there
-    assert loaded.post("/extract/page/prev", follow_redirects=True).status_code == 200
+    # select the same list again -- items concatenate, still in the builder
     r = loaded.post("/extract/select",
                     data={"element_type": "list", "x0": "60", "y0": "500", "x1": "870", "y1": "1000"},
                     follow_redirects=True)
     body = r.data.decode()
-    assert body.count("&lt;listitem&gt;") == 6                 # 3 + 3, concatenated
-    assert body.count("first bullet item") == 4          # preview + XML, each now duplicated
+    assert "6 items so far" in body                            # 3 + 3
+    assert "Page 1 of" in body                                 # still on the same page
+
+    # "Done" ends the builder and shows the assembled fragment
+    r = loaded.post("/extract/continue-done", follow_redirects=True)
+    body = r.data.decode()
+    assert body.count("&lt;listitem&gt;") == 6
     assert "&lt;itemizedlist&gt;" in body
-    assert "Extract more" in body                               # still continuable (not last page)
+
+
+def test_select_more_survives_a_page_change(loaded):
+    loaded.post("/extract/select",
+                data={"element_type": "list", "x0": "60", "y0": "500", "x1": "870", "y1": "1000"},
+                follow_redirects=True)
+    loaded.post("/extract/continue-more", follow_redirects=True)
+    # the page arrows carry the continuation onto another page
+    r = loaded.post("/extract/page/next", follow_redirects=True)
+    body = r.data.decode()
+    assert "3 items so far" in body                            # builder still armed
+    assert "Page 2 of" in body
 
 
 def test_extract_more_type_mismatch_is_rejected(loaded):
@@ -159,13 +176,15 @@ def test_extract_more_hidden_without_prior_result(loaded):
     assert r.status_code == 400
 
 
-def test_extract_more_not_offered_on_last_page(loaded):
+def test_select_more_offered_on_the_last_page(loaded):
+    # no longer tied to "a next page exists" -- the list may continue in
+    # another column on this same page
     assert loaded.post("/extract/page", data={"page_number": "5"},
                        follow_redirects=True).status_code == 200
     r = loaded.post("/extract/select",
                     data={"element_type": "list", "x0": "60", "y0": "60", "x1": "870", "y1": "360"},
                     follow_redirects=True)
-    assert "Extract more" not in r.data.decode()
+    assert "Add to list" in r.data.decode()
 
 
 def test_extract_image_returns_png(loaded):

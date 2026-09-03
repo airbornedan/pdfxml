@@ -205,13 +205,59 @@ button:disabled {
 	font-size: 0.9em;
 }
 
-.continue-banner {
+/* builder panel shown on the select page while "Select more" is armed */
+.continue-panel {
 	background-color: #e8f1fb;
 	border: 1px solid #0056b3;
+	border-radius: 6px;
+	padding: 12px 14px;
+	margin: 12px 0;
+}
+
+.continue-panel__head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+}
+
+.continue-panel__head form {
+	margin: 0;
+}
+
+.continue-panel__hint {
+	color: #003d80;
+	font-size: 0.9em;
+	margin: 6px 0 8px;
+}
+
+.continue-panel__preview {
+	background: white;
+	border: 1px solid #cdddf0;
 	border-radius: 4px;
 	padding: 8px 12px;
-	color: #003d80;
+	max-height: 220px;
+	overflow-y: auto;
 }
+
+.continue-panel__preview ol,
+.continue-panel__preview ul {
+	margin: 0;
+	padding-left: 22px;
+}
+
+.continue-panel__preview li {
+	padding: 2px 0;
+}
+
+.continue-panel__preview p {
+	margin: 0 0 8px;
+}
+
+.continue-panel__preview p:last-child {
+	margin-bottom: 0;
+}
+
 
 /* card grid, colors, and hover treatment borrowed from */
 /* old_pdf_xml/templates/tools.html */
@@ -376,23 +422,6 @@ button:disabled {
 	user-select: none;
 }
 
-.erase-box {
-	position: absolute;
-	border: 1px dashed #b00020;
-	background: repeating-linear-gradient(
-		45deg,
-		rgba(176, 0, 32, 0.25),
-		rgba(176, 0, 32, 0.25) 6px,
-		rgba(176, 0, 32, 0.1) 6px,
-		rgba(176, 0, 32, 0.1) 12px
-	);
-	pointer-events: none;
-}
-
-.erase-toggle-btn.active {
-	background-color: #b00020;
-	border-color: #b00020;
-}
 
 /* IMAGE CROP TOOL */
 .upload-box {
@@ -801,6 +830,28 @@ textarea.xml-output {
 	object-fit: contain;
 	background: #7f8c8d;
 	border-radius: 4px;
+}
+
+/* wraps the modal image so white "remove" boxes can sit over it */
+.image-modal-stage {
+	position: relative;
+	display: inline-block;
+	line-height: 0;
+	max-width: 100%;
+	cursor: crosshair;
+}
+
+.erase-mask {
+	position: absolute;
+	background: #fff;
+	outline: 1px solid #b00020;
+	pointer-events: none;
+}
+
+.image-modal-hint {
+	margin: 0;
+	font-size: 0.9em;
+	color: #666;
 }
 .result-modal__actions {
 	display: flex;

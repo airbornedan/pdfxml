@@ -8,12 +8,12 @@
 		{% if can_continue %}
 		<form method="post" action="{{ url_for('extract.continue_more') }}">
 			<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-			<button type="submit" class="btn">Extract more (continues on the next page)</button>
+			<button type="submit" class="btn">Add to {{ "text" if result.element_type == "paragraph" else "list" }}</button>
 		</form>
 		{% endif %}
 		<form method="post" action="{{ url_for('extract.extract_another') }}">
 			<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-			<button type="submit" class="btn">Extract another</button>
+			<button type="submit" class="btn">Select new</button>
 		</form>
 		<form method="post" action="{{ url_for('extract.new_upload') }}">
 			<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -91,12 +91,12 @@
 		{% if can_continue %}
 		<form method="post" action="{{ url_for('extract.continue_more') }}">
 			<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-			<button type="submit" class="btn">Extract more (continues on the next page)</button>
+			<button type="submit" class="btn">Add to {{ "text" if result.element_type == "paragraph" else "list" }}</button>
 		</form>
 		{% endif %}
 		<form method="post" action="{{ url_for('extract.extract_another') }}">
 			<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-			<button type="submit" class="btn">Extract another</button>
+			<button type="submit" class="btn">Select new</button>
 		</form>
 		<form method="post" action="{{ url_for('extract.new_upload') }}">
 			<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">

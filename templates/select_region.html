@@ -2,7 +2,7 @@
 {% block content %}
 <div class="page-container">
 	{% include "_breadcrumbs.html" %}
-	<h1>Draw a region, then choose what to extract</h1>
+	<h1>{% if continue_type %}Add to your {{ "list" if continue_type != "paragraph" else "text" }}{% else %}Draw a region, then choose what to extract{% endif %}</h1>
 	<div class="page-nav">
 		<form method="post" action="{{ url_for('extract.page_prev') }}">
 			<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -14,33 +14,52 @@
 			<button type="submit" class="chevron-btn" aria-label="Next page" title="Next page" {% if page_count and page_number >= page_count %}disabled{% endif %}><img src="{{ url_for('static', filename='images/chevron-right.svg') }}" alt=""></button>
 		</form>
 	</div>
+
 	{% if continue_type %}
-	<p class="continue-banner">
-		Continuing {{ "the paragraph" if continue_type == "paragraph" else "the list" }} from before --
-		draw the matching content on this page. It'll be appended to what you already extracted.
-	</p>
+	{% set item_word = "paragraph" if continue_type == "paragraph" else "item" %}
+	{% set count = (continuation.preview | length) if continuation else 0 %}
+	<section class="continue-panel">
+		<div class="continue-panel__head">
+			<strong>{{ count }} {{ item_word }}{{ "" if count == 1 else "s" }} so far</strong>
+			<form method="post" action="{{ url_for('extract.continue_done') }}">
+				<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+				<button type="submit" class="btn">Done &mdash; review &amp; copy</button>
+			</form>
+		</div>
+		<p class="continue-panel__hint">
+			Draw another region and pick <strong>{{ "Text" if continue_type == "paragraph" else "List" }}</strong>
+			to add it on. The page arrows carry the same {{ "paragraph" if continue_type == "paragraph" else "list" }}
+			onto later pages.
+		</p>
+		{% if continuation and count %}
+		<div class="continue-panel__preview">
+			{% if continue_type == "paragraph" %}
+			{% for p in continuation.preview %}<p>{{ p|safe }}</p>{% endfor %}
+			{% elif continue_type == "orderedlist" %}
+			<ol>{% for item in continuation.preview %}<li>{{ item|safe }}</li>{% endfor %}</ol>
+			{% else %}
+			<ul>{% for item in continuation.preview %}<li>{{ item|safe }}</li>{% endfor %}</ul>
+			{% endif %}
+		</div>
+		{% endif %}
+	</section>
 	{% endif %}
+
 	{% if error %}<p class="error-text">{{ error }}</p>{% endif %}
 	<p class="error-text is-hidden" id="image-error"></p>
 
 	<p class="controls">
 		{% if not continue_type or continue_type == "paragraph" %}
-		<button type="submit" form="select-form" name="element_type" value="paragraph" class="extract-btn" disabled>Text</button>
+		<button type="submit" form="select-form" name="element_type" value="paragraph" class="extract-btn" disabled>{% if continue_type %}Add to text{% else %}Text{% endif %}</button>
 		{% endif %}
 		{% if not continue_type or continue_type != "paragraph" %}
-		<button type="submit" form="select-form" name="element_type" value="list" class="extract-btn" disabled>List</button>
+		<button type="submit" form="select-form" name="element_type" value="list" class="extract-btn" disabled>{% if continue_type %}Add to list{% else %}List{% endif %}</button>
 		{% endif %}
 		{% if not continue_type %}
 		<button type="submit" form="select-form" name="element_type" value="table" class="extract-btn" disabled>Table</button>
 		<button type="submit" form="select-form" name="element_type" value="image" class="extract-btn" disabled>Image</button>
-		<button type="button" class="btn-reset erase-toggle-btn" disabled>Remove area</button>
-		<button type="button" class="btn-reset clear-erase-btn" disabled>Clear erasures</button>
 		{% endif %}
-		<button type="button" class="btn-reset clear-btn">Clear selection</button>
 	</p>
-	{% if not continue_type %}
-	<p class="hint-text">Draw a region, then "Remove area" lets you paint out stray content caught inside it before extracting as an image.</p>
-	{% endif %}
 
 	<div id="page-image-wrap">
 		<img id="page-image" src="{{ url_for('extract.page_image') }}" alt="Page {{ page_number }}" draggable="false">
@@ -55,18 +74,15 @@
 		<input type="hidden" name="y1" id="y1">
 		<p class="controls">
 			{% if not continue_type or continue_type == "paragraph" %}
-			<button type="submit" name="element_type" value="paragraph" class="extract-btn" disabled>Text</button>
+			<button type="submit" name="element_type" value="paragraph" class="extract-btn" disabled>{% if continue_type %}Add to text{% else %}Text{% endif %}</button>
 			{% endif %}
 			{% if not continue_type or continue_type != "paragraph" %}
-			<button type="submit" name="element_type" value="list" class="extract-btn" disabled>List</button>
+			<button type="submit" name="element_type" value="list" class="extract-btn" disabled>{% if continue_type %}Add to list{% else %}List{% endif %}</button>
 			{% endif %}
 			{% if not continue_type %}
 			<button type="submit" name="element_type" value="table" class="extract-btn" disabled>Table</button>
 			<button type="submit" name="element_type" value="image" class="extract-btn" disabled>Image</button>
-			<button type="button" class="btn-reset erase-toggle-btn" disabled>Remove area</button>
-			<button type="button" class="btn-reset clear-erase-btn" disabled>Clear erasures</button>
 			{% endif %}
-			<button type="button" class="btn-reset clear-btn">Clear selection</button>
 		</p>
 	</form>
 
@@ -88,78 +104,35 @@
 	const img = document.getElementById("page-image");
 	const wrap = document.getElementById("page-image-wrap");
 	const box = document.getElementById("select-box");
-	const extractBtns = document.querySelectorAll(".extract-btn"); // 4 above the image, 4 below
-	const clearBtns = document.querySelectorAll(".clear-btn"); // one above the image, one below
-	const eraseToggleBtns = document.querySelectorAll(".erase-toggle-btn"); // one above, one below
-	const clearEraseBtns = document.querySelectorAll(".clear-erase-btn"); // one above, one below
+	const extractBtns = document.querySelectorAll(".extract-btn"); // Text/List/Table/Image, above + below the image
 	let startX, startY, dragging = false;
-	let erasing = false;          // true once "Remove area" is toggled on
-	let eraseRects = [];          // {el, natural: [x0,y0,x1,y1]} -- natural-pixel space, same as x0..y1 below
 
 	function pointerPos(e) {
 		const rect = img.getBoundingClientRect();
 		return { x: e.clientX - rect.left, y: e.clientY - rect.top };
 	}
 
-	function setErasing(on) {
-		erasing = on;
-		eraseToggleBtns.forEach((btn) => btn.classList.toggle("active", on));
-	}
-
-	function clearEraseRects() {
-		eraseRects.forEach((r) => r.el.remove());
-		eraseRects = [];
-	}
-
-	function setEraseControlsEnabled(enabled) {
-		eraseToggleBtns.forEach((btn) => btn.disabled = !enabled);
-		clearEraseBtns.forEach((btn) => btn.disabled = !enabled);
-		if (!enabled) setErasing(false);
-	}
-
 	wrap.addEventListener("mousedown", function (e) {
 		e.preventDefault(); // stop the browser's native image-drag from hijacking the gesture
-
-		if (erasing) {
-			const p = pointerPos(e);
-			startX = p.x;
-			startY = p.y;
-			dragging = true;
-			const el = document.createElement("div");
-			el.className = "erase-box";
-			el.style.left = startX + "px";
-			el.style.top = startY + "px";
-			el.style.width = "0px";
-			el.style.height = "0px";
-			wrap.appendChild(el);
-			eraseRects.push({ el, natural: null });
-			return;
-		}
-
 		const p = pointerPos(e);
 		startX = p.x;
 		startY = p.y;
 		dragging = true;
-		clearEraseRects(); // a new main selection invalidates erasures drawn for the old one
 		box.style.left = startX + "px";
 		box.style.top = startY + "px";
 		box.style.width = "0px";
 		box.style.height = "0px";
 		box.style.display = "block";
 		extractBtns.forEach((btn) => btn.disabled = true);
-		setEraseControlsEnabled(false);
 	});
 
 	wrap.addEventListener("mousemove", function (e) {
 		if (!dragging) return;
 		const p = pointerPos(e);
-		const x = Math.min(startX, p.x);
-		const y = Math.min(startY, p.y);
-		const target = erasing ? eraseRects[eraseRects.length - 1].el : box;
-		target.style.left = x + "px";
-		target.style.top = y + "px";
-		target.style.width = Math.abs(p.x - startX) + "px";
-		target.style.height = Math.abs(p.y - startY) + "px";
+		box.style.left = Math.min(startX, p.x) + "px";
+		box.style.top = Math.min(startY, p.y) + "px";
+		box.style.width = Math.abs(p.x - startX) + "px";
+		box.style.height = Math.abs(p.y - startY) + "px";
 	});
 
 	wrap.addEventListener("mouseup", function (e) {
@@ -177,17 +150,6 @@
 		const x1 = Math.max(startX, p.x) * scaleX;
 		const y1 = Math.max(startY, p.y) * scaleY;
 
-		if (erasing) {
-			const current = eraseRects[eraseRects.length - 1];
-			if (x1 - x0 < 2 || y1 - y0 < 2) {
-				current.el.remove();
-				eraseRects.pop();
-			} else {
-				current.natural = [x0, y0, x1, y1];
-			}
-			return;
-		}
-
 		document.getElementById("x0").value = x0;
 		document.getElementById("y0").value = y0;
 		document.getElementById("x1").value = x1;
@@ -195,37 +157,36 @@
 
 		const hasRegion = (x1 - x0 >= 2 && y1 - y0 >= 2);
 		extractBtns.forEach((btn) => btn.disabled = !hasRegion);
-		setEraseControlsEnabled(hasRegion);
 	});
 
-	clearBtns.forEach((btn) => btn.addEventListener("click", () => {
+	// no on-screen "Clear selection" button -- Esc drops the current crop
+	// when the image modal isn't up
+	window.addEventListener("keydown", (e) => {
+		if (e.key !== "Escape") return;
+		const modal = document.getElementById("image-modal");
+		if (modal && !modal.classList.contains("is-hidden")) return; // modal owns Esc while open
 		box.style.display = "none";
 		box.style.width = "0px";
 		box.style.height = "0px";
 		["x0", "y0", "x1", "y1"].forEach((id) => document.getElementById(id).value = "");
 		extractBtns.forEach((b) => b.disabled = true);
-		clearEraseRects();
-		setEraseControlsEnabled(false);
-	}));
-
-	eraseToggleBtns.forEach((btn) => btn.addEventListener("click", () => setErasing(!erasing)));
-	clearEraseBtns.forEach((btn) => btn.addEventListener("click", clearEraseRects));
-
-	// exposed for the image-submit handler below, which needs the
-	// accumulated erase rects at the moment "Image" is clicked
-	window.__currentEraseRects = () => eraseRects.filter((r) => r.natural).map((r) => r.natural);
+	});
 })();
 </script>
 
 <div class="result-modal is-hidden" id="image-modal" role="dialog" aria-modal="true" aria-label="Extracted image">
 	<div class="result-modal__card">
-		<img id="image-modal-img" alt="Extracted image">
+		<div class="image-modal-stage" id="image-modal-stage">
+			<img id="image-modal-img" alt="Extracted image">
+		</div>
+		<p class="image-modal-hint">Drag on the image to white out any stray content caught in the crop.</p>
 		<p class="error-text is-hidden" id="image-modal-error"></p>
 		<div class="result-modal__actions">
 			<span class="result-filename-wrap">
 				<input type="text" id="image-modal-name" class="result-filename" spellcheck="false" autocomplete="off" placeholder="file name" aria-label="File name">
 				<span class="result-filename-ext">.png</span>
 			</span>
+			<button type="button" class="btn-reset" id="image-modal-clear-areas" disabled>Clear areas</button>
 			<button type="button" class="btn" id="image-modal-watermark">Watermark <span class="watermark-symbol">*</span></button>
 			<a id="image-modal-download" class="btn" download>Save PNG</a>
 			<button type="button" class="btn-reset" data-action="close-image-modal">Close</button>
@@ -241,15 +202,37 @@
 	const form = document.getElementById("select-form");
 	const pageError = document.getElementById("image-error");
 	const modal = document.getElementById("image-modal");
+	const stage = document.getElementById("image-modal-stage");
 	const modalImg = document.getElementById("image-modal-img");
 	const nameField = document.getElementById("image-modal-name");
 	const download = document.getElementById("image-modal-download");
 	const modalError = document.getElementById("image-modal-error");
+	const clearAreasBtn = document.getElementById("image-modal-clear-areas");
 	const closeBtn = modal.querySelector('[data-action="close-image-modal"]');
 
 	const baseFrom = (s) => s.replace(/\.[^./\\]+$/, "").replace(SAFE_NAME, "").trim();
 	const DEFAULT_NAME = (baseFrom({{ (pdf_filename or "")|tojson }}) || "image") + "-p{{ page_number }}";
 	let cleanUrl = IMAGE_URL;   // the un-watermarked server render of the current crop
+	let eraseRects = [];        // [fx0, fy0, fx1, fy1] -- fractions of the crop, order = draw order
+	let maskEls = [];           // the white preview overlays on the modal image
+	let draw = null;            // {sx, sy, el} while a box is being dragged
+
+	const fieldNum = (id) => parseFloat(document.getElementById(id).value) || 0;
+
+	// fraction-of-crop -> page-preview px, the space the server's
+	// _parse_erase_rects expects (it divides by PREVIEW_ZOOM). The crop's
+	// own bounds are the hidden x0..y1 fields, already in that space.
+	function toPreviewPx(f) {
+		const X0 = fieldNum("x0"), Y0 = fieldNum("y0"), X1 = fieldNum("x1"), Y1 = fieldNum("y1");
+		return [X0 + f[0] * (X1 - X0), Y0 + f[1] * (Y1 - Y0), X0 + f[2] * (X1 - X0), Y0 + f[3] * (Y1 - Y0)];
+	}
+
+	const clearMasks = () => { maskEls.forEach((el) => el.remove()); maskEls = []; };
+	function resetErase() {
+		eraseRects = [];
+		clearMasks();
+		clearAreasBtn.disabled = true;
+	}
 
 	const applyName = () => {
 		download.download = (baseFrom(nameField.value) || DEFAULT_NAME) + ".png";
@@ -259,36 +242,92 @@
 		modalImg.removeAttribute("src");
 	};
 
-	// the Image buttons open the modal in place; text/list/table submit normally
+	// (re)render the crop on the server with the current erase rects and
+	// show it. Same source drives the modal preview and the Save download,
+	// so what you see is what you get.
+	async function renderImage() {
+		const fd = new FormData(form);
+		fd.set("element_type", "image");
+		fd.set("erase_rects", JSON.stringify(eraseRects.map(toPreviewPx)));
+		let resp;
+		try {
+			resp = await fetch(SELECT_URL, { method: "POST", body: fd,
+				headers: { "X-Requested-With": "fetch" } });
+		} catch {
+			resp = null;
+		}
+		if (!resp || !resp.ok) {
+			pageError.textContent = "Couldn't extract that region -- try a different selection.";
+			pageError.classList.remove("is-hidden");
+			return false;
+		}
+		pageError.classList.add("is-hidden");
+		modalError.classList.add("is-hidden");
+		cleanUrl = IMAGE_URL + "?t=" + Date.now();
+		modalImg.addEventListener("load", clearMasks, { once: true }); // baked render supersedes the overlays
+		modalImg.src = cleanUrl;
+		download.href = cleanUrl;
+		return true;
+	}
+
+	// the page's Image button: fresh extract, clears any prior erasures
+	async function openWithImage() {
+		resetErase();
+		if (!(await renderImage())) return;
+		nameField.value = DEFAULT_NAME;
+		applyName();
+		modal.classList.remove("is-hidden");
+		nameField.focus();
+		nameField.select();
+	}
 	document.querySelectorAll('.extract-btn[value="image"]').forEach((btn) =>
-		btn.addEventListener("click", async (e) => {
-			e.preventDefault();
-			const fd = new FormData(form);
-			fd.set("element_type", "image");
-			fd.set("erase_rects", JSON.stringify(window.__currentEraseRects()));
-			let resp;
-			try {
-				resp = await fetch(SELECT_URL, { method: "POST", body: fd,
-					headers: { "X-Requested-With": "fetch" } });
-			} catch {
-				resp = null;
-			}
-			if (!resp || !resp.ok) {
-				pageError.textContent = "Couldn't extract that region -- try a different selection.";
-				pageError.classList.remove("is-hidden");
-				return;
-			}
-			pageError.classList.add("is-hidden");
-			modalError.classList.add("is-hidden");
-			cleanUrl = IMAGE_URL + "?t=" + Date.now();
-			modalImg.src = cleanUrl;
-			download.href = cleanUrl;
-			nameField.value = DEFAULT_NAME;
-			applyName();
-			modal.classList.remove("is-hidden");
-			nameField.focus();
-			nameField.select();
-		}));
+		btn.addEventListener("click", (e) => { e.preventDefault(); openWithImage(); }));
+
+	// --- draw white "remove" boxes directly on the preview ---
+	function imgPos(e) {
+		const r = modalImg.getBoundingClientRect();
+		return {
+			x: Math.min(Math.max(e.clientX - r.left, 0), r.width),
+			y: Math.min(Math.max(e.clientY - r.top, 0), r.height),
+			w: r.width, h: r.height,
+		};
+	}
+	stage.addEventListener("mousedown", (e) => {
+		if (!modalImg.getAttribute("src")) return;
+		e.preventDefault();
+		const p = imgPos(e);
+		const el = document.createElement("div");
+		el.className = "erase-mask";
+		el.style.left = p.x + "px";
+		el.style.top = p.y + "px";
+		el.style.width = "0px";
+		el.style.height = "0px";
+		stage.appendChild(el);
+		maskEls.push(el);
+		draw = { sx: p.x, sy: p.y, el };
+	});
+	window.addEventListener("mousemove", (e) => {
+		if (!draw) return;
+		const p = imgPos(e);
+		draw.el.style.left = Math.min(draw.sx, p.x) + "px";
+		draw.el.style.top = Math.min(draw.sy, p.y) + "px";
+		draw.el.style.width = Math.abs(p.x - draw.sx) + "px";
+		draw.el.style.height = Math.abs(p.y - draw.sy) + "px";
+	});
+	window.addEventListener("mouseup", (e) => {
+		if (!draw) return;
+		const { sx, sy, el } = draw;
+		draw = null;
+		const p = imgPos(e);
+		const x0 = Math.min(sx, p.x), y0 = Math.min(sy, p.y);
+		const x1 = Math.max(sx, p.x), y1 = Math.max(sy, p.y);
+		if (x1 - x0 < 4 || y1 - y0 < 4) { el.remove(); maskEls.pop(); return; }
+		eraseRects.push([x0 / p.w, y0 / p.h, x1 / p.w, y1 / p.h]);
+		clearAreasBtn.disabled = false;
+		renderImage();
+	});
+
+	clearAreasBtn.addEventListener("click", () => { resetErase(); renderImage(); });
 
 	nameField.addEventListener("input", applyName);
 	nameField.addEventListener("keydown", (e) => {
