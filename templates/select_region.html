@@ -90,8 +90,11 @@
 		return { x: e.clientX - rect.left, y: e.clientY - rect.top };
 	}
 
-	wrap.addEventListener("mousedown", function (e) {
-		e.preventDefault(); // stop the browser's native image-drag from hijacking the gesture
+	// pointer events unify mouse, touch, and pen (iOS Safari included) --
+	// one drag gesture handles a mouse drag or a finger drag alike.
+	wrap.addEventListener("pointerdown", function (e) {
+		e.preventDefault(); // stop the browser's native image-drag/scroll from hijacking the gesture
+		wrap.setPointerCapture(e.pointerId); // keeps delivering move/up even if the finger leaves the image
 		const p = pointerPos(e);
 		startX = p.x;
 		startY = p.y;
@@ -104,7 +107,7 @@
 		extractBtns.forEach((btn) => btn.disabled = true);
 	});
 
-	wrap.addEventListener("mousemove", function (e) {
+	wrap.addEventListener("pointermove", function (e) {
 		if (!dragging) return;
 		const p = pointerPos(e);
 		const x = Math.min(startX, p.x);
@@ -115,7 +118,7 @@
 		box.style.height = Math.abs(p.y - startY) + "px";
 	});
 
-	wrap.addEventListener("mouseup", function (e) {
+	wrap.addEventListener("pointerup", function (e) {
 		if (!dragging) return;
 		dragging = false;
 		const p = pointerPos(e);
