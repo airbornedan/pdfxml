@@ -362,7 +362,6 @@ button:disabled {
 	position: relative;
 	display: inline-block;
 	border: 1px solid #ccc;
-	touch-action: none; /* let a finger drag draw the selection box instead of scrolling the page */
 }
 
 #page-image {
