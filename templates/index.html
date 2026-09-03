@@ -21,6 +21,12 @@
 			<hr class="card-divider">
 			<span class="card-desc">Crop an image.</span>
 		</a>
+		<a href="{{ url_for('normalize.fix_xml') }}" class="card">
+			<img class="card-icon" src="{{ url_for('static', filename='images/cleanup.svg') }}" alt="">
+			<span class="card-title">Fix XML</span>
+			<hr class="card-divider">
+			<span class="card-desc">Clean up a list or table for Paligo's source view</span>
+		</a>
 		{% if trusted_network %}
 		<a href="{{ url_for('pages.troubleshooting') }}" class="card">
 			<img class="card-icon" src="{{ url_for('static', filename='images/troubleshooting.svg') }}" alt="">

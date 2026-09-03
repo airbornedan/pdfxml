@@ -570,6 +570,32 @@ textarea.xml-output {
 	box-sizing: border-box;
 }
 
+/* Fix XML tool: paste-in / result boxes */
+textarea.xml-io {
+	width: 100%;
+	font-family: monospace;
+	font-size: 0.9rem;
+	padding: 10px;
+	border: 1px solid #0056b3;
+	border-radius: 4px;
+	box-sizing: border-box;
+	resize: vertical;
+}
+
+.field-label {
+	display: block;
+	font-weight: bold;
+	margin: 14px 0 4px;
+}
+
+.normalize-note {
+	background: #fdf6e3;
+	border: 1px solid #d9b310;
+	border-radius: 4px;
+	padding: 10px 12px;
+	margin: 12px 0;
+}
+
 .validation-pass {
 	color: #1a7f37;
 	font-weight: bold;

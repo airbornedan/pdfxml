@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-container wide">
+	{% include "_breadcrumbs.html" %}
+	<h1>Fix XML for Paligo</h1>
+	<p class="subtitle">Paste a DocBook or HTML list or table. It comes back in the form Paligo's XML source view accepts &mdash; the same shape the Extract tool produces.</p>
+
+	<form method="post">
+		<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+		<label class="field-label" for="xml-in">Your XML</label>
+		<textarea class="xml-io" id="xml-in" name="xml" rows="12" spellcheck="false" autofocus
+		          placeholder="&lt;ul&gt;&#10;  &lt;li&gt;first item&lt;/li&gt;&#10;  &lt;li&gt;second item&lt;/li&gt;&#10;&lt;/ul&gt;">{{ src }}</textarea>
+		<p><button type="submit" class="btn">Fix it</button></p>
+	</form>
+
+	{% if diagnostic and not changed %}
+	<div class="normalize-note">
+		<strong>Left alone.</strong> {{ diagnostic }}
+		{% if output %}<br>Your input is shown below, unchanged.{% endif %}
+	</div>
+	{% elif diagnostic %}
+	<p class="subtitle">{{ diagnostic }}</p>
+	{% endif %}
+
+	{% if output is not none %}
+	<label class="field-label" for="xml-out">Result</label>
+	<p><button type="button" id="copy-btn" class="btn">Copy all</button></p>
+	<textarea class="xml-io" id="xml-out" rows="14" readonly onclick="this.select();">{{ output }}</textarea>
+	<script nonce="{{ g.csp_nonce }}">
+	document.getElementById("copy-btn").addEventListener("click", async () => {
+		const button = document.getElementById("copy-btn");
+		const out = document.getElementById("xml-out");
+		out.focus();
+		out.select();
+		let copied = false;
+		try {
+			await navigator.clipboard.writeText(out.value);
+			copied = true;
+		} catch {
+			copied = document.execCommand("copy");
+		}
+		button.textContent = copied ? "Copied" : "Copy failed";
+		setTimeout(() => { button.textContent = "Copy all"; }, 1500);
+	});
+	</script>
+	{% endif %}
+</div>
+{% endblock %}
