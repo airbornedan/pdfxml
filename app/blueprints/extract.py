@@ -1,6 +1,8 @@
 ########################################################################
 ### EXTRACT -- UPLOAD, PAGE SELECTION, REGION-SELECT WIZARD
 ########################################################################
+import json
+
 from flask import Blueprint, render_template, request, redirect, url_for, session, Response, abort
 
 from app.extensions import (
@@ -237,7 +239,10 @@ def select_region():
             return _page("Draw a region on the page first.")
 
         try:
-            result = _run_extraction(path, session["page_number"], (x0, y0, x1, y1), element_type)
+            result = _run_extraction(
+                path, session["page_number"], (x0, y0, x1, y1), element_type,
+                erase_rects=_parse_erase_rects(request.form.get("erase_rects", "")) if element_type == "image" else None,
+            )
         except sandbox.SandboxError:
             return _page("Couldn't read that region -- try a different selection.")
 
@@ -314,12 +319,39 @@ def _extraction_is_empty(element_type, preview):
     return False
 
 
+### image-only: rectangles (preview px, same space as x0..y1) to punch
+### white over stray content caught inside the crop. Malformed input is
+### a 400 (tampered form); a degenerate box is just dropped.
+MAX_ERASE_RECTS = 20
+
+
+def _parse_erase_rects(raw):
+    if not raw:
+        return []
+    try:
+        data = json.loads(raw)
+    except (TypeError, ValueError):
+        abort(400)
+    if not isinstance(data, list) or len(data) > MAX_ERASE_RECTS:
+        abort(400)
+    rects = []
+    for item in data:
+        if not (isinstance(item, list) and len(item) == 4 and all(isinstance(v, (int, float)) for v in item)):
+            abort(400)
+        ex0, ey0, ex1, ey1 = (v / PREVIEW_ZOOM for v in item)
+        if ex1 > ex0 and ey1 > ey0:
+            rects.append([ex0, ey0, ex1, ey1])
+    return rects
+
+
 ### image has no DocBook fragment -- rendered on demand by
 ### extracted_image(). rect is PDF points. fitz work is in the worker;
 ### the emptiness check + validation are pure and stay here.
-def _run_extraction(path, page_number, rect, element_type):
+def _run_extraction(path, page_number, rect, element_type, erase_rects=None):
     result = {"element_type": element_type, "rect": list(rect), "page_number": page_number}
     if element_type == "image":
+        if erase_rects:
+            result["erase_rects"] = erase_rects
         return result
 
     raw = sandbox.run(pdfops.extract_region, path, page_number - 1, rect, element_type)
@@ -433,6 +465,7 @@ def extracted_image():
             IMAGE_ZOOM,
             WATERMARK_TEXT,
             MAX_RENDER_MEGAPIXELS,
+            result_data.get("erase_rects") or [],
         )
     except Exception:
         abort(500)

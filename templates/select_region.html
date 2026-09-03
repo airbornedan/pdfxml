@@ -33,9 +33,14 @@
 		{% if not continue_type %}
 		<button type="submit" form="select-form" name="element_type" value="table" class="extract-btn" disabled>Table</button>
 		<button type="submit" form="select-form" name="element_type" value="image" class="extract-btn" disabled>Image</button>
+		<button type="button" class="btn-reset erase-toggle-btn" disabled>Erase junk</button>
+		<button type="button" class="btn-reset clear-erase-btn" disabled>Clear erasures</button>
 		{% endif %}
 		<button type="button" class="btn-reset clear-btn">Clear selection</button>
 	</p>
+	{% if not continue_type %}
+	<p class="hint-text">Draw a region, then "Erase junk" lets you paint out stray content caught inside it before extracting as an image.</p>
+	{% endif %}
 
 	<div id="page-image-wrap">
 		<img id="page-image" src="{{ url_for('extract.page_image') }}" alt="Page {{ page_number }}" draggable="false">
@@ -58,6 +63,8 @@
 			{% if not continue_type %}
 			<button type="submit" name="element_type" value="table" class="extract-btn" disabled>Table</button>
 			<button type="submit" name="element_type" value="image" class="extract-btn" disabled>Image</button>
+			<button type="button" class="btn-reset erase-toggle-btn" disabled>Erase junk</button>
+			<button type="button" class="btn-reset clear-erase-btn" disabled>Clear erasures</button>
 			{% endif %}
 			<button type="button" class="btn-reset clear-btn">Clear selection</button>
 		</p>
@@ -83,25 +90,64 @@
 	const box = document.getElementById("select-box");
 	const extractBtns = document.querySelectorAll(".extract-btn"); // 4 above the image, 4 below
 	const clearBtns = document.querySelectorAll(".clear-btn"); // one above the image, one below
+	const eraseToggleBtns = document.querySelectorAll(".erase-toggle-btn"); // one above, one below
+	const clearEraseBtns = document.querySelectorAll(".clear-erase-btn"); // one above, one below
 	let startX, startY, dragging = false;
+	let erasing = false;          // true once an "Erase junk" toggle is active
+	let eraseRects = [];          // {el, natural: [x0,y0,x1,y1]} -- natural-pixel space, same as x0..y1 below
 
 	function pointerPos(e) {
 		const rect = img.getBoundingClientRect();
 		return { x: e.clientX - rect.left, y: e.clientY - rect.top };
 	}
 
+	function setErasing(on) {
+		erasing = on;
+		eraseToggleBtns.forEach((btn) => btn.classList.toggle("active", on));
+	}
+
+	function clearEraseRects() {
+		eraseRects.forEach((r) => r.el.remove());
+		eraseRects = [];
+	}
+
+	function setEraseControlsEnabled(enabled) {
+		eraseToggleBtns.forEach((btn) => btn.disabled = !enabled);
+		clearEraseBtns.forEach((btn) => btn.disabled = !enabled);
+		if (!enabled) setErasing(false);
+	}
+
 	wrap.addEventListener("mousedown", function (e) {
 		e.preventDefault(); // stop the browser's native image-drag from hijacking the gesture
+
+		if (erasing) {
+			const p = pointerPos(e);
+			startX = p.x;
+			startY = p.y;
+			dragging = true;
+			const el = document.createElement("div");
+			el.className = "erase-box";
+			el.style.left = startX + "px";
+			el.style.top = startY + "px";
+			el.style.width = "0px";
+			el.style.height = "0px";
+			wrap.appendChild(el);
+			eraseRects.push({ el, natural: null });
+			return;
+		}
+
 		const p = pointerPos(e);
 		startX = p.x;
 		startY = p.y;
 		dragging = true;
+		clearEraseRects(); // a new main selection invalidates erasures drawn for the old one
 		box.style.left = startX + "px";
 		box.style.top = startY + "px";
 		box.style.width = "0px";
 		box.style.height = "0px";
 		box.style.display = "block";
 		extractBtns.forEach((btn) => btn.disabled = true);
+		setEraseControlsEnabled(false);
 	});
 
 	wrap.addEventListener("mousemove", function (e) {
@@ -109,10 +155,11 @@
 		const p = pointerPos(e);
 		const x = Math.min(startX, p.x);
 		const y = Math.min(startY, p.y);
-		box.style.left = x + "px";
-		box.style.top = y + "px";
-		box.style.width = Math.abs(p.x - startX) + "px";
-		box.style.height = Math.abs(p.y - startY) + "px";
+		const target = erasing ? eraseRects[eraseRects.length - 1].el : box;
+		target.style.left = x + "px";
+		target.style.top = y + "px";
+		target.style.width = Math.abs(p.x - startX) + "px";
+		target.style.height = Math.abs(p.y - startY) + "px";
 	});
 
 	wrap.addEventListener("mouseup", function (e) {
@@ -130,12 +177,25 @@
 		const x1 = Math.max(startX, p.x) * scaleX;
 		const y1 = Math.max(startY, p.y) * scaleY;
 
+		if (erasing) {
+			const current = eraseRects[eraseRects.length - 1];
+			if (x1 - x0 < 2 || y1 - y0 < 2) {
+				current.el.remove();
+				eraseRects.pop();
+			} else {
+				current.natural = [x0, y0, x1, y1];
+			}
+			return;
+		}
+
 		document.getElementById("x0").value = x0;
 		document.getElementById("y0").value = y0;
 		document.getElementById("x1").value = x1;
 		document.getElementById("y1").value = y1;
 
-		extractBtns.forEach((btn) => btn.disabled = (x1 - x0 < 2 || y1 - y0 < 2));
+		const hasRegion = (x1 - x0 >= 2 && y1 - y0 >= 2);
+		extractBtns.forEach((btn) => btn.disabled = !hasRegion);
+		setEraseControlsEnabled(hasRegion);
 	});
 
 	clearBtns.forEach((btn) => btn.addEventListener("click", () => {
@@ -144,7 +204,16 @@
 		box.style.height = "0px";
 		["x0", "y0", "x1", "y1"].forEach((id) => document.getElementById(id).value = "");
 		extractBtns.forEach((b) => b.disabled = true);
+		clearEraseRects();
+		setEraseControlsEnabled(false);
 	}));
+
+	eraseToggleBtns.forEach((btn) => btn.addEventListener("click", () => setErasing(!erasing)));
+	clearEraseBtns.forEach((btn) => btn.addEventListener("click", clearEraseRects));
+
+	// exposed for the image-submit handler below, which needs the
+	// accumulated erase rects at the moment "Image" is clicked
+	window.__currentEraseRects = () => eraseRects.filter((r) => r.natural).map((r) => r.natural);
 })();
 </script>
 
@@ -196,6 +265,7 @@
 			e.preventDefault();
 			const fd = new FormData(form);
 			fd.set("element_type", "image");
+			fd.set("erase_rects", JSON.stringify(window.__currentEraseRects()));
 			let resp;
 			try {
 				resp = await fetch(SELECT_URL, { method: "POST", body: fd,

@@ -48,12 +48,17 @@ def _redact_watermark(page, watermark_text):
     page.apply_redactions(images=_REDACT_IMAGES, graphics=_REDACT_GRAPHICS)
 
 
-### renders the region, not the embedded image object.
-def render_region_png(pdf_path, page_index, rect, zoom, watermark_text, max_megapixels):
+### renders the region, not the embedded image object. erase_rects
+### (PDF points, page-relative) are painted white before rendering --
+### lets the caller punch out stray content that overlapped the crop
+### rectangle without hand-editing the source PDF.
+def render_region_png(pdf_path, page_index, rect, zoom, watermark_text, max_megapixels, erase_rects=None):
     clip = fitz.Rect(*rect)
     with fitz.open(pdf_path) as doc:
         page = doc[page_index]
         _redact_watermark(page, watermark_text)
+        for er in (erase_rects or []):
+            page.draw_rect(fitz.Rect(*er), color=(1, 1, 1), fill=(1, 1, 1), width=0)
         zoom = _clamp_zoom(clip.width, clip.height, zoom, max_megapixels)
         return page.get_pixmap(clip=clip, matrix=fitz.Matrix(zoom, zoom)).tobytes("png")
 

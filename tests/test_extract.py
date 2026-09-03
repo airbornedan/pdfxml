@@ -1,6 +1,7 @@
 """Full extraction wizard against a generated PDF (sandbox runs for real)."""
 import io
 import html
+import json
 
 import pytest
 
@@ -198,3 +199,54 @@ def test_invalid_element_type_is_400(loaded):
     r = loaded.post("/extract/select",
                     data={"element_type": "bogus", "x0": "1", "y0": "1", "x1": "9", "y1": "9"})
     assert r.status_code == 400
+
+
+def test_extract_image_erase_rects_changes_output(loaded):
+    # baseline: whole region, nothing erased
+    r1 = loaded.post("/extract/select",
+                    data={"element_type": "image", "x0": "40", "y0": "40", "x1": "870", "y1": "1000"},
+                    headers={"X-Requested-With": "fetch"})
+    assert r1.status_code == 204
+    baseline = loaded.get("/extract/image").data
+
+    # same region, but a swath over the first-page paragraph is punched white
+    r2 = loaded.post("/extract/select",
+                    data={
+                        "element_type": "image", "x0": "40", "y0": "40", "x1": "870", "y1": "1000",
+                        "erase_rects": json.dumps([[60, 130, 700, 180]]),
+                    },
+                    headers={"X-Requested-With": "fetch"})
+    assert r2.status_code == 204
+    erased = loaded.get("/extract/image").data
+    assert erased != baseline
+
+
+def test_extract_image_erase_rects_malformed_json_is_400(loaded):
+    r = loaded.post("/extract/select",
+                    data={
+                        "element_type": "image", "x0": "40", "y0": "40", "x1": "870", "y1": "1000",
+                        "erase_rects": "not json",
+                    })
+    assert r.status_code == 400
+
+
+def test_extract_image_too_many_erase_rects_is_400(loaded):
+    r = loaded.post("/extract/select",
+                    data={
+                        "element_type": "image", "x0": "40", "y0": "40", "x1": "870", "y1": "1000",
+                        "erase_rects": json.dumps([[10, 10, 20, 20]] * 25),
+                    })
+    assert r.status_code == 400
+
+
+def test_extract_image_erase_rects_ignored_for_non_image_types(loaded):
+    # erase_rects only means something for images -- a list/paragraph
+    # submission carrying it shouldn't be affected or rejected
+    r = loaded.post("/extract/select",
+                    data={
+                        "element_type": "paragraph", "x0": "60", "y0": "60", "x1": "870", "y1": "450",
+                        "erase_rects": json.dumps([[10, 10, 20, 20]]),
+                    },
+                    follow_redirects=True)
+    assert r.status_code == 200
+    assert b"plain paragraph of body text" in r.data

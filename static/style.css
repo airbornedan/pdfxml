@@ -200,6 +200,11 @@ button:disabled {
 	color: #b00020;
 }
 
+.hint-text {
+	color: #666;
+	font-size: 0.9em;
+}
+
 .continue-banner {
 	background-color: #e8f1fb;
 	border: 1px solid #0056b3;
@@ -369,6 +374,24 @@ button:disabled {
 	max-width: 100%;
 	-webkit-user-drag: none;
 	user-select: none;
+}
+
+.erase-box {
+	position: absolute;
+	border: 1px dashed #b00020;
+	background: repeating-linear-gradient(
+		45deg,
+		rgba(176, 0, 32, 0.25),
+		rgba(176, 0, 32, 0.25) 6px,
+		rgba(176, 0, 32, 0.1) 6px,
+		rgba(176, 0, 32, 0.1) 12px
+	);
+	pointer-events: none;
+}
+
+.erase-toggle-btn.active {
+	background-color: #b00020;
+	border-color: #b00020;
 }
 
 /* IMAGE CROP TOOL */
