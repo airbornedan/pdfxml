@@ -8,6 +8,31 @@ import fitz
 # Bounds measured from tests/sample.png. The right and bottom values are
 # exclusive, as required by PyMuPDF's clip rectangle.
 ISOBUS_RECT = fitz.Rect(371, 4, 1549, 1076)
+CORNER_RADIUS = 20
+
+
+def _white_out_rounded_corners(pixmap: fitz.Pixmap) -> None:
+    """Replace screenshot background visible through the panel's corners."""
+    radius = min(CORNER_RADIUS, pixmap.width // 2, pixmap.height // 2)
+    samples = pixmap.samples_mv
+    channels = pixmap.n
+    corners = (
+        (0, 0, radius, radius),
+        (pixmap.width - radius, 0, pixmap.width - radius - 1, radius),
+        (0, pixmap.height - radius, radius, pixmap.height - radius - 1),
+        (
+            pixmap.width - radius,
+            pixmap.height - radius,
+            pixmap.width - radius - 1,
+            pixmap.height - radius - 1,
+        ),
+    )
+    for start_x, start_y, center_x, center_y in corners:
+        for y in range(start_y, start_y + radius):
+            for x in range(start_x, start_x + radius):
+                if (x - center_x) ** 2 + (y - center_y) ** 2 > radius ** 2:
+                    offset = (y * pixmap.width + x) * channels
+                    samples[offset:offset + 3] = b"\xff\xff\xff"
 
 
 def crop_isobus(source: str | Path, destination: str | Path) -> None:
@@ -33,6 +58,7 @@ def crop_isobus(source: str | Path, destination: str | Path) -> None:
     cropped = page.get_pixmap(
         matrix=fitz.Matrix(scale_x, scale_y), clip=clip, alpha=False
     )
+    _white_out_rounded_corners(cropped)
     destination_path.parent.mkdir(parents=True, exist_ok=True)
     cropped.save(str(destination_path))
     document.close()
