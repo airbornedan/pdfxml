@@ -21,6 +21,12 @@
 			<hr class="card-divider">
 			<span class="card-desc">Crop an image.</span>
 		</a>
+		<a href="{{ url_for('screenshot.screenshot') }}" class="card">
+			<img class="card-icon" src="{{ url_for('static', filename='images/screenshot.svg') }}" alt="">
+			<span class="card-title">Screenshot</span>
+			<hr class="card-divider">
+			<span class="card-desc">Crop an agricultural display screenshot to its ISOBUS panel</span>
+		</a>
 		<a href="{{ url_for('normalize.fix_xml') }}" class="card">
 			<img class="card-icon" src="{{ url_for('static', filename='images/cleanup.svg') }}" alt="">
 			<span class="card-title">Fix XML</span>

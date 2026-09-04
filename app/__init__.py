@@ -96,9 +96,11 @@ def create_app():
 
     from app.blueprints.extract import bp as extract_bp
     from app.blueprints.imagecrop import bp as imagecrop_bp
+    from app.blueprints.screenshot import bp as screenshot_bp
     from app.blueprints.normalize import bp as normalize_bp
     app.register_blueprint(extract_bp)
     app.register_blueprint(imagecrop_bp)
+    app.register_blueprint(screenshot_bp)
     app.register_blueprint(normalize_bp)
 
     ### snapshot at build so registration, the template flag, and pages.py agree

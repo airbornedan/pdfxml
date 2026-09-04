@@ -136,19 +136,19 @@ def pdf_processing_limit(f):
 ### user-controllable path. One PDF per session -- a fresh upload
 ### replaces the old one.
 ########################################################################
-def save_upload(file_storage):
+def save_upload(file_storage, suffix=".pdf"):
     os.makedirs(UPLOAD_DIR, exist_ok=True)
     token = secrets.token_hex(16)
-    file_storage.save(os.path.join(UPLOAD_DIR, f"{token}.pdf"))
+    file_storage.save(os.path.join(UPLOAD_DIR, f"{token}{suffix}"))
     return token
 
 
-def upload_path(token):
+def upload_path(token, suffix=".pdf"):
     ### token comes from our own secrets.token_hex() output, never
     ### request data directly -- hex-checked anyway as defense in depth
     if not token or not all(c in "0123456789abcdef" for c in token):
         return None
-    path = os.path.join(UPLOAD_DIR, f"{token}.pdf")
+    path = os.path.join(UPLOAD_DIR, f"{token}{suffix}")
     if not os.path.isfile(path):
         return None
     try:
@@ -159,8 +159,8 @@ def upload_path(token):
     return path
 
 
-def delete_upload(token):
-    path = upload_path(token)
+def delete_upload(token, suffix=".pdf"):
+    path = upload_path(token, suffix)
     if path:
         os.remove(path)
     delete_result(token)

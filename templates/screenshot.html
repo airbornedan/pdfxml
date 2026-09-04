@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-container">
+	{% if result %}
+	<div class="result-modal screenshot-result" role="dialog" aria-modal="true" aria-label="Cropped screenshot">
+		<div class="result-modal__card">
+			<a href="data:image/png;base64,{{ result }}" download="isobus.png" title="Download cropped screenshot">
+				<img src="data:image/png;base64,{{ result }}" alt="Cropped ISOBUS screenshot">
+			</a>
+			<div class="result-modal__actions">
+				<a href="{{ url_for('extract.index') }}" class="btn-reset">Close</a>
+			</div>
+		</div>
+	</div>
+	{% else %}
+	<h1>Screenshot</h1>
+	<p class="subtitle">Upload an agricultural display screenshot to crop its ISOBUS panel.</p>
+	<form method="post" action="{{ url_for('screenshot.screenshot') }}" enctype="multipart/form-data" id="screenshot-form">
+		<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+		<div class="upload-box" id="drop-zone">
+			<input type="file" id="image-file" name="image" accept="image/png,image/jpeg" required class="file-input">
+			<label for="image-file">Drag and drop an image here, or click to choose</label>
+		</div>
+		<p class="error-text{% if not error %} is-hidden{% endif %}" id="file-error">{{ error or "" }}</p>
+	</form>
+	{% endif %}
+</div>
+{% if not result %}
+<script nonce="{{ g.csp_nonce }}">
+(function () {
+	const form = document.getElementById("screenshot-form");
+	const dropZone = document.getElementById("drop-zone");
+	const fileInput = document.getElementById("image-file");
+	const fileError = document.getElementById("file-error");
+	const label = dropZone.querySelector("label");
+
+	function submitWith(file) {
+		if (!file) return;
+		if (!["image/png", "image/jpeg"].includes(file.type)) {
+			fileError.textContent = "That doesn't look like a PNG or JPEG image.";
+			fileError.classList.remove("is-hidden");
+			fileInput.value = "";
+			return;
+		}
+		fileError.classList.add("is-hidden");
+		label.textContent = "Cropping…";
+		dropZone.classList.add("uploading");
+		form.requestSubmit();
+	}
+
+	fileInput.addEventListener("change", () => submitWith(fileInput.files[0]));
+	["dragenter", "dragover"].forEach((name) =>
+		dropZone.addEventListener(name, (e) => { e.preventDefault(); dropZone.classList.add("dragover"); }));
+	["dragleave", "drop"].forEach((name) =>
+		dropZone.addEventListener(name, (e) => { e.preventDefault(); dropZone.classList.remove("dragover"); }));
+	dropZone.addEventListener("drop", (e) => {
+		fileInput.files = e.dataTransfer.files;
+		submitWith(e.dataTransfer.files[0]);
+	});
+})();
+</script>
+{% endif %}
+{% endblock %}
