@@ -15,7 +15,7 @@ Flask-WTF==1.3.0
 PyMuPDF==1.26.5
 
 # XML fragment construction -- safe escaping/serialization, not string formatting
-lxml==5.4.0
+lxml>=6.1.3
 
 # Markdown -> HTML for the Process/Troubleshooting content (content/*.md).
 # Pure Python, no dependencies.
