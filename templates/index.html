@@ -13,7 +13,7 @@
 			<img class="card-icon" src="{{ url_for('static', filename='images/extract.svg') }}" alt="">
 			<span class="card-title">Extract</span>
 			<hr class="card-divider">
-			<span class="card-desc">Pull text, lists, tables, or images from a PDF</span>
+			<span class="card-desc">Text, lists, tables, or images</span>
 		</a>
 		<a href="{{ url_for('imagecrop.image_crop') }}" class="card">
 			<img class="card-icon" src="{{ url_for('static', filename='images/crop.svg') }}" alt="">
@@ -25,13 +25,19 @@
 			<img class="card-icon" src="{{ url_for('static', filename='images/screenshot.svg') }}" alt="">
 			<span class="card-title">Screenshot</span>
 			<hr class="card-divider">
-			<span class="card-desc">Crop an agricultural display screenshot to its ISOBUS panel</span>
+			<span class="card-desc">Crop G5 screenshot</span>
+		</a>
+		<a href="{{ url_for('screenshot.convert') }}" class="card">
+			<img class="card-icon" src="{{ url_for('static', filename='images/pencil.svg') }}" alt="">
+			<span class="card-title">Convert</span>
+			<hr class="card-divider">
+			<span class="card-desc">Convert to line drawing</span>
 		</a>
 		<a href="{{ url_for('normalize.fix_xml') }}" class="card">
 			<img class="card-icon" src="{{ url_for('static', filename='images/cleanup.svg') }}" alt="">
 			<span class="card-title">Fix XML</span>
 			<hr class="card-divider">
-			<span class="card-desc">Clean up a list or table for Paligo's source view</span>
+			<span class="card-desc">Clean up a list or table</span>
 		</a>
 		{% if trusted_network %}
 		<a href="{{ url_for('pages.troubleshooting') }}" class="card">

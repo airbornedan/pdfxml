@@ -2,10 +2,10 @@
 {% block content %}
 <div class="page-container">
 	{% if result %}
-	<div class="result-modal screenshot-result" role="dialog" aria-modal="true" aria-label="Cropped screenshot">
+	<div class="result-modal screenshot-result" role="dialog" aria-modal="true" aria-label="Converted line drawing">
 		<div class="result-modal__card">
-			<a href="data:image/png;base64,{{ result }}" download="isobus.png" title="Download cropped screenshot">
-				<img src="data:image/png;base64,{{ result }}" alt="Cropped ISOBUS screenshot">
+			<a href="data:image/png;base64,{{ result }}" download="line-drawing.png" title="Download line drawing">
+				<img src="data:image/png;base64,{{ result }}" alt="Converted line drawing">
 			</a>
 			<div class="result-modal__actions">
 				<a href="{{ url_for('extract.index') }}" class="btn-reset">Close</a>
@@ -13,9 +13,9 @@
 		</div>
 	</div>
 	{% else %}
-	<h1>Screenshot</h1>
-	<p class="subtitle">Upload an agricultural display screenshot to crop its ISOBUS panel.</p>
-	<form method="post" action="{{ url_for('screenshot.screenshot') }}" enctype="multipart/form-data" id="screenshot-form">
+	<h1>Convert</h1>
+	<p class="subtitle">Upload an image and convert it to a black-and-white line drawing.</p>
+	<form method="post" action="{{ url_for('screenshot.convert') }}" enctype="multipart/form-data" id="convert-form">
 		<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 		<div class="upload-box" id="drop-zone">
 			<input type="file" id="image-file" name="image" accept="image/png,image/jpeg" required class="file-input">
@@ -28,7 +28,7 @@
 {% if not result %}
 <script nonce="{{ g.csp_nonce }}">
 (function () {
-	const form = document.getElementById("screenshot-form");
+	const form = document.getElementById("convert-form");
 	const dropZone = document.getElementById("drop-zone");
 	const fileInput = document.getElementById("image-file");
 	const fileError = document.getElementById("file-error");
@@ -43,7 +43,7 @@
 			return;
 		}
 		fileError.classList.add("is-hidden");
-		label.textContent = "Cropping…";
+		label.textContent = "Converting…";
 		dropZone.classList.add("uploading");
 		form.requestSubmit();
 	}
