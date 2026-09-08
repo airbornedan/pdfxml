@@ -44,7 +44,9 @@ jobs:
         run: |
           & "$env:APP_ROOT\.venv\Scripts\python.exe" -m pip install --quiet -r "$env:APP_ROOT\deploy\iis\requirements-iis.txt"
 
+      # always() so a failed sync/pip step never leaves the site stopped
       - name: Start app
+        if: always()
         shell: powershell
         run: |
           Copy-Item "$env:GITHUB_WORKSPACE\web.config" "$env:APP_ROOT\web.config" -Force

@@ -18,7 +18,8 @@ PyMuPDF==1.26.5
 lxml>=6.1.3
 
 # Raster image preprocessing / edge-detect line-art conversion.
-opencv-python-headless==5.0.0
+# NB: opencv uses 4-part versions on PyPI -- "5.0.0" does not exist.
+opencv-python-headless==5.0.0.93
 
 # Markdown -> HTML for the Process/Troubleshooting content (content/*.md).
 # Pure Python, no dependencies.
