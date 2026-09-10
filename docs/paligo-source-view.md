@@ -84,13 +84,17 @@ Rows marked **[?]** are guesses to confirm. `TBD` = not looked at yet.
 
 ### Element vocabulary actually in use
 
-_Pulled from ~a dozen real exported topics. The set the ruleset needs to
-cover._
+_The set the ruleset needs to cover. Believed to be nearly the whole
+list — extend if a survey of real topics turns up more._
 
-- Known so far: `section`, `title`, `para`, `orderedlist`,
+- Block / structure: `section`, `title`, `para`, `orderedlist`,
   `itemizedlist`, `listitem`, `informaltable`, `thead`, `tbody`, `tr`,
-  `th`, `td`, `mediaobject`, `imageobject`. Extend as we survey real
-  topics.
+  `th`, `td`, `mediaobject`, `imageobject`.
+- Inline (inside `<para>`):
+  - `<emphasis role="bold">` — **bold**. Note: this is the house style;
+    `app/paligo.py` currently keys "bold" off `role="strong"`, not
+    `role="bold"` — reconcile when the tool grows.
+  - `<guilabel>` — a UI element / on-screen label.
 
 ### Content-model rules observed
 
@@ -100,6 +104,7 @@ _The growing `{parent → allowed children}` table._
 |--------|------------------|-------|
 | `section` | `title` (required, first), `para`, `orderedlist`, `itemizedlist`, `informaltable`, nested `section`, … | **[known]** title is bare text; nested `section` → sub-heading |
 | `title` | bare text | **[known]** no `<para>` inside, in `section` or `informaltable` |
+| `para` | text + inline: `emphasis` (`role="bold"`), `guilabel` | **[known]** these two inline tags cover nearly everything we see |
 | `orderedlist` / `itemizedlist` | `listitem` **only** | **[known]** nothing loose between the list tags — every child is a `<listitem>...</listitem>`. Bare `<para>` here is the canonical break. `<title>` on a list: **[?]** |
 | `listitem` | `para` (+ nested `orderedlist` / `itemizedlist`) | **[known]** text must be wrapped in `<para>...</para>`, never bare |
 | `informaltable` | `title` (optional, bare text), `thead` (optional), `tbody` | **[known]** all our books use `informaltable`, never `table` / CALS |
