@@ -106,7 +106,7 @@ _The growing `{parent → allowed children}` table._
 | `thead` | `tr` | **[known]** header rows |
 | `tbody` | `tr` | **[known]** body rows |
 | `tr` | `th` (in `thead`), `td` (in `tbody`) | **[known]** |
-| `th` / `td` | **[?]** bare text, or `para`-wrapped? | the Extract tool emits `<para>`-wrapped cells; confirm whether the source view *requires* that or also takes bare text |
+| `th` / `td` | **[?]** bare text, or `para`-wrapped? | the Extract tool emits `<para>`-wrapped cells; confirm whether the source view *requires* that or also takes bare text. **[known]** column width is a `width="n%"` attr on the `<th>` (see below) |
 | `mediaobject` | `imageobject` | **[known]** image wrapper |
 | `imageobject` | the image reference (**[?]** `imagedata fileref=…`?) | **[known]** nests inside `mediaobject` |
 
@@ -136,9 +136,9 @@ _The growing `{parent → allowed children}` table._
     emit.
   - `frame="void" rules="none"` — no borders at all. Used for layout
     tables that place an image and text side by side.
-- **Column widths — not confirmed.** Likely `<colgroup><col>` or
-  `<colspec colwidth="…">`; unknown which the source view accepts.
-  Check a topic with non-uniform columns.
+- **[known]** (~99% — verify against an exported topic) Column widths
+  are a percentage `width` attribute on the header cell:
+  `<th width="30%">`. No `<colgroup>` / `<colspec>`.
 
 ### Fault-injection log
 
