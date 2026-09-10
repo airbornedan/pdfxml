@@ -65,31 +65,61 @@ wrong.
 
 ## Findings
 
+Rows marked **[known]** are things we already rely on from building the
+Extract / Fix XML tools and from day-to-day authoring — treat as solid.
+Rows marked **[?]** are guesses to confirm. `TBD` = not looked at yet.
+
 ### Topic / root structure
 
-_What does a topic's source view look like at the top? Root element
-(`<section>`? `<topic>`?), required children (`<title>`?), version
-attribute, namespace declaration, `xml:id` conventions._
-
-- TBD
+- **`<section>`** is the topic root (and is nestable — see below).
+  - **[known]** Requires a `<title>...</title>` child, and of course a
+    closing `</section>`. A missing title or unclosed tag is a common
+    break.
+  - **[known]** `<title>` content is **bare text** — no `<para>` wrapper.
+  - **[known]** Sections **nest**. A `<section>` inside a `<section>`
+    renders as a sub-heading (and deeper nesting = deeper heading
+    levels).
+- **[?]** version attribute, namespace declaration, `xml:id`
+  conventions on `<section>` — TBD.
 
 ### Element vocabulary actually in use
 
 _Pulled from ~a dozen real exported topics. The set the ruleset needs to
 cover._
 
-- TBD
+- Known so far: `section`, `title`, `para`, `orderedlist`,
+  `itemizedlist`, `listitem`, `informaltable`, `thead`, `tbody`, `tr`,
+  `th`, `td`. Extend as we survey real topics.
 
 ### Content-model rules observed
 
-_The growing `{parent → allowed children}` table. One row per parent as
-we confirm it._
+_The growing `{parent → allowed children}` table._
 
-| Parent | Allowed children (observed) | Notes |
-|--------|-----------------------------|-------|
-| `orderedlist` / `itemizedlist` | `listitem` (+ `title`?) | a bare `<para>` here is the canonical break |
-| `listitem` | `para`, nested lists, … | first child must be a block; bare text rejected? |
-| _..._ | | |
+| Parent | Allowed children | Notes |
+|--------|------------------|-------|
+| `section` | `title` (required, first), `para`, `orderedlist`, `itemizedlist`, `informaltable`, nested `section`, … | **[known]** title is bare text; nested `section` → sub-heading |
+| `title` | bare text | **[known]** no `<para>` inside, in `section` or `informaltable` |
+| `orderedlist` / `itemizedlist` | `listitem` **only** | **[known]** nothing loose between the list tags — every child is a `<listitem>...</listitem>`. Bare `<para>` here is the canonical break. `<title>` on a list: **[?]** |
+| `listitem` | `para` (+ nested `orderedlist` / `itemizedlist`) | **[known]** text must be wrapped in `<para>...</para>`, never bare |
+| `informaltable` | `title` (optional, bare text), `thead` (optional), `tbody` | **[known]** all our books use `informaltable`, never `table` / CALS |
+| `thead` | `tr` | **[known]** header rows |
+| `tbody` | `tr` | **[known]** body rows |
+| `tr` | `th` (in `thead`), `td` (in `tbody`) | **[known]** |
+| `th` / `td` | **[?]** bare text, or `para`-wrapped? | the Extract tool emits `<para>`-wrapped cells; confirm whether the source view *requires* that or also takes bare text |
+
+### Table borders and column widths
+
+- **[known]** Structure: `<informaltable>` › optional bare-text
+  `<title>` › optional `<thead><tr><th>…</th></tr></thead>` ›
+  `<tbody><tr><td>…</td></tr></tbody>`.
+- **Borders — not confirmed.** The Extract / Fix XML tools currently set
+  `<informaltable frame="box" rules="all">`. Unknown whether Paligo
+  requires these attributes, ignores them, or sets borders some other
+  way (a `<?dbfo?>` PI, a `colspec`, a style class). Check an exported
+  topic that has visible table borders.
+- **Column widths — not confirmed.** Likely `<colgroup><col>` or
+  `<colspec colwidth="…">`; unknown which the source view accepts.
+  Check a topic with non-uniform columns.
 
 ### Fault-injection log
 
