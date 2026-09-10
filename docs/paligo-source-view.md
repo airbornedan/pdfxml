@@ -129,11 +129,13 @@ _The growing `{parent → allowed children}` table._
 - **[known]** Structure: `<informaltable>` › optional bare-text
   `<title>` › optional `<thead><tr><th>…</th></tr></thead>` ›
   `<tbody><tr><td>…</td></tr></tbody>`.
-- **Borders — not confirmed.** The Extract / Fix XML tools currently set
-  `<informaltable frame="box" rules="all">`. Unknown whether Paligo
-  requires these attributes, ignores them, or sets borders some other
-  way (a `<?dbfo?>` PI, a `colspec`, a style class). Check an exported
-  topic that has visible table borders.
+- **[known]** Borders are the `frame` + `rules` attribute pair on
+  `<informaltable>`, and only two combinations are in use:
+  - `frame="box" rules="all"` — borders on every cell and the outside
+    edge (normal data tables). This is what the Extract / Fix XML tools
+    emit.
+  - `frame="void" rules="none"` — no borders at all. Used for layout
+    tables that place an image and text side by side.
 - **Column widths — not confirmed.** Likely `<colgroup><col>` or
   `<colspec colwidth="…">`; unknown which the source view accepts.
   Check a topic with non-uniform columns.
