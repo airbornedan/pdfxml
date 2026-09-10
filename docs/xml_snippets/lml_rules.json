@@ -30,7 +30,9 @@
       "emphasis",
       "guilabel",
       "xref",
-      "indexterm"
+      "indexterm",
+      "primary",
+      "secondary"
     ],
     "admonitions": [
       "note",

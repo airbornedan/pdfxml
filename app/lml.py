@@ -237,10 +237,25 @@ def _line_of(text, pos):
     return text.count("\n", 0, pos) + 1
 
 
+def _attr_int(attrs, name, default=1):
+    m = re.search(rf'\b{name}\s*=\s*["\']?\s*(\d+)', attrs or "", flags=re.IGNORECASE)
+    try:
+        return max(1, int(m.group(1))) if m else default
+    except (TypeError, ValueError):
+        return default
+
+
 def check_tables(text):
-    """Return a list of {"line": int|None, "message": str} findings for
-    every <informaltable> in `text`. Empty list == no table problems (or
-    no tables)."""
+    """Return a list of {"line": int, "message": str[, "tag"]} findings
+    for every <informaltable> in `text`. Empty list == no table problems
+    (or no tables).
+
+    Column counts are computed as a grid: each cell's colspan is added,
+    and a cell's rowspan reserves that many columns in the rows below it,
+    so a row with fewer <td> elements than its neighbours is not flagged
+    when the difference is a span. A <colgroup> (its <col> count, summing
+    any col/@span) is treated as the authoritative width when present.
+    """
     findings = []
     seen = set()
     stack = []   # open <informaltable> contexts, innermost last
@@ -257,6 +272,7 @@ def check_tables(text):
 
     for match in _TAG_RE.finditer(text):
         name = match.group(2).lower()
+        attrs = match.group(3) or ""
         is_close = match.group(1) == "/"
         is_self = match.group(4) == "/" and not is_close
         line = _line_of(text, match.start())
@@ -270,12 +286,24 @@ def check_tables(text):
                 else:
                     add(line, "</informaltable> with no opening tag.", tag="informaltable")
             else:
-                stack.append({"line": line, "rows": [], "row": None})
+                stack.append({
+                    "line": line, "rows": [], "row": None,
+                    "colgroup_cols": 0, "in_colgroup": False,
+                    "carry": [],           # [cols, rows_left] from rowspans
+                })
             continue
 
         if not stack:
             continue                      # tags outside any table: not our job here
         table = stack[-1]
+
+        if name == "colgroup":
+            table["in_colgroup"] = not is_close and not is_self
+            continue
+        if name == "col":
+            if not is_close and table["row"] is None:   # in the colgroup, not a row
+                table["colgroup_cols"] += _attr_int(attrs, "span", 1)
+            continue
 
         if name == _ROW_TAG:
             if is_self:
@@ -284,12 +312,13 @@ def check_tables(text):
                 if table["row"] is None:
                     add(line, "</tr> with no matching <tr>.")
                 else:
-                    table["rows"].append(table["row"])
-                    table["row"] = None
+                    _end_row(table)
             else:
                 if table["row"] is not None:
                     _close_dangling_row(table, add)
-                table["row"] = {"line": line, "cells": 0, "open_cell": None}
+                carried = sum(cols for cols, left in table["carry"] if left > 0)
+                table["row"] = {"line": line, "cells": 0, "span_cols": carried,
+                                "open_cell": None, "pending_rowspans": []}
             continue
 
         if name in _CELL_TAGS:
@@ -297,7 +326,7 @@ def check_tables(text):
                 continue
             row = table["row"]
             if row is None:
-                add(line, f"<{name}> outside any <tr>.")
+                add(line, f"<{name}> outside any <tr>.", tag=name)
                 continue
             if is_close:
                 if row["open_cell"] is None:
@@ -310,41 +339,57 @@ def check_tables(text):
             else:
                 if row["open_cell"] is not None:
                     add(line, f"<{row['open_cell']}> (line {row['line']}) "
-                              f"has no closing tag before the next cell.")
+                              f"has no closing tag before the next cell.", tag=row["open_cell"])
+                colspan = _attr_int(attrs, "colspan", 1)
+                rowspan = _attr_int(attrs, "rowspan", 1)
                 row["open_cell"] = name
                 row["cells"] += 1
+                row["span_cols"] += colspan
+                if rowspan > 1:
+                    row["pending_rowspans"].append([colspan, rowspan - 1])
             continue
 
-        if table["row"] is not None:
-            row = table["row"]
-            if row["cells"] == 0:
-                add(line, "Content appears before the first <td> or <th> inside a row; move it into a cell.", tag=name)
-            elif row["open_cell"] is None:
-                add(line, "Content appears after the last <td> or <th> inside a row; move it into a cell.", tag=name)
-
-        if table["row"] is not None:
-            row = table["row"]
-            if row["cells"] == 0:
-                add(line, "Content appears before the first <td> or <th> inside a row; move it into a cell.", tag=name)
-            elif row["open_cell"] is None:
-                add(line, "Content appears after the last <td> or <th> inside a row; move it into a cell.", tag=name)
+        ### any other element directly inside a <tr> but not in a cell
+        row = table["row"]
+        if row is not None and not table["in_colgroup"]:
+            if is_close or is_self:
+                continue
+            if row["open_cell"] is None:
+                where = "before the first" if row["cells"] == 0 else "after the last"
+                add(line, f"<{name}> appears {where} <td> or <th> in a row; "
+                          f"move it into a cell.", tag=name)
 
     for table in stack:                  # never closed
         add(table["line"],
-            f"<informaltable> (line {table['line']}) has no </informaltable>.", tag="informaltable")
+            f"<informaltable> (line {table['line']}) has no </informaltable>.",
+            tag="informaltable")
         _finalize_table(table, add)
 
     findings.sort(key=lambda f: f["line"] or 0)
     return findings
 
 
+def _end_row(table):
+    """Finish table['row']: bank it, then age the rowspan carry. The
+    carry entries already existing covered this row, so decrement them
+    first; this row's own rowspans start covering the rows below."""
+    row = table["row"]
+    table["rows"].append(row)
+    for entry in table["carry"]:
+        entry[1] -= 1
+    table["carry"] = [e for e in table["carry"] if e[1] > 0]
+    for cols, left in row["pending_rowspans"]:      # left is already rowspan-1
+        table["carry"].append([cols, left])
+    table["row"] = None
+
+
 def _close_dangling_row(table, add):
     row = table["row"]
-    add(row["line"], f"<tr> (line {row['line']}) has no </tr>.")
+    add(row["line"], f"<tr> (line {row['line']}) has no </tr>.", tag="tr")
     if row["open_cell"] is not None:
-        add(row["line"], f"<{row['open_cell']}> in that row has no closing tag.")
-    table["rows"].append(row)
-    table["row"] = None
+        add(row["line"], f"<{row['open_cell']}> in that row has no closing tag.",
+            tag=row["open_cell"])
+    _end_row(table)
 
 
 def _finalize_table(table, add):
@@ -352,23 +397,28 @@ def _finalize_table(table, add):
         _close_dangling_row(table, add)
 
     if not table["rows"]:
-        add(table["line"],
-            f"<informaltable> (line {table['line']}) has no rows.")
+        add(table["line"], f"<informaltable> (line {table['line']}) has no rows.",
+            tag="informaltable")
         return
 
     for row in table["rows"]:
         if row["cells"] == 0:
-            add(row["line"], f"Row at line {row['line']} has no cells.")
+            add(row["line"], f"Row at line {row['line']} has no cells.", tag="tr")
 
-    counts = {row["cells"] for row in table["rows"] if row["cells"] > 0}
-    if len(counts) > 1:
+    widths = {row["span_cols"] for row in table["rows"] if row["cells"] > 0}
+    if len(widths) > 1:
         detail = ", ".join(
-            f"line {row['line']}: {row['cells']}"
+            f"line {row['line']}: {row['span_cols']}"
             for row in table["rows"] if row["cells"] > 0
         )
         add(table["line"],
-            f"Rows have different column counts ({detail}). Every row in "
-            f"these tables should have the same number of columns.")
+            f"Rows have different column counts ({detail}), counting colspan "
+            f"and rowspan. Every row should span the same width.",
+            tag="informaltable")
+    elif table["colgroup_cols"] and widths and next(iter(widths)) != table["colgroup_cols"]:
+        add(table["line"],
+            f"<colgroup> declares {table['colgroup_cols']} columns but the "
+            f"rows span {next(iter(widths))}.", tag="colgroup")
 
 
 ########################################################################
