@@ -1,0 +1,448 @@
+<?xml version="1.0"?>
+<section xmlns="http://docbook.org/ns/docbook" xmlns:xinfo="http://ns.expertinfo.se/cms/xmlns/1.0" version="5.0" xinfo:resource="UUID-c4375bc4-bc4f-a380-2d8b-158f5ea3990d" xinfo:resource-id="189803" xinfo:resource-title="Install Wizard" xinfo:resource-titlelabel="" xinfo:resource-type="component" xinfo:version-major="1" xinfo:version-minor="0" xml:id="UUID-c4375bc4-bc4f-a380-2d8b-158f5ea3990d" xml:lang="en">
+  <title xinfo:text="189804">Installation Wizard<indexterm><primary>Installation Wizard</primary></indexterm></title>
+  <para xinfo:text="190255">Run the Installation Wizard to complete the initial configuration of Sentinel NH₃.</para>
+  <orderedlist>
+    <listitem>
+      <para xinfo:text="185072">Select <guilabel>Tools</guilabel> to configure Sentinel.</para>
+      <mediaobject>
+        <imageobject>
+          <imagedata fileref="UUID-1194276d-18cb-3f5b-c861-3eaa97163e9a" width="60" xinfo:image="UUID-1194276d-18cb-3f5b-c861-3eaa97163e9a"/>
+        </imageobject>
+      </mediaobject>
+    </listitem>
+    <listitem>
+      <para xinfo:text="185073">Select <guilabel>Installation Wizard</guilabel> to begin the configuration process.</para>
+      <mediaobject>
+        <imageobject>
+          <imagedata fileref="UUID-10612950-ee93-5984-f38b-171635da38b0" width="60px" xinfo:image="UUID-10612950-ee93-5984-f38b-171635da38b0"/>
+        </imageobject>
+      </mediaobject>
+    </listitem>
+    <listitem>
+      <para xinfo:text="185074">The <guilabel>Product Configuration</guilabel> screen opens.<indexterm><primary>Product Configuration</primary></indexterm></para>
+      <informalfigure>
+        <informaltable frame="void" role="sidebyside" rules="none" width="100%">
+          <colgroup>
+            <col width="60%"></col>
+            <col width="40%"></col>
+          </colgroup>
+          <tbody>
+            <tr valign="top">
+              <td>
+                <mediaobject>
+                  <imageobject>
+                    <imagedata fileref="UUID-8739aa15-34e1-812b-a23c-388b5d181b6b" contentdepth="300" xinfo:image="UUID-8739aa15-34e1-812b-a23c-388b5d181b6b"/>
+                  </imageobject>
+                </mediaobject>
+              </td>
+              <td valign="top">
+                <para xinfo:text="185075"><emphasis role="bold">Configure products:</emphasis>&#xA0;</para>
+                <itemizedlist>
+                  <listitem>
+                    <para xinfo:text="185076">Enter the <guilabel>Number of Products</guilabel> (1-4).</para>
+                  </listitem>
+                  <listitem>
+                    <para xinfo:text="185077">Select <guilabel>Units</guilabel>.</para>
+                  </listitem>
+                </itemizedlist>
+              </td>
+            </tr>
+          </tbody>
+        </informaltable>
+      </informalfigure>
+    </listitem>
+    <listitem>
+      <para xinfo:text="185078">Select <guilabel>Next</guilabel>.</para>
+      <mediaobject>
+        <imageobject>
+          <imagedata fileref="UUID-bdb4bbbb-3830-1007-fdfb-4112618f0a7c" width="60px" xinfo:image="UUID-bdb4bbbb-3830-1007-fdfb-4112618f0a7c"/>
+        </imageobject>
+      </mediaobject>
+    </listitem>
+    <listitem>
+      <para xinfo:text="185079">The <guilabel>Implement</guilabel> screen opens.</para>
+      <informalfigure>
+        <informaltable frame="void" role="sidebyside" rules="none" width="100%">
+          <colgroup>
+            <col width="60%"></col>
+            <col width="40%"></col>
+          </colgroup>
+          <tbody>
+            <tr valign="top">
+              <td valign="top">
+                <mediaobject>
+                  <imageobject>
+                    <imagedata fileref="UUID-ef2ecb71-8c09-a7d6-f9d8-82d67bd4ac0c" contentdepth="300" xinfo:image="UUID-ef2ecb71-8c09-a7d6-f9d8-82d67bd4ac0c"/>
+                  </imageobject>
+                </mediaobject>
+              </td>
+              <td>
+                <para xinfo:text="185080"><emphasis role="bold">Configure implement measurements:</emphasis>&#xA0;</para>
+                <itemizedlist>
+                  <listitem>
+                    <para xinfo:text="185081"><guilabel>A</guilabel> sets the tractor to implement distance. This is the distance from the tractor hitch to the implement axle.</para>
+                  </listitem>
+                  <listitem>
+                    <para xinfo:text="185082"><guilabel>B</guilabel> configures implement offset if needed.</para>
+                  </listitem>
+                  <listitem>
+                    <para xinfo:text="185083"><guilabel>C</guilabel> sets the implement axle to workpoint distance.</para>
+                  </listitem>
+                </itemizedlist>
+              </td>
+            </tr>
+          </tbody>
+        </informaltable>
+      </informalfigure>
+    </listitem>
+    <listitem>
+      <para xinfo:text="185084">Select <guilabel>Next</guilabel>.</para>
+      <mediaobject>
+        <imageobject>
+          <imagedata fileref="UUID-bdb4bbbb-3830-1007-fdfb-4112618f0a7c" width="60px" xinfo:image="UUID-bdb4bbbb-3830-1007-fdfb-4112618f0a7c"/>
+        </imageobject>
+      </mediaobject>
+    </listitem>
+    <listitem>
+      <para xinfo:text="185085">The <guilabel>Speed</guilabel> screen opens.</para>
+      <informalfigure>
+        <informaltable frame="void" role="sidebyside" rules="none" width="100%">
+          <colgroup>
+            <col width="60%"></col>
+            <col width="40%"></col>
+          </colgroup>
+          <tbody>
+            <tr>
+              <td valign="top">
+                <mediaobject>
+                  <imageobject>
+                    <imagedata fileref="UUID-2ac25778-6d86-c2f2-1b7f-4ef6b8721615" contentdepth="300" xinfo:image="UUID-2ac25778-6d86-c2f2-1b7f-4ef6b8721615"/>
+                  </imageobject>
+                </mediaobject>
+              </td>
+              <td valign="top">
+                <para xinfo:text="185086"><emphasis role="bold">Configure speed settings:</emphasis>&#xA0;</para>
+                <itemizedlist>
+                  <listitem>
+                    <para xinfo:text="185087">Select speed source:</para>
+                    <itemizedlist>
+                      <listitem>
+                        <para xinfo:text="185088">Select <guilabel>Ground Speed</guilabel> if you are using GPS.</para>
+                      </listitem>
+                      <listitem>
+                        <para xinfo:text="185089">Select <guilabel>Wheel Speed</guilabel> to calculate speed based on wheel rotation.</para>
+                      </listitem>
+                      <listitem>
+                        <para xinfo:text="185090">Select <guilabel>Machine Selected Speed</guilabel> when using a separate, tractor-provided speed input.</para>
+                      </listitem>
+                      <listitem>
+                        <para xinfo:text="185091">Select <guilabel>ECU</guilabel> to select GPS input from the ECU, if installed.</para>
+                      </listitem>
+                      <listitem>
+                        <para xinfo:text="185092">Select <guilabel>Simulate Speed</guilabel> if testing/calibrating Sentinel.</para>
+                      </listitem>
+                    </itemizedlist>
+                  </listitem>
+                  <listitem>
+                    <para xinfo:text="185093">Enter <guilabel>ECU Speed Calibration</guilabel> if using external GPS. The GPS manufacturer provides this value, usually on a sticker on the GPS receiver unit.<indexterm><primary>ECU Speed Calibration</primary></indexterm></para>
+                  </listitem>
+                  <listitem>
+                    <para xinfo:text="185094">Select <guilabel>Speed Units</guilabel>.</para>
+                  </listitem>
+                  <listitem>
+                    <para xinfo:text="185095">Enter <guilabel>Speed Smoothing Interval</guilabel> to smooth out speed reporting.</para>
+                  </listitem>
+                  <listitem>
+                    <para xinfo:text="185096">The <guilabel>Diagnostic</guilabel> panel displays which speed sources are reporting (only available when moving).</para>
+                  </listitem>
+                </itemizedlist>
+              </td>
+            </tr>
+          </tbody>
+        </informaltable>
+      </informalfigure>
+    </listitem>
+    <listitem>
+      <para xinfo:text="185097">Select <guilabel>Next</guilabel>.</para>
+      <mediaobject>
+        <imageobject>
+          <imagedata fileref="UUID-bdb4bbbb-3830-1007-fdfb-4112618f0a7c" width="60px" xinfo:image="UUID-bdb4bbbb-3830-1007-fdfb-4112618f0a7c"/>
+        </imageobject>
+      </mediaobject>
+    </listitem>
+    <listitem>
+      <para xinfo:text="185098">The <guilabel>Hardware</guilabel> screen opens.</para>
+      <informalfigure>
+        <informaltable frame="void" role="sidebyside" rules="none" width="100%">
+          <colgroup>
+            <col width="60%"></col>
+            <col width="40%"></col>
+          </colgroup>
+          <tbody>
+            <tr>
+              <td valign="top">
+                <mediaobject>
+                  <imageobject>
+                    <imagedata fileref="UUID-df06c470-6bf9-6d21-4586-7ef99d93018a" contentdepth="300" xinfo:image="UUID-df06c470-6bf9-6d21-4586-7ef99d93018a"/>
+                  </imageobject>
+                </mediaobject>
+              </td>
+              <td valign="top">
+                <para xinfo:text="185099"><emphasis role="bold">Configure hardware settings:</emphasis>&#xA0;</para>
+                <itemizedlist>
+                  <listitem>
+                    <para xinfo:text="185100">Select <guilabel>Use External Master Switch</guilabel> if you are using a foot pedal or other external switch to control Sentinel.</para>
+                  </listitem>
+                  <listitem>
+                    <para xinfo:text="185101">Select <guilabel>Use Height Switch</guilabel> to enable height switch sensing.</para>
+                    <itemizedlist>
+                      <listitem>
+                        <para xinfo:text="185102">Select <guilabel>Setup</guilabel> to configure your height switch.</para>
+                      </listitem>
+                    </itemizedlist>
+                  </listitem>
+                  <listitem>
+                    <para xinfo:text="185103">Select <guilabel>Enable Task Control</guilabel> if you are using Sentinel with Task Control.<indexterm><primary>Task Control</primary></indexterm></para>
+                  </listitem>
+                </itemizedlist>
+              </td>
+            </tr>
+          </tbody>
+        </informaltable>
+      </informalfigure>
+    </listitem>
+    <listitem>
+      <para xinfo:text="185104">Select <guilabel>Next</guilabel>.</para>
+      <mediaobject>
+        <imageobject>
+          <imagedata fileref="UUID-bdb4bbbb-3830-1007-fdfb-4112618f0a7c" width="60px" xinfo:image="UUID-bdb4bbbb-3830-1007-fdfb-4112618f0a7c"/>
+        </imageobject>
+      </mediaobject>
+    </listitem>
+    <listitem>
+      <para xinfo:text="190245">The <guilabel>Product Mode</guilabel> screen opens.</para>
+      <informaltable frame="void" rules="none">
+        <tbody>
+          <tr>
+            <td>
+              <mediaobject>
+                <imageobject>
+                  <imagedata fileref="UUID-3bc56ce6-752e-6cc8-a47e-3c2f0d3dc9b8" contentdepth="300" xinfo:image="UUID-3bc56ce6-752e-6cc8-a47e-3c2f0d3dc9b8"/>
+                </imageobject>
+              </mediaobject>
+            </td>
+            <td valign="top">
+              <para xinfo:text="190246">
+                <emphasis role="bold">Configure mode:</emphasis>
+              </para>
+              <para xinfo:text="190256">Select <guilabel>NH3Control</guilabel>.</para>
+            </td>
+          </tr>
+        </tbody>
+      </informaltable>
+    </listitem>
+    <listitem>
+      <para xinfo:text="185104">Select <guilabel>Next</guilabel>.</para>
+      <mediaobject>
+        <imageobject>
+          <imagedata fileref="UUID-bdb4bbbb-3830-1007-fdfb-4112618f0a7c" width="60px" xinfo:image="UUID-bdb4bbbb-3830-1007-fdfb-4112618f0a7c"/>
+        </imageobject>
+      </mediaobject>
+    </listitem>
+    <listitem>
+      <para xinfo:text="190224">The <guilabel>Product Configuration</guilabel> screen opens.</para>
+      <informaltable frame="void" rules="none">
+        <tbody>
+          <tr>
+            <td valign="top">
+              <mediaobject>
+                <imageobject>
+                  <imagedata fileref="UUID-6ad42217-6f46-d560-9ee1-1d777f4ffbbf" contentdepth="300" xinfo:image="UUID-6ad42217-6f46-d560-9ee1-1d777f4ffbbf"/>
+                </imageobject>
+              </mediaobject>
+            </td>
+            <td>
+              <para xinfo:text="190225">
+                <emphasis role="bold">Configure Product</emphasis>
+              </para>
+              <itemizedlist>
+                <listitem>
+                  <para xinfo:text="190226">Enter the <emphasis role="strong">Total Rows</emphasis> for this product.</para>
+                </listitem>
+                <listitem>
+                  <para xinfo:text="190227">Enter the <emphasis role="strong">Total Sections</emphasis> for this product.</para>
+                </listitem>
+                <listitem>
+                  <para xinfo:text="190228">Enter the <emphasis role="strong">Row Spacing</emphasis> for your implement.</para>
+                </listitem>
+                <listitem>
+                  <para xinfo:text="190229">Verify <emphasis role="strong">Implement Width</emphasis>.</para>
+                </listitem>
+                <listitem>
+                  <para xinfo:text="190232">Check that the correct <emphasis role="strong">App Units</emphasis> are selected.</para>
+                </listitem>
+                <listitem>
+                  <para xinfo:text="190233">Enter <emphasis role="strong">Off-Rate Tolerance</emphasis>. This setting defines how far the overall application can deviate from the configured rate before Sentinel triggers an alarm.</para>
+                </listitem>
+              </itemizedlist>
+            </td>
+          </tr>
+        </tbody>
+      </informaltable>
+    </listitem>
+    <listitem>
+      <para xinfo:text="185123">Select <guilabel>Next</guilabel>.</para>
+      <mediaobject>
+        <imageobject>
+          <imagedata fileref="UUID-bdb4bbbb-3830-1007-fdfb-4112618f0a7c" width="60px" xinfo:image="UUID-bdb4bbbb-3830-1007-fdfb-4112618f0a7c"/>
+        </imageobject>
+      </mediaobject>
+    </listitem>
+    <listitem>
+      <para xinfo:text="185124">The <guilabel>Product Rows and Sections</guilabel> screen opens.</para>
+      <informalfigure>
+        <informaltable frame="void" role="sidebyside" rules="none" width="100%">
+          <colgroup>
+            <col width="60%"></col>
+            <col width="40%"></col>
+          </colgroup>
+          <tbody>
+            <tr>
+              <td>
+                <mediaobject>
+                  <imageobject>
+                    <imagedata fileref="UUID-d9cb3877-9874-5def-8d26-9454fcb297d5" contentdepth="300" xinfo:image="UUID-d9cb3877-9874-5def-8d26-9454fcb297d5"/>
+                  </imageobject>
+                </mediaobject>
+              </td>
+              <td valign="top">
+                <para xinfo:text="185125"><emphasis role="bold">Configure rows and sections for this product:</emphasis>&#xA0;</para>
+                <itemizedlist>
+                  <listitem>
+                    <para xinfo:text="185126">Verify that <guilabel>Total Rows</guilabel> is correct.</para>
+                  </listitem>
+                  <listitem>
+                    <para xinfo:text="185127"><guilabel>Num Rows</guilabel> shows the number of rows per section.</para>
+                    <para xinfo:text="185128">On initial setup, Sentinel calculates this and sets the number of rows per section by dividing the total rows by the number of sections. If this is not the correct configuration for your application, enter <guilabel>Num Rows</guilabel> for each section manually.</para>
+                  </listitem>
+                </itemizedlist>
+              </td>
+            </tr>
+          </tbody>
+        </informaltable>
+      </informalfigure>
+    </listitem>
+    <listitem>
+      <para xinfo:text="185078">Select <guilabel>Next</guilabel>.</para>
+      <mediaobject>
+        <imageobject>
+          <imagedata fileref="UUID-bdb4bbbb-3830-1007-fdfb-4112618f0a7c" width="60px" xinfo:image="UUID-bdb4bbbb-3830-1007-fdfb-4112618f0a7c"/>
+        </imageobject>
+      </mediaobject>
+    </listitem>
+    <listitem>
+      <para xinfo:text="190235">The <guilabel>Rate</guilabel> screen opens.</para>
+      <informaltable frame="void" rules="none">
+        <tbody>
+          <tr>
+            <td>
+              <mediaobject>
+                <imageobject>
+                  <imagedata fileref="UUID-3f926af2-cad6-1b53-ac3e-5e7d706664b7" contentdepth="300" xinfo:image="UUID-3f926af2-cad6-1b53-ac3e-5e7d706664b7"/>
+                </imageobject>
+              </mediaobject>
+            </td>
+            <td>
+              <para xinfo:text="190236">
+                <emphasis role="bold">Configure the rate:</emphasis>
+              </para>
+              <itemizedlist>
+                <listitem>
+                  <para xinfo:text="190237">Select a <emphasis role="strong">Rate Mode</emphasis>.</para>
+                </listitem>
+                <listitem>
+                  <para xinfo:text="190238">Enter the desired <emphasis role="strong">Rate</emphasis>.</para>
+                </listitem>
+                <listitem>
+                  <para xinfo:text="190239">Enter <emphasis role="strong">Flow Adjustment</emphasis> to calibrate the system NH₃ flowmeter rate as needed.</para>
+                </listitem>
+                <listitem>
+                  <para xinfo:text="190240">Enter <emphasis role="strong">User Defined Manual Rates</emphasis>. These rates appear on the Sentinel <emphasis role="strong">Home</emphasis> screen and enable quick rate changes without opening the <emphasis role="strong">Rate</emphasis> screen.</para>
+                </listitem>
+                <listitem>
+                  <para xinfo:text="190241">Enter <emphasis role="strong">Outside Row Rates</emphasis> to set a different flow rate for outside rows</para>
+                </listitem>
+                <listitem>
+                  <para xinfo:text="190242">Do not adjust <emphasis role="strong">Control Integral</emphasis>.</para>
+                </listitem>
+              </itemizedlist>
+            </td>
+          </tr>
+        </tbody>
+      </informaltable>
+    </listitem>
+    <listitem>
+      <para xinfo:text="185078">Select <guilabel>Next</guilabel>.</para>
+      <mediaobject>
+        <imageobject>
+          <imagedata fileref="UUID-bdb4bbbb-3830-1007-fdfb-4112618f0a7c" width="60px" xinfo:image="UUID-bdb4bbbb-3830-1007-fdfb-4112618f0a7c"/>
+        </imageobject>
+      </mediaobject>
+    </listitem>
+    <listitem>
+      <para xinfo:text="190247">The <guilabel>Control</guilabel> screen opens.</para>
+      <informaltable frame="void" rules="none">
+        <tbody>
+          <tr>
+            <td>
+              <mediaobject>
+                <imageobject>
+                  <imagedata fileref="UUID-d4db572a-4c9e-e36a-a984-6e403e1f1a91" contentdepth="300" xinfo:image="UUID-d4db572a-4c9e-e36a-a984-6e403e1f1a91"/>
+                </imageobject>
+              </mediaobject>
+            </td>
+            <td>
+              <para xinfo:text="190248">Configure settings:</para>
+              <itemizedlist>
+                <listitem>
+                  <para xinfo:text="190249">Set <guilabel>Ctrl Mode</guilabel> to <guilabel>Rate Servo</guilabel>.</para>
+                </listitem>
+                <listitem>
+                  <para xinfo:text="190250">Verify that <guilabel>PWM Max</guilabel> is set to 90 and <guilabel>PWM Min</guilabel> is set to 30.</para>
+                </listitem>
+                <listitem>
+                  <para xinfo:text="190251">Ensure that the correct Units are selected:</para>
+                  <itemizedlist>
+                    <listitem>
+                      <para xinfo:text="190252">Select Units of N for units of nitrogen, or</para>
+                    </listitem>
+                    <listitem>
+                      <para xinfo:text="190253">Units NH3 for units of anhydrous ammonia.</para>
+                    </listitem>
+                  </itemizedlist>
+                </listitem>
+              </itemizedlist>
+            </td>
+          </tr>
+        </tbody>
+      </informaltable>
+    </listitem>
+    <listitem>
+      <para xinfo:text="185084">Select <guilabel>Next</guilabel>.</para>
+      <mediaobject>
+        <imageobject>
+          <imagedata fileref="UUID-bdb4bbbb-3830-1007-fdfb-4112618f0a7c" width="60px" xinfo:image="UUID-bdb4bbbb-3830-1007-fdfb-4112618f0a7c"/>
+        </imageobject>
+      </mediaobject>
+    </listitem>
+    <listitem>
+      <para xinfo:text="190254">Select <guilabel>Sentinel</guilabel> to return to the Home screen.</para>
+      <mediaobject>
+        <imageobject>
+          <imagedata fileref="UUID-ab000a58-1848-d970-05f2-3073302752c8" xinfo:image="UUID-ab000a58-1848-d970-05f2-3073302752c8"/>
+        </imageobject>
+      </mediaobject>
+    </listitem>
+  </orderedlist>
+</section>

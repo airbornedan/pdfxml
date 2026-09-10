@@ -1,0 +1,66 @@
+<?xml version="1.0"?>
+<section xmlns="http://docbook.org/ns/docbook" xmlns:xinfo="http://ns.expertinfo.se/cms/xmlns/1.0" version="5.0" xinfo:resource="UUID-fc977ca9-afd0-9d68-ef23-05fc7437cacc" xinfo:resource-id="189036" xinfo:resource-title="System Will Not Apply" xinfo:resource-titlelabel="" xinfo:resource-type="component" xinfo:version-major="1" xinfo:version-minor="0" xml:id="UUID-fc977ca9-afd0-9d68-ef23-05fc7437cacc" xml:lang="en">
+  <title xinfo:text="189037">System Will Not Apply</title>
+  <para xinfo:text="189680">Sentinel will not apply product unless required operating conditions are satisfied.</para>
+  <para xinfo:text="189681">
+    <emphasis role="bold">Possible Causes:</emphasis>
+  </para>
+  <itemizedlist>
+    <listitem>
+      <para xinfo:text="189682">Valves are closed somewhere in the system.</para>
+    </listitem>
+    <listitem>
+      <para xinfo:text="190479">Master switch is OFF.</para>
+    </listitem>
+    <listitem>
+      <para xinfo:text="189683">Product control is OFF.</para>
+    </listitem>
+    <listitem>
+      <para xinfo:text="189684">No valid speed source is available.</para>
+    </listitem>
+    <listitem>
+      <para xinfo:text="189685">Implement height switch is not indicating the application position.</para>
+    </listitem>
+    <listitem>
+      <para xinfo:text="189686">No target rate has been entered.</para>
+    </listitem>
+    <listitem>
+      <para xinfo:text="189687">No working width is available.</para>
+    </listitem>
+  </itemizedlist>
+  <para xinfo:text="189688">
+    <emphasis role="bold">Corrective Actions:</emphasis>
+  </para>
+  <itemizedlist>
+    <listitem>
+      <para xinfo:text="189689">Verify break-away check valve is seated and open.</para>
+    </listitem>
+    <listitem>
+      <para xinfo:text="190480">Verify that the nurse tank valve is open.</para>
+    </listitem>
+    <listitem>
+      <para xinfo:text="190481">Verify that other flow valves in the system are open.</para>
+    </listitem>
+    <listitem>
+      <para xinfo:text="190482">Check the stainer for plugging.</para>
+    </listitem>
+    <listitem>
+      <para xinfo:text="190483">Verify a target rate has been selected.</para>
+    </listitem>
+    <listitem>
+      <para xinfo:text="189690">Verify the Master switch is ON.</para>
+    </listitem>
+    <listitem>
+      <para xinfo:text="189691">Verify Product control is ON.</para>
+    </listitem>
+    <listitem>
+      <para xinfo:text="189692">Verify a valid speed source is configured and reporting speed.</para>
+    </listitem>
+    <listitem>
+      <para xinfo:text="189693">Verify the implement height switch is operating correctly, if equipped.</para>
+    </listitem>
+    <listitem>
+      <para xinfo:text="189694">Review the <guilabel>Diagnostic</guilabel> tab and identify any operating conditions that are preventing application.</para>
+    </listitem>
+  </itemizedlist>
+</section>

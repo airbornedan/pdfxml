@@ -1,0 +1,53 @@
+<?xml version="1.0"?>
+<section xmlns="http://docbook.org/ns/docbook" xmlns:xinfo="http://ns.expertinfo.se/cms/xmlns/1.0" version="5.0" xinfo:resource="UUID-23ef6bdf-4e53-faf9-d3e2-f3503eb6aec0" xinfo:resource-id="899" xinfo:resource-title="Safety - General" xinfo:resource-titlelabel="" xinfo:resource-type="component" xinfo:version-major="2" xinfo:version-minor="1" xml:id="UUID-23ef6bdf-4e53-faf9-d3e2-f3503eb6aec0" xml:lang="en">
+  <title xinfo:text="900">Safety - General</title>
+  <para xinfo:text="901">Safety alert symbols found throughout this manual are used to call your attention to instructions involving your personal safety and the safety of others. Failure to follow these instructions can result in injury or death.</para>
+  <section xml:id="section-idm234409103407271">
+    <title xinfo:text="1030">Recognize Safety Information</title>
+    <mediaobject>
+      <imageobject>
+        <imagedata fileref="UUID-182213fc-47af-8833-6a8f-83031963e842" xinfo:image="UUID-182213fc-47af-8833-6a8f-83031963e842"/>
+      </imageobject>
+    </mediaobject>
+    <para xinfo:text="1031">This is a safety-alert symbol. When you see this symbol on your machine or in this manual, be alert to the potential for personal injury.</para>
+    <para xinfo:text="1032">Follow recommended precautions and safe operating practices.</para>
+  </section>
+  <section xml:id="section-idm234398962614463">
+    <title xinfo:text="902">Signal Words</title>
+    <para xinfo:text="903">Note the use of signal words, DANGER, WARNING, CAUTION, and NOTICE with safety messages. The appropriate signal word for each has been selected using the following guidelines:</para>
+    <warning role="danger">
+      <para xinfo:text="904">DANGER indicates imminently hazardous situation that, if not avoided, can result in death or serious injury. This signal word is to be limited to the most extreme situations typically for machine components which, for functional purposes, cannot be guarded.</para>
+    </warning>
+    <warning>
+      <para xinfo:text="905">WARNING indicates a potentially hazardous situation that, if not avoided, could result in death or serious injury, and includes hazards that are exposed when guards are removed. It may also be used to alert against unsafe practices.</para>
+    </warning>
+    <caution>
+      <para xinfo:text="906">CAUTION indicates a potentially hazardous situation that, if not avoided, may result in minor or moderate injury. It may also be used to alert against unsafe practices.</para>
+    </caution>
+    <note role="notice">
+      <para xinfo:text="907">NOTICE is used to address safety practices not related to personal safety.</para>
+    </note>
+  </section>
+  <section xml:id="section-idm234409067622039">
+    <title xinfo:text="1026">Personal Protective Equipment (PPE)</title>
+    <para xinfo:text="1027">Wear clothing and personal protective equipment appropriate for the job. Wear steel-toed shoes when operating. Wear hearing protection when exposed to loud noises. Do not wear additional hearing impairment devices such as radio headphones, etc.</para>
+  </section>
+  <section xml:id="section-idm234409093576455">
+    <title xinfo:text="1028">A Word to the Operator</title>
+    <para xinfo:text="1029">It is your responsibility to read and understand the safety messages in this manual. You are the key to safety. Safety is your responsibility.</para>
+  </section>
+  <section xml:id="section-idm234668741809184">
+    <title xinfo:text="150979">Battery Safety</title>
+    <para xinfo:text="150980">Use caution when connecting, disconnecting, charging, and jumpstarting the machine's battery.</para>
+    <para xinfo:text="150981">Keep sparks and flames away from the battery. Battery gas can explode and cause serious injury.</para>
+    <para xinfo:text="150982">Remove jewelry that can make electrical contact and create sparks.</para>
+  </section>
+  <section xml:id="section-idm23466874457007">
+    <title xinfo:text="150983">Chemical Safety</title>
+    <para xinfo:text="150984">Chemicals used in agricultural applications can be harmful to personal health and/or the environment if not used correctly. Always follow all label directions for effective, safe, and legal use of any chemicals.</para>
+  </section>
+  <section xml:id="section-idm234409263518167">
+    <title xinfo:text="1044">Replace Safety Signs</title>
+    <para xinfo:text="1045">Replace missing or damaged safety signs. See the machine operator's manual for correct safety sign placement.</para>
+  </section>
+</section>

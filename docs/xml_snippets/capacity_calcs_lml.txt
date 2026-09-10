@@ -1,0 +1,232 @@
+<?xml version="1.0"?>
+<section xmlns="http://docbook.org/ns/docbook" xmlns:xinfo="http://ns.expertinfo.se/cms/xmlns/1.0" version="5.0" xinfo:resource="UUID-cbcfc559-511e-c4dd-fe6a-0f38a9edfce0" xinfo:resource-id="189024" xinfo:resource-title="Capacity Calculations" xinfo:resource-titlelabel="" xinfo:resource-type="component" xinfo:version-major="1" xinfo:version-minor="0" xml:id="UUID-cbcfc559-511e-c4dd-fe6a-0f38a9edfce0" xml:lang="en">
+  <title xinfo:text="189025">Capacity Calculations</title>
+  <para xinfo:text="189123">Proper component selection begins with determining the maximum NH₃ flow rate required by the application. Required flow is influenced by application rate, implement width, ground speed, and operating conditions. Use the capacity tables in this section to estimate the flow required by the system and to verify that major components are appropriately sized for the intended application.</para>
+  <section>
+    <title xinfo:text="189141">Sizing System Components</title>
+    <para xinfo:text="189124">The SurePoint Torpedo™ NH₃ system is available in multiple configurations intended to support different application rates and operating conditions. Use the capacity table below to select a Torpedo model with adequate flow capacity. Actual field performance may vary depending on system configuration and operating conditions.</para>
+    <informaltable frame="box" rules="all" tabstyle="tabstyle3" width="100%">
+      <colgroup>
+        <col></col>
+        <col></col>
+        <col></col>
+        <col></col>
+        <col></col>
+        <col></col>
+        <col></col>
+        <col></col>
+        <col></col>
+      </colgroup>
+      <tbody>
+        <tr>
+          <td>
+            <para></para>
+          </td>
+          <td colspan="2" style="background-color:bg1">
+            <para xinfo:text="189125">34 degrees F (50 PSI)</para>
+          </td>
+          <td colspan="2" style="background-color:bg1">
+            <para xinfo:text="189126">Max App Rate Lbs N / acre</para>
+          </td>
+          <td colspan="2" style="background-color:bg2">
+            <para xinfo:text="189127">60 degrees F (93 PSI)</para>
+          </td>
+          <td colspan="2" style="background-color:bg2">
+            <para xinfo:text="189128">Max App Rate Lbs N / acre</para>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <para xinfo:text="189129">Model </para>
+          </td>
+          <td style="background-color:bg1">
+            <para xinfo:text="189130">GPM</para>
+          </td>
+          <td style="background-color:bg1">
+            <para xinfo:text="189131">Lbs NH3 per hour</para>
+          </td>
+          <td style="background-color:bg1">
+            <para xinfo:text="189132">40’ at 8 MPH</para>
+          </td>
+          <td style="background-color:bg1">
+            <para xinfo:text="189133">60’ at 8 MPH</para>
+          </td>
+          <td style="background-color:bg2">
+            <para xinfo:text="189134">GPM</para>
+          </td>
+          <td style="background-color:bg2">
+            <para xinfo:text="189135">Lbs NH3 per hour</para>
+          </td>
+          <td style="background-color:bg2">
+            <para xinfo:text="189136">40’ at 8 MPH</para>
+          </td>
+          <td style="background-color:bg2">
+            <para xinfo:text="189137">60’ at 8 MPH</para>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <para>100</para>
+          </td>
+          <td style="background-color:bg1">
+            <para>23</para>
+          </td>
+          <td style="background-color:bg1">
+            <para>7100</para>
+          </td>
+          <td style="background-color:bg1">
+            <para>150</para>
+          </td>
+          <td style="background-color:bg1">
+            <para>100</para>
+          </td>
+          <td style="background-color:bg2">
+            <para>28</para>
+          </td>
+          <td style="background-color:bg2">
+            <para>8650</para>
+          </td>
+          <td style="background-color:bg2">
+            <para>185</para>
+          </td>
+          <td style="background-color:bg2">
+            <para>120</para>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <para>200</para>
+          </td>
+          <td style="background-color:bg1">
+            <para>35</para>
+          </td>
+          <td style="background-color:bg1">
+            <para>10800</para>
+          </td>
+          <td style="background-color:bg1">
+            <para>230</para>
+          </td>
+          <td style="background-color:bg1">
+            <para>150</para>
+          </td>
+          <td style="background-color:bg2">
+            <para>43</para>
+          </td>
+          <td style="background-color:bg2">
+            <para>13500</para>
+          </td>
+          <td style="background-color:bg2">
+            <para>285</para>
+          </td>
+          <td style="background-color:bg2">
+            <para>190</para>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <para>250</para>
+          </td>
+          <td style="background-color:bg1">
+            <para>35</para>
+          </td>
+          <td style="background-color:bg1">
+            <para>10800</para>
+          </td>
+          <td style="background-color:bg1">
+            <para>230</para>
+          </td>
+          <td style="background-color:bg1">
+            <para>150</para>
+          </td>
+          <td style="background-color:bg2">
+            <para>43</para>
+          </td>
+          <td style="background-color:bg2">
+            <para>13500</para>
+          </td>
+          <td style="background-color:bg2">
+            <para>285</para>
+          </td>
+          <td style="background-color:bg2">
+            <para>190</para>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <para>300</para>
+          </td>
+          <td style="background-color:bg1">
+            <para>50</para>
+          </td>
+          <td style="background-color:bg1">
+            <para>15450</para>
+          </td>
+          <td style="background-color:bg1">
+            <para>330</para>
+          </td>
+          <td style="background-color:bg1">
+            <para>220</para>
+          </td>
+          <td style="background-color:bg2">
+            <para>64</para>
+          </td>
+          <td style="background-color:bg2">
+            <para>20000</para>
+          </td>
+          <td style="background-color:bg2">
+            <para>427</para>
+          </td>
+          <td style="background-color:bg2">
+            <para>285</para>
+          </td>
+        </tr>
+      </tbody>
+    </informaltable>
+    <para xinfo:text="189953">All Torpedo models utilize the same Continental heat exchanger assembly. Differences between Models 100, 200, 250, and 300 are primarily related to supply-side plumbing size and component capacity necessary for higher-flow applications.</para>
+  </section>
+  <section>
+    <title xinfo:text="189142">Calculating NH₃ Flow</title>
+    <para xinfo:text="189143">Calculate the required NH₃ delivery rate before selecting system components. Use the following equations to determine hourly NH₃ demand and gallons per minute.</para>
+    <mediaobject>
+      <imageobject>
+        <imagedata fileref="UUID-d4d601df-fc94-facb-b704-7cb92cf0e638" contentwidth="500" xinfo:image="UUID-d4d601df-fc94-facb-b704-7cb92cf0e638"/>
+      </imageobject>
+    </mediaobject>
+    <mediaobject>
+      <imageobject>
+        <imagedata fileref="UUID-ece9ec8f-8d94-7882-efbd-a3861b03ebb1" xinfo:image="UUID-ece9ec8f-8d94-7882-efbd-a3861b03ebb1"/>
+      </imageobject>
+    </mediaobject>
+  </section>
+  <section>
+    <title xinfo:text="189219">Useful Formulas for Calculations</title>
+    <para xinfo:text="189247">
+      <emphasis role="bold">NH₃ Flow Rate Calculation</emphasis>
+    </para>
+    <para xinfo:text="189220">Calculate the hourly NH₃ requirement using the following formula:</para>
+    <para xinfo:text="189221">(Lb N/ac × Speed × Width × 0.1212) ÷ 0.822 = NH₃ lb/hr</para>
+    <para xinfo:text="189222">where:</para>
+    <itemizedlist>
+      <listitem>
+        <para xinfo:text="189223">60 = minutes per hour</para>
+      </listitem>
+      <listitem>
+        <para xinfo:text="189224">5.15 = approximate weight of NH₃ in pounds per gallon</para>
+      </listitem>
+    </itemizedlist>
+    <para xinfo:text="189248">
+      <emphasis role="bold">Gallons Per Minute (GPM)</emphasis>
+    </para>
+    <para xinfo:text="189226">To convert NH₃ flow from pounds per hour to gallons per minute:</para>
+    <para xinfo:text="189227">NH₃ lb/hr ÷ 60 ÷ 5.15 = NH₃ GPM</para>
+    <para xinfo:text="189249">where:</para>
+    <itemizedlist>
+      <listitem>
+        <para xinfo:text="189228">60 = minutes per hour</para>
+      </listitem>
+      <listitem>
+        <para xinfo:text="189229">5.15 = approximate weight of NH₃ in pounds per gallon</para>
+      </listitem>
+    </itemizedlist>
+  </section>
+</section>

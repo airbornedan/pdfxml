@@ -1,0 +1,178 @@
+<?xml version="1.0"?>
+<section xmlns="http://docbook.org/ns/docbook" xmlns:xinfo="http://ns.expertinfo.se/cms/xmlns/1.0" version="5.0" xinfo:resource="UUID-77eeef9f-e27c-ea22-9110-e96f44a7e13b" xinfo:resource-id="185343" xinfo:resource-title="Totalizers and Counters" xinfo:resource-titlelabel="" xinfo:resource-type="component" xinfo:version-major="1" xinfo:version-minor="0" xml:id="UUID-77eeef9f-e27c-ea22-9110-e96f44a7e13b" xml:lang="en">
+  <title xinfo:text="185345">Totalizers and Counters<indexterm><primary>Totalizers</primary></indexterm></title>
+  <para xinfo:text="185346">Sentinel maintains cumulative operating totals that can be used to verify application performance, monitor productivity, and compare actual product usage with expected application rates. Display Totalizer values on the Sentinel <guilabel>Home</guilabel> screen using the customizable toolbar. See <xref xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="urn:resource:fork:184279"></xref>. Use Totalizers as a quick operational reference throughout the season.</para>
+  <section>
+    <title xinfo:text="185347">Totalizer Functions</title>
+    <para xinfo:text="185348">Sentinel tracks several accumulated values during operation.</para>
+    <informaltable>
+      <thead>
+        <tr>
+          <th>
+            <para xinfo:text="185349">Item</para>
+          </th>
+          <th>
+            <para xinfo:text="185350">Description</para>
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>
+            <para xinfo:text="185351">Total Area Worked</para>
+          </td>
+          <td>
+            <para xinfo:text="185352">Total applied area accumulated while the product is active.</para>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <para xinfo:text="185353">Total Product Applied</para>
+          </td>
+          <td>
+            <para xinfo:text="185354">Total volume of product applied by the system.</para>
+          </td>
+        </tr>
+      </tbody>
+    </informaltable>
+  </section>
+  <section>
+    <title xinfo:text="185357">Using Totalizers</title>
+    <para xinfo:text="185358">The totalizer values provide a useful verification tool during operation.</para>
+    <para xinfo:text="185359">Examples include:</para>
+    <itemizedlist>
+      <listitem>
+        <para xinfo:text="185360">Compare Total Product Applied against remaining tank volume.</para>
+      </listitem>
+      <listitem>
+        <para xinfo:text="185361">Compare Total Area Worked against field acreage.</para>
+      </listitem>
+      <listitem>
+        <para xinfo:text="185362">Monitor Average Flow to verify consistent system performance.</para>
+      </listitem>
+      <listitem>
+        <para xinfo:text="185363">Confirm application totals after completing a field, customer, or test run.</para>
+      </listitem>
+      <listitem>
+        <para xinfo:text="185364">Compare accumulated gallons applied against flowmeter calibration and Catch Test results.</para>
+      </listitem>
+    </itemizedlist>
+  </section>
+  <section>
+    <title xinfo:text="185365">Resetting Totals<indexterm><primary>Totalizers</primary><secondary>resetting</secondary></indexterm></title>
+    <para xinfo:text="185366">Reset Totalizers when beginning a new season, field, product application, or customer application.</para>
+    <para xinfo:text="185367">SurePoint recommends recording totalized values before resetting them if application records are required.</para>
+    <para xinfo:text="185368">Resetting totalizers allows operators to:</para>
+    <itemizedlist>
+      <listitem>
+        <para xinfo:text="185369">Track individual field applications.</para>
+      </listitem>
+      <listitem>
+        <para xinfo:text="185370">Monitor seasonal product usage.</para>
+      </listitem>
+      <listitem>
+        <para xinfo:text="185371">Verify calibration over a known acreage.</para>
+      </listitem>
+      <listitem>
+        <para xinfo:text="185372">Measure productivity during testing or troubleshooting procedures. </para>
+      </listitem>
+    </itemizedlist>
+    <para xinfo:text="185373">To reset a total, from the <guilabel>Home</guilabel> screen:</para>
+    <informaltable frame="void" rules="none">
+      <colgroup>
+        <col width="70%"></col>
+        <col width="30%"></col>
+      </colgroup>
+      <tbody>
+        <tr>
+          <td>
+            <mediaobject>
+              <imageobject>
+                <imagedata fileref="UUID-7620b5da-2780-c2c7-5e46-9c47e894c2ff" contentdepth="300" xinfo:image="UUID-7620b5da-2780-c2c7-5e46-9c47e894c2ff"/>
+              </imageobject>
+            </mediaobject>
+          </td>
+          <td valign="top">
+            <orderedlist>
+              <listitem>
+                <para xinfo:text="185374">Select the item to reset from the toolbar.</para>
+              </listitem>
+              <listitem>
+                <para xinfo:text="185375">Sentinel displays a reset confirmation dialog.</para>
+              </listitem>
+              <listitem>
+                <para xinfo:text="185376">Select <guilabel>OK</guilabel>.</para>
+              </listitem>
+              <listitem>
+                <para xinfo:text="186789">The totalizer resets.</para>
+              </listitem>
+            </orderedlist>
+          </td>
+        </tr>
+      </tbody>
+    </informaltable>
+  </section>
+  <section>
+    <title xinfo:text="185377">Best Practices<indexterm><primary>Totalizers</primary><secondary>best practices</secondary></indexterm></title>
+    <para xinfo:text="185378">Follow these standard practices with totalizers:</para>
+    <itemizedlist>
+      <listitem>
+        <para xinfo:text="185379">Record Area, Time, and Product Applied totals at the completion of each field if application records are needed.</para>
+      </listitem>
+      <listitem>
+        <para xinfo:text="185380">Periodically compare Product Applied totals against actual product used to verify system calibration.</para>
+      </listitem>
+      <listitem>
+        <para xinfo:text="185381">Use Total Area Worked and Total Product Applied together when validating flowmeter calibration after a Catch Test.</para>
+      </listitem>
+      <listitem>
+        <para xinfo:text="185382">Maintain records of accumulated totals throughout the season to assist with troubleshooting and performance verification. </para>
+      </listitem>
+    </itemizedlist>
+    <note>
+      <para xinfo:text="185383">Totalizer values are intended as an operational reference and should be periodically verified against actual field records, product inventory, and calibrated application equipment. Catch Test verification remains the recommended method for confirming flowmeter accuracy.</para>
+    </note>
+  </section>
+  <section>
+    <title xinfo:text="185384">Counter Functions<indexterm><primary>counters</primary></indexterm></title>
+    <para xinfo:text="185385">Counters display the current or average measured values.</para>
+    <informaltable frame="box" rules="all">
+      <thead>
+        <tr>
+          <th>
+            <para xinfo:text="185386">Item</para>
+          </th>
+          <th>
+            <para xinfo:text="185387">Description</para>
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>
+            <para xinfo:text="185388">Total Time Worked</para>
+          </td>
+          <td>
+            <para xinfo:text="185389">Total application time accumulated during operation.</para>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <para xinfo:text="185390">Average Flow Over Area</para>
+          </td>
+          <td>
+            <para xinfo:text="185391">Average application flow calculated over the worked area.</para>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <para xinfo:text="185355">Total Flow Per Minute</para>
+          </td>
+          <td>
+            <para xinfo:text="185356">Current system flow rate.</para>
+          </td>
+        </tr>
+      </tbody>
+    </informaltable>
+  </section>
+</section>

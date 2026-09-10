@@ -1,0 +1,112 @@
+<?xml version="1.0"?>
+<section xmlns="http://docbook.org/ns/docbook" xmlns:xinfo="http://ns.expertinfo.se/cms/xmlns/1.0" version="5.0" xinfo:resource="UUID-03f7d059-325a-addc-fedb-006e2005230e" xinfo:resource-id="185040" xinfo:resource-title="Accessing Sentinel on the VT or (UT)" xinfo:resource-titlelabel="" xinfo:resource-type="component" xinfo:version-major="1" xinfo:version-minor="0" xml:id="UUID-03f7d059-325a-addc-fedb-006e2005230e" xml:lang="en">
+  <title xinfo:text="185041">Accessing Sentinel</title>
+  <para xinfo:text="185042">Sentinel is accessed on in-cab displays as a virtual terminal (VT)/virtual implement (VI). Because Sentinel is ISOBUS-compliant, it can operate on a range of displays.  Follow the instructions below to access Sentinel on your specific screen.</para>
+  <section>
+    <title xinfo:text="185043">John Deere 4640</title>
+    <indexterm><primary xinfo:text="186790">Accessing Sentinel</primary> <secondary xinfo:text="186791">John Deere 4640</secondary></indexterm>
+    <para xinfo:text="185044">To access Sentinel on the John Deere Gen4 or G5 display:</para>
+    <orderedlist>
+      <listitem>
+        <para xinfo:text="185045">Select <guilabel>ISO</guilabel> from the 4640 Home screen.</para>
+        <mediaobject>
+          <imageobject>
+            <imagedata fileref="UUID-0917eed1-14d7-1576-3258-a8fbe09c64a0" contentdepth="60" contentwidth="60" xinfo:image="UUID-0917eed1-14d7-1576-3258-a8fbe09c64a0"/>
+          </imageobject>
+        </mediaobject>
+      </listitem>
+      <listitem>
+        <para xinfo:text="185046">If you have more than one ISOBUS implement attached, it may be necessary to select <guilabel>ISOBUS Menu</guilabel> to open the ISOBUS selection list.</para>
+        <mediaobject>
+          <imageobject>
+            <imagedata fileref="UUID-6babcdb9-ea72-12df-40ef-12345a0d3d2f" contentdepth="40" contentwidth="130" xinfo:image="UUID-6babcdb9-ea72-12df-40ef-12345a0d3d2f"/>
+          </imageobject>
+        </mediaobject>
+      </listitem>
+      <listitem>
+        <para xinfo:text="185047">Select <guilabel>Sentinel</guilabel> from the list.</para>
+        <mediaobject>
+          <imageobject>
+            <imagedata fileref="UUID-631b7303-cd0b-354e-c085-cdacb745b878" xinfo:image="UUID-631b7303-cd0b-354e-c085-cdacb745b878"/>
+          </imageobject>
+        </mediaobject>
+      </listitem>
+    </orderedlist>
+  </section>
+  <section>
+    <title xinfo:text="181202">John Deere 2630</title>
+    <indexterm><primary xinfo:text="186792">Accessing Sentinel</primary> <secondary xinfo:text="186793">John Deere 2630</secondary></indexterm>
+    <para xinfo:text="185048">To access Sentinel on a John Deere 2630 display:</para>
+    <orderedlist>
+      <listitem>
+        <para xinfo:text="185049">Sentinel should appear automatically on the Home screen of the 2630 after the initial connection. </para>
+        <note>
+          <para xinfo:text="185050">It may take several minutes for Sentinel's interface to load the first time it is connected. Subsequent loading should be significantly faster.</para>
+        </note>
+        <mediaobject>
+          <imageobject>
+            <imagedata fileref="UUID-d836304f-750f-eb20-ee1a-a44e3eac486c" contentdepth="300" xinfo:image="UUID-d836304f-750f-eb20-ee1a-a44e3eac486c"/>
+          </imageobject>
+        </mediaobject>
+      </listitem>
+      <listitem>
+        <para xinfo:text="185051">Select <guilabel>Sentinel</guilabel>.</para>
+        <note>
+          <para xinfo:text="188164">The 2630 display supports only one ISOBUS ECU when used with  Task Control. Because of this, if using this display to control planter functions, task control functions like section control will not work with Sentinel.</para>
+        </note>
+      </listitem>
+    </orderedlist>
+  </section>
+  <section>
+    <title xinfo:text="185052">Case IH AFS Pro 700 / Pro 1200</title>
+    <indexterm><primary xinfo:text="186794">Accessing Sentinel</primary> <secondary xinfo:text="186795">Case Pro 700</secondary></indexterm>
+    <para xinfo:text="185053">To access Sentinel on a Pro 700 display:</para>
+    <orderedlist>
+      <listitem>
+        <para xinfo:text="185054">Select <guilabel>Toolbox &gt; Layout</guilabel> to tell the display to update the list of connected devices.</para>
+        <mediaobject>
+          <imageobject>
+            <imagedata fileref="UUID-7f08ec4c-7c40-69d9-230e-3eb1381aeee5" contentdepth="300" xinfo:image="UUID-7f08ec4c-7c40-69d9-230e-3eb1381aeee5"/>
+          </imageobject>
+        </mediaobject>
+        <note>
+          <para xinfo:text="185055">It may take several minutes for the display to find and load Sentinel's interface the first time it is connected. Subsequent loading should be significantly faster.</para>
+        </note>
+      </listitem>
+      <listitem>
+        <para xinfo:text="185056">Select <guilabel>ISOBUS</guilabel> to display the list of ISOBUS devices or select <guilabel>Sentinel</guilabel>.</para>
+      </listitem>
+    </orderedlist>
+  </section>
+  <section>
+    <title xinfo:text="185057">Ag Leader InCommand</title>
+    <indexterm><primary xinfo:text="186796">Accessing Sentinel</primary> <secondary xinfo:text="186797">Ag Leader InCommand</secondary></indexterm>
+    <para xinfo:text="185058">To access Sentinel on the Ag Leader InCommand:</para>
+    <orderedlist>
+      <listitem>
+        <para xinfo:text="185059">Select <guilabel>Universal Terminal</guilabel>.</para>
+        <mediaobject>
+          <imageobject>
+            <imagedata fileref="UUID-6e9301c4-8103-17c9-3402-0f6d5d1df876" contentdepth="300" xinfo:image="UUID-6e9301c4-8103-17c9-3402-0f6d5d1df876"/>
+          </imageobject>
+        </mediaobject>
+      </listitem>
+      <listitem>
+        <para xinfo:text="185060">Select <guilabel>Sentinel</guilabel>.</para>
+        <mediaobject>
+          <imageobject>
+            <imagedata fileref="UUID-b14e5209-1bbe-ae2b-332b-b12fc8ed0462" width="60" xinfo:image="UUID-b14e5209-1bbe-ae2b-332b-b12fc8ed0462"/>
+          </imageobject>
+        </mediaobject>
+      </listitem>
+    </orderedlist>
+  </section>
+  <section>
+    <title xinfo:text="185061">Other Displays and Features</title>
+    <indexterm>
+      <primary xinfo:text="186798">Accessing Sentinel</primary>
+      <secondary xinfo:text="186799">Other displays</secondary>
+    </indexterm>
+    <para xinfo:text="185062">SurePoint Technical Support has additional screenshot-based instructions for  configuring displays to use Sentinel. This includes setting up Task Control, Section Control, Work Setup, and other options depending on display.</para>
+  </section>
+</section>
