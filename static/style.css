@@ -967,3 +967,23 @@ button.is-busy,
 	.spinner { animation-duration: 1.6s; animation-timing-function: steps(8, end); }
 	.busy-overlay { transition: none; }
 }
+
+/* --- Check XML: tag-balance output --- */
+.lml-output {
+	margin-top: 8px;
+	padding: 12px 14px;
+	border: 1px solid #ccc;
+	border-radius: 4px;
+	background: #fafafa;
+	font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+	font-size: 0.9rem;
+	line-height: 1.55;
+	white-space: pre-wrap;
+	word-break: break-word;
+	overflow-x: auto;
+}
+.lml-bad {
+	background: #fbdcdc;               /* reddish -- unmatched tag */
+	box-shadow: 0 0 0 1px #e08b8b;
+	border-radius: 2px;
+}

@@ -2,10 +2,14 @@
 ### NORMALIZE -- paste any DocBook / HTML list or table, get it back in
 ### the exact form Paligo's XML source view accepts. app/paligo.py does
 ### the work; this is just the page. Shown on both deployment profiles.
+###
+### /check is the first piece of the "why won't this validate" tool:
+### app/lml.py pairs opening/closing tags of known elements and marks
+### the unmatched ones. No content-model checks, no editing yet.
 ########################################################################
 from flask import Blueprint, render_template, request, url_for
 
-from app import paligo
+from app import lml, paligo
 
 bp = Blueprint("normalize", __name__)
 
@@ -24,4 +28,20 @@ def fix_xml():
         output=output,
         changed=changed,
         diagnostic=diagnostic,
+    )
+
+
+@bp.route("/check", methods=["GET", "POST"])
+def check_xml():
+    src = request.form.get("xml", "") if request.method == "POST" else ""
+    marked, unmatched = (None, 0)
+    if request.method == "POST":
+        marked, unmatched = lml.check_tags(src)
+
+    return render_template(
+        "check.html",
+        breadcrumbs=[("Home", url_for("extract.index")), ("Check XML", "")],
+        src=src,
+        marked=marked,
+        unmatched=unmatched,
     )
