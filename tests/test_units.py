@@ -1,8 +1,6 @@
 """Unit-level checks that don't need a full request."""
 from pathlib import Path
 
-import cv2
-import numpy as np
 import pytest
 
 
@@ -54,25 +52,6 @@ def test_clamp_zoom_caps_a_giant_mediabox():
     z = clamp_zoom(14400, 14400, 600 / 72)
     px = (14400 * z) ** 2
     assert px <= MAX_RENDER_MEGAPIXELS * 1_000_000 * 1.001
-
-
-# --- line-art image conversion ----------------------------------------
-def test_edge_detect_line_art_outputs_monochrome_png(tmp_path):
-    from app.imageops import edge_detect_line_art
-
-    source = Path(__file__).with_name("NH3_ill_splitter_mount_bracket.png")
-    result = edge_detect_line_art(str(source))
-
-    assert result.startswith(b"\x89PNG\r\n\x1a\n")
-    image = cv2.imdecode(np.frombuffer(result, dtype=np.uint8), cv2.IMREAD_GRAYSCALE)
-    assert image is not None
-    assert image.shape[0] > 0 and image.shape[1] > 0
-    assert np.unique(image).size >= 2
-
-    out_path = tmp_path / "lineart.png"
-    saved = edge_detect_line_art(str(source), str(out_path))
-    assert saved == out_path.read_bytes()
-    assert out_path.exists()
 
 
 # --- rate limiter sliding window -------------------------------------

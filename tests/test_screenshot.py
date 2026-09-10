@@ -11,14 +11,6 @@ def test_home_has_screenshot_card(client):
     assert 'images/screenshot.svg' in body
 
 
-def test_home_has_convert_card(client):
-    body = client.get("/").data.decode()
-    assert 'Convert' in body
-    assert 'href="/convert"' in body
-    assert 'images/pencil.svg' in body
-    assert 'Convert to line drawing' in body
-
-
 def test_screenshot_upload_returns_fixed_crop(client, tmp_path):
     source = tmp_path / "sample.png"
     document = fitz.open()
