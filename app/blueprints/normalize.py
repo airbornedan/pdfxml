@@ -9,6 +9,7 @@
 ########################################################################
 from flask import Blueprint, render_template, request, url_for
 
+from app import fixes as fixes_mod
 from app import lml, paligo
 
 bp = Blueprint("normalize", __name__)
@@ -58,6 +59,8 @@ def check_xml():
         findings = sorted(
             deduped, key=lambda f: (f.get("line") or 0, f.get("start") or 0)
         )
+        for finding in findings:
+            finding["_fixes"] = fixes_mod.suggest_fixes(src, finding)
 
         summary = lml.summarize(findings)
         lines = lml.build_lines(src, findings)

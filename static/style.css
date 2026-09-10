@@ -1037,11 +1037,52 @@ a.check-line:hover { background: #f2b8b8; }
 	white-space: normal;
 	background: #fdeaea;
 }
-.lml-annot-text {
-	padding: 1px 0 3px 8px;
-	color: #7a1f1f;
+.lml-annot-body {
+	padding: 1px 8px 4px;
+	min-width: 0;
 	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
+.lml-annot-text {
+	color: #7a1f1f;
+}
+.fix {
+	margin-top: 4px;
+	font-size: 0.9rem;
+}
+.fix > summary {
+	cursor: pointer;
+	color: #0056b3;
+	width: fit-content;
+}
+.fix-opt {
+	margin: 6px 0 0;
+	padding: 6px 8px;
+	background: #fff;
+	border: 1px solid #d8d8d8;
+	border-radius: 4px;
+}
+.fix-head {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	gap: 10px;
+}
+.fix-apply {
+	padding: 2px 12px;
+	font-size: 0.85rem;
+}
+.fix-diff {
+	margin: 4px 0 0;
+	padding: 6px 8px;
+	background: #fafafa;
+	border-radius: 3px;
+	font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+	font-size: 0.82rem;
+	white-space: pre-wrap;
+	word-break: break-word;
+}
+.fix-was { color: #7a1f1f; text-decoration: line-through; }
+.fix-now { color: #1a7f37; }
 @media (prefers-reduced-motion: reduce) {
 	.lml-line:target { animation: none; background: #fde68a; }
 }

@@ -77,7 +77,7 @@ def test_build_lines_wraps_offending_tag_and_attaches_note():
     lines = build_lines(src, findings)
     assert len(lines) == 3
     assert '<span class="lml-bad">&lt;para&gt;</span>' in lines[1]["html"]
-    assert lines[1]["notes"] == ["move it into a <listitem>."]
+    assert lines[1]["notes"] == [{"message": "move it into a <listitem>.", "fixes": []}]
     assert lines[0]["notes"] == [] and lines[2]["notes"] == []
 
 

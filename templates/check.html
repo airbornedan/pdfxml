@@ -32,7 +32,26 @@
 			<span class="lml-gutter">{{ ln.num }}</span><code class="lml-src">{{ ln.html|safe }}</code>
 		</div>
 		{% for note in ln.notes %}
-		<div class="lml-annot"><span class="lml-gutter"></span><span class="lml-annot-text">&#9656; {{ note }}</span></div>
+		<div class="lml-annot">
+			<span class="lml-gutter"></span>
+			<div class="lml-annot-body">
+				<span class="lml-annot-text">&#9656; {{ note.message }}</span>
+				{% if note.fixes %}
+				<details class="fix">
+					<summary>Suggest a fix</summary>
+					{% for fx in note.fixes %}
+					<form method="post" class="fix-opt">
+						<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+						<textarea name="xml" hidden>{{ fx.new_text }}</textarea>
+						<div class="fix-head"><strong>{{ fx.label }}</strong><button type="submit" class="btn-reset fix-apply">Apply</button></div>
+						<pre class="fix-diff"><span class="fix-was">{{ fx.before }}</span>
+<span class="fix-now">{{ fx.after }}</span></pre>
+					</form>
+					{% endfor %}
+				</details>
+				{% endif %}
+			</div>
+		</div>
 		{% endfor %}
 		{% endfor %}
 	</div>

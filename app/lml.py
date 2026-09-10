@@ -149,6 +149,7 @@ def check_tags(text):
                     f"</{name}> has no matching <{name}> before it -- "
                     f"add the opening tag or delete this one."
                 )
+                entry["fix"] = {"kind": "delete-stray-close"}
                 findings.append(entry)
         else:
             open_stacks.setdefault(name, []).append(entry)
@@ -569,21 +570,28 @@ def check_lists(text):
     stack = []          # {"tag","line","kind": "list"|"li"|"other", ...}
     last_end = 0
 
-    def add(line, message, tag=None):
+    def add(line, message, tag=None, fix=None):
         finding = {"line": line, "message": message}
         if tag is not None:
             finding["tag"] = tag
+        if fix is not None:
+            finding["fix"] = fix
         findings.append(finding)
 
-    def finalize(frame, dangling=False):
+    def finalize(frame, dangling=False, close_end=None):
         if frame["kind"] == "li":
             if dangling:
                 add(frame["line"],
                     f"<listitem> (line {frame['line']}) has no </listitem>.", tag="listitem")
             if not frame["content"]:
+                fix = None
+                if not dangling and close_end is not None:
+                    fix = {"kind": "empty-listitem",
+                           "el_start": frame["open_start"], "el_end": close_end}
                 add(frame["line"],
                     f"<listitem> (line {frame['line']}) has no content -- it "
-                    f"needs a <para>, a <mediaobject>, or a nested list.", tag="listitem")
+                    f"needs a <para>, a <mediaobject>, or a nested list.",
+                    tag="listitem", fix=fix)
         elif frame["kind"] == "list":
             if dangling:
                 add(frame["line"],
@@ -624,7 +632,9 @@ def check_lists(text):
 
         if text[last_end:start].strip() and cont and cont["kind"] == "list":
             add(_line_of(text, last_end),
-                "Text sits directly inside a list; it must be in a <listitem>.")
+                "Text sits directly inside a list; it must be in a <listitem>.",
+                fix={"kind": "bare-text-in-list",
+                     "text_start": last_end, "text_end": start})
         last_end = end
 
         kind = ("list" if name in _LIST_TAGS
@@ -654,7 +664,7 @@ def check_lists(text):
                 elif cont and cont["kind"] == "li":
                     cont["content"].add("list")
                 stack.append({"tag": name, "line": line, "kind": "list",
-                              "items": 0})
+                              "items": 0, "open_start": start})
             elif kind == "li":
                 while stack and stack[-1]["kind"] != "list":
                     finalize(stack.pop(), dangling=True)   # implicit close
@@ -664,11 +674,13 @@ def check_lists(text):
                 else:
                     cont["items"] += 1
                 stack.append({"tag": name, "line": line, "kind": "li",
-                              "content": set()})
+                              "content": set(), "open_start": start})
             else:                              # other element
                 if cont and cont["kind"] == "list":
                     add(line, f"<{name}> sits directly inside a list; it must "
-                              f"be inside a <listitem>.", tag=name)
+                              f"be inside a <listitem>.", tag=name,
+                        fix={"kind": "loose-block-in-list", "el_start": start,
+                             "list_tag": cont["tag"], "list_start": cont["open_start"]})
                 elif name == "imageobject" and not in_mediaobject():
                     add(line, f"<{name}> must be inside a <mediaobject>.", tag=name)
                 elif name in ("para", "mediaobject"):
@@ -689,7 +701,7 @@ def check_lists(text):
             finalize(frame, dangling=True)
         closed = stack[depth]
         del stack[depth:]
-        finalize(closed, dangling=False)
+        finalize(closed, dangling=False, close_end=end)
 
     for frame in reversed(stack):
         finalize(frame, dangling=True)
@@ -744,10 +756,10 @@ def summarize(findings):
 
 def build_lines(text, findings):
     """Render `text` as numbered lines. Returns
-    [{"num": int, "html": str, "notes": [str]}] where `html` is the line
-    escaped for display with each offending tag wrapped in
-    <span class="lml-bad">, and `notes` are the messages anchored to that
-    line."""
+    [{"num": int, "html": str, "notes": [{"message", "fixes"}]}] where
+    `html` is the line escaped for display with each offending tag
+    wrapped in <span class="lml-bad">, and `notes` carry the message and
+    any candidate fixes (finding["_fixes"]) anchored to that line."""
     raw_lines = text.split("\n")
     line_start = []
     pos = 0
@@ -759,7 +771,10 @@ def build_lines(text, findings):
     notes_by_line = {}
     for finding in findings:
         line = min(max(finding.get("line") or 1, 1), len(raw_lines) or 1)
-        notes_by_line.setdefault(line, []).append(finding.get("message", ""))
+        notes_by_line.setdefault(line, []).append({
+            "message": finding.get("message", ""),
+            "fixes": finding.get("_fixes", []),
+        })
 
         start, end = finding.get("start"), finding.get("end")
         if start is not None and end is not None:
