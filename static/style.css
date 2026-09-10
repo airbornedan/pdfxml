@@ -987,3 +987,27 @@ button.is-busy,
 	box-shadow: 0 0 0 1px #e08b8b;
 	border-radius: 2px;
 }
+
+.check-subhead {
+	margin: 22px 0 6px;
+	font-size: 1.05rem;
+}
+.check-findings {
+	margin: 0;
+	padding-left: 20px;
+	line-height: 1.6;
+}
+.check-findings li {
+	margin-bottom: 3px;
+}
+.check-line {
+	display: inline-block;
+	min-width: 4.5em;
+	padding: 0 6px;
+	margin-right: 6px;
+	border-radius: 3px;
+	background: #fbdcdc;
+	font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+	font-size: 0.82rem;
+	color: #7a1f1f;
+}

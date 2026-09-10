@@ -24,6 +24,19 @@
 		{% endif %}
 	</p>
 	<pre class="lml-output">{{ marked|safe }}</pre>
+
+	{% if has_tables %}
+	<h2 class="check-subhead">Table structure</h2>
+	{% if table_findings %}
+	<ul class="check-findings">
+		{% for f in table_findings %}
+		<li>{% if f.line %}<span class="check-line">line {{ f.line }}</span> {% endif %}{{ f.message }}</li>
+		{% endfor %}
+	</ul>
+	{% else %}
+	<p class="subtitle">Every <code>&lt;informaltable&gt;</code> has rows and cells, a matching close, and the same number of columns in every row.</p>
+	{% endif %}
+	{% endif %}
 	{% endif %}
 </div>
 <script nonce="{{ g.csp_nonce }}">
