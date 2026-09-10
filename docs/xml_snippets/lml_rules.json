@@ -1,0 +1,102 @@
+{
+  "name": "LML rules",
+  "version": 1,
+  "source": "docs/xml_snippets/LML_rules.txt",
+  "tags": {
+    "structure": [
+      "section",
+      "title",
+      "para",
+      "orderedlist",
+      "itemizedlist",
+      "listitem",
+      "informaltable",
+      "thead",
+      "tbody",
+      "tr",
+      "th",
+      "td",
+      "colgroup",
+      "col"
+    ],
+    "media": [
+      "mediaobject",
+      "imageobject",
+      "imagedata",
+      "informalfigure",
+      "fileref"
+    ],
+    "inline": [
+      "emphasis",
+      "guilabel",
+      "xref",
+      "indexterm"
+    ],
+    "admonitions": [
+      "note",
+      "warning",
+      "caution"
+    ]
+  },
+  "rules": [
+    {
+      "id": "section-root",
+      "kind": "structure",
+      "description": "The topic root is always <section>."
+    },
+    {
+      "id": "section-title",
+      "kind": "structure",
+      "description": "Each <section> requires exactly one <title>, and that title must be the first non-whitespace child."
+    },
+    {
+      "id": "lists-content",
+      "kind": "structure",
+      "description": "Every <orderedlist> or <itemizedlist> must contain at least one <listitem>; each list item must have real content."
+    },
+    {
+      "id": "listitem-first-para",
+      "kind": "structure",
+      "description": "A <listitem> is valid when its first child is a <para> or it contains a valid nested list or media object."
+    },
+    {
+      "id": "imageobject-mediaobject",
+      "kind": "media",
+      "description": "Every <imageobject> must be nested inside a <mediaobject>."
+    },
+    {
+      "id": "mediaobject-imagedata",
+      "kind": "media",
+      "description": "A <mediaobject> must include <imageobject> and <imagedata>, and <imagedata> must include fileref."
+    },
+    {
+      "id": "table-structure",
+      "kind": "structure",
+      "description": "A table must contain <tbody>, each row must be a <tr> with <td> or <th> cells, and bare text inside a cell is not allowed."
+    },
+    {
+      "id": "admonitions-para",
+      "kind": "admonitions",
+      "description": "<note>, <warning>, and <caution> must contain a <para>."
+    },
+    {
+      "id": "inline-only",
+      "kind": "inline",
+      "description": "Inline-only elements such as <emphasis role=\"bold\"> and <guilabel> are allowed only where the rules permit them."
+    },
+    {
+      "id": "error-conditions",
+      "kind": "errors",
+      "description": "Current error conditions include missing titles, misplaced titles, missing list items, missing mediaobject/imageobject/imagedata, raw text in cells, and missing paragraph content in admonitions."
+    },
+    {
+      "id": "warning-conditions",
+      "kind": "warnings",
+      "description": "Current warning conditions include unknown elements, empty paras, empty notes, empty list items, inconsistent table column counts, multiple title elements in the same section, and unknown inline role values."
+    }
+  ],
+  "notes": [
+    "The text file remains the human-readable source of truth for the detailed rule descriptions.",
+    "This JSON file is the machine-readable companion for tooling and review."
+  ]
+}

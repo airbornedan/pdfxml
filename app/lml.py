@@ -9,19 +9,63 @@
 ### nesting order yet -- one independent stack per element name, pure
 ### open/close balance. Unmatched tags are marked; nothing is edited.
 ########################################################################
+import json
 import re
+from pathlib import Path
 
 from markupsafe import escape
 
-### the vocabulary from docs/paligo-source-view.md. Tags outside this
-### set are ignored for now (a later pass can flag unknowns).
-KNOWN_TAGS = frozenset({
+### Supported Paligo source-view tags for this checker.
+### The runtime vocabulary is loaded from the checked-in JSON rules file,
+### with an explicit fallback so the validator still behaves predictably
+### if the rules file is missing or malformed.
+RULES_PATH = Path(__file__).resolve().parents[1] / "docs" / "xml_snippets" / "lml_rules.json"
+
+_FALLBACK_TAGS = frozenset({
+    # structure
     "section", "title", "para",
     "orderedlist", "itemizedlist", "listitem",
     "informaltable", "thead", "tbody", "tr", "th", "td",
-    "mediaobject", "imageobject",
-    "emphasis", "guilabel",
+    "colgroup", "col",
+    # media / image
+    "mediaobject", "imageobject", "imagedata", "informalfigure",
+    "fileref",
+    # inline / references
+    "emphasis", "guilabel", "xref", "indexterm",
+    # admonitions
+    "note", "warning", "caution",
 })
+
+
+def _load_rules_file():
+    """Load the JSON rules file, returning a dict with a fallback.
+
+    The JSON file is now the machine-readable rule catalog that can be
+    extended without editing code for simple vocabulary updates.
+    """
+    if not RULES_PATH.exists():
+        return {"tags": {"fallback": list(_FALLBACK_TAGS)}}
+
+    try:
+        data = json.loads(RULES_PATH.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {"tags": {"fallback": list(_FALLBACK_TAGS)}}
+
+    return data
+
+
+RULES = _load_rules_file()
+
+
+def _load_known_tags():
+    tags = set()
+    for group in RULES.get("tags", {}).values():
+        if isinstance(group, list):
+            tags.update(str(tag).lower() for tag in group)
+    return frozenset(tags or _FALLBACK_TAGS)
+
+
+KNOWN_TAGS = _load_known_tags()
 
 ### <name ...>, </name>, or <name .../>. Deliberately loose -- we only
 ### need the element name and whether the tag opens or closes. A literal
@@ -347,55 +391,96 @@ _LI_CONTENT = frozenset({"para", "mediaobject", "orderedlist", "itemizedlist"})
 
 
 def check_mediaobjects(text):
-    """Return findings for any <imageobject> not nested inside a
-    <mediaobject> anywhere in `text`."""
+    """Return findings for mediaobject/imageobject/imagedata structure.
+
+    This supplements the tag-pair check with the LML rules we explicitly
+    use for Paligo source-view snippets: every <imageobject> should be
+    inside a <mediaobject>, and every <mediaobject> should contain at
+    least one <imageobject> plus an <imagedata> element. The rules are
+    intentionally targeted to the snippets this app accepts.
+    """
     findings = []
+    seen = set()
     stack = []
+
+    def add(line, message, tag=None):
+        key = (line, message, tag)
+        if key in seen:
+            return
+        seen.add(key)
+        finding = {"line": line, "message": message}
+        if tag is not None:
+            finding["tag"] = tag
+        findings.append(finding)
 
     for match in _TAG_RE.finditer(text):
         name = match.group(2).lower()
+        attrs = match.group(3) or ""
         is_close = match.group(1) == "/"
         is_self = match.group(4) == "/" and not is_close
         line = _line_of(text, match.start())
 
-        if name == "imageobject":
+        if name == "mediaobject":
             if is_self:
-                findings.append({
-                    "line": line,
-                    "tag": name,
-                    "message": f"<{name}/> must be inside a <mediaobject>.",
-                })
+                add(line, "<mediaobject/> is not valid here; use a full <mediaobject>...</mediaobject> block.", tag="mediaobject")
                 continue
-            if not is_close and not any(frame["tag"] == "mediaobject" for frame in stack):
-                findings.append({
-                    "line": line,
-                    "tag": name,
-                    "message": f"<{name}> must be inside a <mediaobject>.",
-                })
-
-        if is_self:
+            if is_close:
+                if not stack:
+                    add(line, "</mediaobject> with no matching <mediaobject>.", tag="mediaobject")
+                    continue
+                frame = stack.pop()
+                if frame["imageobject_count"] == 0:
+                    add(frame["line"], "<mediaobject> must contain at least one <imageobject>.", tag="mediaobject")
+                if frame["imageobject_count"] > 0 and frame["imagedata_count"] == 0:
+                    add(frame["line"], "<mediaobject> contains <imageobject> but no <imagedata>.", tag="imageobject")
+                continue
+            stack.append({"line": line, "imageobject_count": 0, "imagedata_count": 0})
             continue
 
-        if is_close:
-            for idx in range(len(stack) - 1, -1, -1):
-                if stack[idx]["tag"] == name:
-                    del stack[idx:]
-                    break
-        else:
-            stack.append({"tag": name})
+        if name == "imageobject":
+            if is_self:
+                if stack:
+                    stack[-1]["imageobject_count"] += 1
+                else:
+                    add(line, "<imageobject/> must be inside a <mediaobject>.", tag="imageobject")
+                continue
+            if is_close:
+                continue
+            if stack:
+                stack[-1]["imageobject_count"] += 1
+            else:
+                add(line, "<imageobject> must be inside a <mediaobject>.", tag="imageobject")
+            continue
 
+        if name == "imagedata":
+            if is_self:
+                if stack:
+                    if not re.search(r"\bfileref\b", attrs, flags=re.IGNORECASE):
+                        add(line, "<imagedata> is missing the required fileref attribute.", tag="imagedata")
+                else:
+                    add(line, "<imagedata> must be inside a <mediaobject>.", tag="imagedata")
+                continue
+            if is_close:
+                continue
+            if stack:
+                if not re.search(r"\bfileref\b", attrs, flags=re.IGNORECASE):
+                    add(line, "<imagedata> is missing the required fileref attribute.", tag="imagedata")
+                stack[-1]["imagedata_count"] += 1
+            else:
+                add(line, "<imagedata> must be inside a <mediaobject>.", tag="imagedata")
+            continue
+
+    findings.sort(key=lambda f: f["line"] or 0)
     return findings
 
 
 def check_sections(text):
-    """Report only the first content tag that appears after a nested
-    <section> inside the same parent <section>.
+    """Report section-level structural issues from the LML rules.
 
-    Once a subsection starts, later siblings at that parent level are not
-    allowed and must move into their own nested <section> or be placed
-    before the first subsection. Reporting only the first offending tag
-    keeps the output actionable instead of drowning interns in cascade
-    errors from the rest of the document.
+    The checker intentionally keeps the output focused on the actionable
+    issues that interns are likely to hit when pasting Paligo source-view
+    fragments into this app: missing or misplaced section titles and
+    content that appears after a nested section starts.
     """
     findings = []
     stack = []
@@ -406,29 +491,69 @@ def check_sections(text):
         is_self = match.group(4) == "/" and not is_close
         line = _line_of(text, match.start())
 
-        if name != "section":
-            if len(stack) == 1 and stack[0]["nested"] and not stack[0]["reported"]:
-                findings.append({
+        if name == "section":
+            if is_self:
+                continue
+            if not is_close:
+                stack.append({
                     "line": line,
-                    "tag": name,
-                    "message": (
-                        f"<{name}> appears after a nested <section>; move it "
-                        f"into its own nested <section> or place it before the first subsection."
-                    ),
+                    "nested": False,
+                    "reported": False,
+                    "title_count": 0,
+                    "title_lines": [],
+                    "first_child": None,
                 })
-                stack[0]["reported"] = True
+                if stack[:-1]:
+                    stack[-2]["nested"] = True
+            else:
+                if stack:
+                    frame = stack.pop()
+                    if frame["title_count"] == 0:
+                        findings.append({
+                            "line": frame["line"],
+                            "tag": "title",
+                            "message": "<section> is missing a <title>.",
+                        })
+                    if frame["first_child"] is not None and frame["first_child"] != "title":
+                        findings.append({
+                            "line": frame["line"],
+                            "tag": frame["first_child"],
+                            "message": "<section> must start with a <title>.",
+                        })
+                    for extra_title_line in frame["title_lines"][1:]:
+                        findings.append({
+                            "line": extra_title_line,
+                            "tag": "title",
+                            "message": "<section> has more than one <title>; keep exactly one.",
+                        })
             continue
 
-        if is_self:
+        if not stack:
             continue
 
-        if not is_close:
-            if stack:
-                stack[-1]["nested"] = True
-            stack.append({"line": line, "nested": False, "reported": False})
-        else:
-            if stack:
-                stack.pop()
+        frame = stack[-1]
+
+        if name == "title":
+            if not is_close:
+                frame["title_count"] += 1
+                frame["title_lines"].append(line)
+                if frame["first_child"] is None:
+                    frame["first_child"] = "title"
+            continue
+
+        if frame["first_child"] is None:
+            frame["first_child"] = name
+
+        if len(stack) == 1 and frame["nested"] and not frame["reported"]:
+            findings.append({
+                "line": line,
+                "tag": name,
+                "message": (
+                    f"<{name}> appears after a nested <section>; move it "
+                    f"into its own nested <section> or place it before the first subsection."
+                ),
+            })
+            frame["reported"] = True
 
     findings.sort(key=lambda f: f["line"] or 0)
     return findings
