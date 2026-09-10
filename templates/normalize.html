@@ -8,8 +8,7 @@
 	<form method="post">
 		<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 		<label class="field-label" for="xml-in">Your code</label>
-		<textarea class="xml-io" id="xml-in" name="xml" rows="12" spellcheck="false" autofocus
-		          placeholder="&lt;ul&gt;&#10;  &lt;li&gt;first item&lt;/li&gt;&#10;  &lt;li&gt;second item&lt;/li&gt;&#10;&lt;/ul&gt;">{{ src }}</textarea>
+		<textarea class="xml-io" id="xml-in" name="xml" rows="12" spellcheck="false" autofocus>{{ src }}</textarea>
 		<p>
 			<button type="submit" class="btn">Fix it</button>
 			<button type="button" class="btn" id="clear-btn">Clear</button>
