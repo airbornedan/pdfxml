@@ -18,7 +18,7 @@
 		</form>
 	</div>
 	{% else %}
-	<form method="post" action="{{ url_for('extract.upload') }}" enctype="multipart/form-data" id="upload-form">
+	<form method="post" action="{{ url_for('extract.upload') }}" enctype="multipart/form-data" id="upload-form" data-busy>
 		<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 		<div class="upload-box" id="drop-zone">
 			<input type="file" id="pdf-file" name="pdf" accept="application/pdf" required class="file-input">

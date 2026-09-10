@@ -4,12 +4,12 @@
 	{% include "_breadcrumbs.html" %}
 	<h1>{% if continue_type %}Add to your {{ "list" if continue_type != "paragraph" else "text" }}{% else %}Draw a region, then choose what to extract{% endif %}</h1>
 	<div class="page-nav">
-		<form method="post" action="{{ url_for('extract.page_prev') }}">
+		<form method="post" action="{{ url_for('extract.page_prev') }}" data-busy="button">
 			<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 			<button type="submit" class="chevron-btn" aria-label="Previous page" title="Previous page" {% if page_number <= 1 %}disabled{% endif %}><img src="{{ url_for('static', filename='images/chevron-left.svg') }}" alt=""></button>
 		</form>
 		<p class="page-indicator">Page {{ page_number }}{% if page_count %} of {{ page_count }}{% endif %}</p>
-		<form method="post" action="{{ url_for('extract.page_next') }}">
+		<form method="post" action="{{ url_for('extract.page_next') }}" data-busy="button">
 			<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 			<button type="submit" class="chevron-btn" aria-label="Next page" title="Next page" {% if page_count and page_number >= page_count %}disabled{% endif %}><img src="{{ url_for('static', filename='images/chevron-right.svg') }}" alt=""></button>
 		</form>
@@ -21,7 +21,7 @@
 	<section class="continue-panel">
 		<div class="continue-panel__head">
 			<strong>{{ count }} {{ item_word }}{{ "" if count == 1 else "s" }} so far</strong>
-			<form method="post" action="{{ url_for('extract.continue_done') }}">
+			<form method="post" action="{{ url_for('extract.continue_done') }}" data-busy="button">
 				<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 				<button type="submit" class="btn">Done &mdash; review &amp; copy</button>
 			</form>
@@ -66,7 +66,7 @@
 		<div id="select-box"></div>
 	</div>
 
-	<form method="post" id="select-form">
+	<form method="post" id="select-form" data-busy>
 		<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 		<input type="hidden" name="x0" id="x0">
 		<input type="hidden" name="y0" id="y0">
@@ -87,12 +87,12 @@
 	</form>
 
 	<div class="page-nav">
-		<form method="post" action="{{ url_for('extract.page_prev') }}">
+		<form method="post" action="{{ url_for('extract.page_prev') }}" data-busy="button">
 			<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 			<button type="submit" class="chevron-btn" aria-label="Previous page" title="Previous page" {% if page_number <= 1 %}disabled{% endif %}><img src="{{ url_for('static', filename='images/chevron-left.svg') }}" alt=""></button>
 		</form>
 		<p class="page-indicator">Page {{ page_number }}{% if page_count %} of {{ page_count }}{% endif %}</p>
-		<form method="post" action="{{ url_for('extract.page_next') }}">
+		<form method="post" action="{{ url_for('extract.page_next') }}" data-busy="button">
 			<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 			<button type="submit" class="chevron-btn" aria-label="Next page" title="Next page" {% if page_count and page_number >= page_count %}disabled{% endif %}><img src="{{ url_for('static', filename='images/chevron-right.svg') }}" alt=""></button>
 		</form>
@@ -249,12 +249,15 @@
 		const fd = new FormData(form);
 		fd.set("element_type", "image");
 		fd.set("erase_rects", JSON.stringify(eraseRects.map(toPreviewPx)));
+		if (window.PdfxmlBusy) window.PdfxmlBusy.show();
 		let resp;
 		try {
 			resp = await fetch(SELECT_URL, { method: "POST", body: fd,
 				headers: { "X-Requested-With": "fetch" } });
 		} catch {
 			resp = null;
+		} finally {
+			if (window.PdfxmlBusy) window.PdfxmlBusy.hide();
 		}
 		if (!resp || !resp.ok) {
 			pageError.textContent = "Couldn't extract that region -- try a different selection.";

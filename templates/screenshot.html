@@ -15,7 +15,7 @@
 	{% else %}
 	<h1>Screenshot</h1>
 	<p class="subtitle">Upload an agricultural display screenshot to crop its ISOBUS panel.</p>
-	<form method="post" action="{{ url_for('screenshot.screenshot') }}" enctype="multipart/form-data" id="screenshot-form">
+	<form method="post" action="{{ url_for('screenshot.screenshot') }}" enctype="multipart/form-data" id="screenshot-form" data-busy>
 		<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 		<div class="upload-box" id="drop-zone">
 			<input type="file" id="image-file" name="image" accept="image/png,image/jpeg" required class="file-input">

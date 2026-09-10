@@ -6,16 +6,16 @@
 
 	<div class="actions">
 		{% if can_continue %}
-		<form method="post" action="{{ url_for('extract.continue_more') }}">
+		<form method="post" action="{{ url_for('extract.continue_more') }}" data-busy="button">
 			<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 			<button type="submit" class="btn">Add to {{ "text" if result.element_type == "paragraph" else "list" }}</button>
 		</form>
 		{% endif %}
-		<form method="post" action="{{ url_for('extract.extract_another') }}">
+		<form method="post" action="{{ url_for('extract.extract_another') }}" data-busy="button">
 			<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 			<button type="submit" class="btn">Select new</button>
 		</form>
-		<form method="post" action="{{ url_for('extract.new_upload') }}">
+		<form method="post" action="{{ url_for('extract.new_upload') }}" data-busy="button">
 			<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 			<button type="submit" class="link-btn">Upload a different PDF</button>
 		</form>
@@ -89,16 +89,16 @@
 
 	<div class="actions">
 		{% if can_continue %}
-		<form method="post" action="{{ url_for('extract.continue_more') }}">
+		<form method="post" action="{{ url_for('extract.continue_more') }}" data-busy="button">
 			<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 			<button type="submit" class="btn">Add to {{ "text" if result.element_type == "paragraph" else "list" }}</button>
 		</form>
 		{% endif %}
-		<form method="post" action="{{ url_for('extract.extract_another') }}">
+		<form method="post" action="{{ url_for('extract.extract_another') }}" data-busy="button">
 			<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 			<button type="submit" class="btn">Select new</button>
 		</form>
-		<form method="post" action="{{ url_for('extract.new_upload') }}">
+		<form method="post" action="{{ url_for('extract.new_upload') }}" data-busy="button">
 			<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 			<button type="submit" class="link-btn">Upload a different PDF</button>
 		</form>
