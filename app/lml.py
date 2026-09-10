@@ -455,6 +455,7 @@ def check_mediaobjects(text):
         if name == "imagedata":
             if is_self:
                 if stack:
+                    stack[-1]["imagedata_count"] += 1   # self-closed is the normal form
                     if not re.search(r"\bfileref\b", attrs, flags=re.IGNORECASE):
                         add(line, "<imagedata> is missing the required fileref attribute.", tag="imagedata")
                 else:
