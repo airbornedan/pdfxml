@@ -1,0 +1,168 @@
+<?xml version="1.0"?>
+<section xmlns="http://docbook.org/ns/docbook" xmlns:xinfo="http://ns.expertinfo.se/cms/xmlns/1.0" version="5.0" xinfo:resource="UUID-a94c25f0-97b9-5779-7b7d-e62dd5814d76" xinfo:resource-id="189022" xinfo:resource-title="Safety - NH3" xinfo:resource-titlelabel="" xinfo:resource-type="component" xinfo:version-major="1" xinfo:version-minor="0" xml:id="UUID-a94c25f0-97b9-5779-7b7d-e62dd5814d76" xml:lang="en">
+  <title xinfo:text="189023">Safety - NH₃</title>
+  <warning role="danger">
+    <para xinfo:text="190378">Please follow all of the instructions in this manual carefully and read the entire manual completely. Failure to do so may cause the product to function improperly or fail causing serious injury or death.</para>
+  </warning>
+  <warning role="danger">
+    <para xinfo:text="189054">ANHYDROUS AMMONIA IS AN INHALATION HAZARD AND WILL CAUSE SERIOUS INJURY OR DEATH. USE EXTREME CAUTION WHEN HANDLING IT OR PERFORMING ANY MAINTENANCE ON EQUIPMENT USED FOR ANHYDROUS AMMONIA.</para>
+  </warning>
+  <para xinfo:text="189056">Before performing any installation, repair or maintenance please follow the instructions below:</para>
+  <orderedlist>
+    <listitem>
+      <para xinfo:text="189057">Only trained and certified personnel should work with anhydrous ammonia. If you are not, please seek out the appropriate agricultural department to attend a class to obtain the proper training and certification.</para>
+    </listitem>
+    <listitem>
+      <para xinfo:text="189058">Wear appropriate safety goggles, gloves and breathing apparatuses.</para>
+    </listitem>
+    <listitem>
+      <para xinfo:text="189059">Always know which way the wind is blowing.</para>
+    </listitem>
+    <listitem>
+      <para xinfo:text="189060">Drain all tanks, hoses and piping of anhydrous ammonia COMPLETELY before removing, installing, performing maintenance or repairing any equipment.</para>
+    </listitem>
+    <listitem>
+      <para xinfo:text="189061">Always remove device from service before performing any maintenance or repair.</para>
+    </listitem>
+    <listitem>
+      <para xinfo:text="189062">Have sufficient water nearby.</para>
+    </listitem>
+    <listitem>
+      <para xinfo:text="189063">Obey all local, state and federal laws regarding the handling of anhydrous ammonia.</para>
+    </listitem>
+  </orderedlist>
+  <mediaobject>
+    <imageobject>
+      <imagedata fileref="UUID-6a95b018-370c-64c1-b977-7be74d98b8ff" xinfo:image="UUID-6a95b018-370c-64c1-b977-7be74d98b8ff"/>
+    </imageobject>
+  </mediaobject>
+  <section>
+    <title xinfo:text="189064">Anhydrous Ammonia Safety</title>
+    <para xinfo:text="189065">Anhydrous ammonia is an important source of nitrogen fertilizer for crops. The improper handling of anhydrous ammonia can have catastrophic results on both plants and farm workers. Common injuries are severe burns to eyes, skin and the respiratory tract.</para>
+    <itemizedlist>
+      <listitem>
+        <para xinfo:text="189066">Always wear personal protective equipment (PPE). Standard PPE should be non-vented goggles, rubber gloves with thermal lining, face shield or an approved respirator. Wear a lightweight rubber suit, or (at the very least) a long sleeve shirt and coveralls.</para>
+      </listitem>
+      <listitem>
+        <para xinfo:text="189067">Make sure anhydrous ammonia tanks are not filled beyond the recommended capacity.</para>
+      </listitem>
+      <listitem>
+        <para xinfo:text="189068">Use care when handling the hose end valve so that it does not open accidentally. Do not move the hose by handling valve handle.</para>
+      </listitem>
+      <listitem>
+        <para xinfo:text="189069">Be sure to bleed the hose coupling before disconnecting. Use care when cleaning plugged knives as anhydrous ammonia could be built up behind the plug.</para>
+      </listitem>
+      <listitem>
+        <para xinfo:text="189070">Use emergency water supply for at least 15 minutes if exposed to anhydrous ammonia and then seek emergency medical attention.</para>
+      </listitem>
+      <listitem>
+        <para xinfo:text="189071">Always carry a small squeeze bottle of fresh water.</para>
+      </listitem>
+      <listitem>
+        <para xinfo:text="189072">Never assume NH₃ lines are empty, including the lines connected to the Torpedo.</para>
+      </listitem>
+      <listitem>
+        <para xinfo:text="189073">Make sure the system is completely drained of NH₃. It can hide in low areas of the system. Look for frost on the hose or equipment. Frost usually indicates the presence of NH₃.</para>
+      </listitem>
+      <listitem>
+        <para xinfo:text="189074">Always use high pressure hose when ammonia can be trapped in that segment, such as between the tank and the Torpedo.</para>
+      </listitem>
+      <listitem>
+        <para xinfo:text="189075">Any place that has a high pressure hose should also have a hydrostatic relief valve and a bleed valve.</para>
+      </listitem>
+      <listitem>
+        <para xinfo:text="189076">Always handle valves by the body and not by the wheel or latch.</para>
+      </listitem>
+      <listitem>
+        <para xinfo:text="189077">Always make sure you are upwind of potential NH₃ release points.</para>
+      </listitem>
+      <listitem>
+        <para xinfo:text="189078">When you park, position NH₃ equipment downwind from dwellings, people, and livestock.</para>
+      </listitem>
+      <listitem>
+        <para xinfo:text="189079">Close the valve on the tank when you stop.</para>
+      </listitem>
+      <listitem>
+        <para xinfo:text="189080">The first treatment for anhydrous ammonia exposure is WATER.</para>
+      </listitem>
+    </itemizedlist>
+    <note role="notice">
+      <para xinfo:text="189105">FOLLOW THESE INSTRUCTIONS WHEN APPLYING ANHYDROUS AMMONIA OR SERVICING EQUIPMENT.</para>
+    </note>
+  </section>
+  <section>
+    <title xinfo:text="189081">Before Applying Anhydrous Ammonia</title>
+    <para xinfo:text="189082">Before beginning NH₃ application, verify:</para>
+    <itemizedlist>
+      <listitem>
+        <para xinfo:text="189083">Wind direction is known and allows safe operation.</para>
+      </listitem>
+      <listitem>
+        <para xinfo:text="189084">Hoses are in good condition.</para>
+      </listitem>
+      <listitem>
+        <para xinfo:text="189085">Hoses and other dated components are within their approved service life.</para>
+      </listitem>
+      <listitem>
+        <para xinfo:text="189086">Fittings, valves, and connections are clean and free from rust.</para>
+      </listitem>
+      <listitem>
+        <para xinfo:text="189087">Low-pressure tubes are free from leaks.</para>
+      </listitem>
+      <listitem>
+        <para xinfo:text="189088">Application knives are free from obstructions.</para>
+      </listitem>
+      <listitem>
+        <para xinfo:text="189089">Nurse tank is secured with a locking hitch pin.</para>
+      </listitem>
+      <listitem>
+        <para xinfo:text="189090">Pressure relief valves are operating correctly.</para>
+      </listitem>
+      <listitem>
+        <para xinfo:text="189091">Nurse tank has five gallons of fresh water.</para>
+      </listitem>
+      <listitem>
+        <para xinfo:text="189092">PPE is available and being worn.</para>
+      </listitem>
+    </itemizedlist>
+  </section>
+  <section>
+    <title xinfo:text="190361">Before performing maintenance on the toolbar or equipment:</title>
+    <para xinfo:text="190312">Become familiar with all bleeder-valve locations on the NH₃ system before performing service. Multiple bleed points may be present throughout the system, and all trapped-pressure sections should be relieved in accordance with approved bleed-down procedures.</para>
+    <itemizedlist>
+      <listitem>
+        <para xinfo:text="189094">Wear appropriate PPE.</para>
+      </listitem>
+      <listitem>
+        <para xinfo:text="189095">Ensure emergency water is immediately available.</para>
+      </listitem>
+      <listitem>
+        <para xinfo:text="189096">Verify wind direction and stay upwind.</para>
+      </listitem>
+      <listitem>
+        <para xinfo:text="189097">Park away from buildings, livestock, and people.</para>
+      </listitem>
+      <listitem>
+        <para xinfo:text="189098">Close the valve on the NH₃ tank and follow bleed-down procedures.</para>
+      </listitem>
+      <listitem>
+        <para xinfo:text="189099">Verify the tank valve is fully closed. </para>
+      </listitem>
+      <listitem>
+        <para xinfo:text="189104">Turn the Master valve on and leave it on during bleeding.</para>
+      </listitem>
+      <listitem>
+        <para xinfo:text="189100">Disconnect the nurse tank supply hoses.</para>
+      </listitem>
+      <listitem>
+        <para xinfo:text="189101">Open all bleeder valves on the cooler and the rest of system.</para>
+      </listitem>
+      <listitem>
+        <para xinfo:text="189102">Check any hoses that have a low loop in them.</para>
+      </listitem>
+      <listitem>
+        <para xinfo:text="189103">After completing bleed-down procedures, loosen fittings slowly and cautiously to verify that no residual pressure or trapped ammonia remains before service is performed.</para>
+      </listitem>
+    </itemizedlist>
+  </section>
+</section>

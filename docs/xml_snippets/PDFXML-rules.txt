@@ -1,0 +1,43 @@
+PDFXML Check XML rules
+
+This file documents the current rules the checker applies in the app.
+
+1. Known tag pairing
+- The checker looks at the known Paligo-style tags and flags unmatched opening or closing tags.
+- This is a loose structural check, not a full XML schema validator.
+
+2. xinfo attributes
+- xinfo attributes are stripped from pasted XML before validation, except that the xinfo attributes on the first <section> tag are preserved.
+- This keeps the source usable while removing the noisy internal metadata that the tool does not want to preserve.
+
+3. List structure
+- Every <orderedlist> or <itemizedlist> must contain at least one <listitem>.
+- Each <listitem> must have real content.
+- A <listitem> can contain a <para>, a <mediaobject>, or a nested list.
+- Text or tags that sit directly inside a list, instead of inside a <listitem>, are reported.
+- A nested list must be contained inside a <listitem>.
+- <imageobject> must be inside a <mediaobject>.
+
+4. Section structure
+- Once a nested <section> begins inside the same parent <section>, later sibling content at that parent level is not allowed.
+- The checker reports the first offending element after the nested section and suggests moving it into its own nested <section> or before the first subsection.
+
+5. Table structure
+- Once a row has started, everything must be inside a <td> or <th>.
+- Content before the first <td> or <th> in a row is reported.
+- Content after the last <td> or <th> in a row is reported.
+- Rows must have a matching closing </tr>.
+- Cells must close correctly.
+- A cell closing tag must match the open cell type (for example, </td> cannot close a <th> cell).
+- If a row has no cells, it is reported.
+- Rows in the same table are expected to have the same number of columns.
+- Missing </informaltable> is reported.
+
+6. Output behavior
+- Findings are shown in line-number order, regardless of which checker produced them.
+- The returned text highlights only the offending tags, not whole lines.
+- The page shows an Errors section with actionable findings only.
+
+7. What is intentionally not being enforced
+- The checker is not attempting to validate the pasted XML against real DocBook or against Paligo's full schema.
+- It is intentionally tuned for the Paligo source-view LML that interns paste into this app.

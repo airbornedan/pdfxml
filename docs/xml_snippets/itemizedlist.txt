@@ -1,0 +1,17 @@
+  <itemizedlist>
+    <listitem>
+      <para xinfo:text="189294">Verify Sentinel configuration settings.</para>
+    </listitem>
+    <listitem>
+      <para xinfo:text="189295">Verify flowmeter calibration.</para>
+    </listitem>
+    <listitem>
+      <para xinfo:text="189296">Verify speed-source configuration.</para>
+    </listitem>
+    <listitem>
+      <para xinfo:text="189297">Verify valve operation and wiring.</para>
+    </listitem>
+    <listitem>
+      <para xinfo:text="189298">Refer to Troubleshooting for additional diagnostic procedures.</para>
+    </listitem>
+  </itemizedlist>

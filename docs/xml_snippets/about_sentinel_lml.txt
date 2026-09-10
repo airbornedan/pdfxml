@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<section xmlns="http://docbook.org/ns/docbook" xmlns:xinfo="http://ns.expertinfo.se/cms/xmlns/1.0" version="5.0" xinfo:resource="UUID-3d3b220b-4105-8eb2-eda3-6d8177c063c4" xinfo:resource-id="187989" xinfo:resource-title="About Sentinel for NH3" xinfo:resource-titlelabel="" xinfo:resource-type="component" xinfo:version-major="1" xinfo:version-minor="0" xml:id="UUID-3d3b220b-4105-8eb2-eda3-6d8177c063c4" xml:lang="en">
+  <title xinfo:text="187990">About Sentinel for NH₃</title>
+  <para xinfo:text="188014">Sentinel® is an ISOBUS-compatible control and monitoring platform for NH₃ application systems. It provides:</para>
+  <itemizedlist>
+    <listitem>
+      <para xinfo:text="188015">Rate Control: Sentinel Rate Control serves as the primary rate controller for the implement. The ECU monitors machine speed and system performance data and adjusts output to maintain the target application rate.</para>
+    </listitem>
+    <listitem>
+      <para xinfo:text="188016">Row Monitoring: Sentinel Row Monitoring tracks application performance at each row to identify flow variations, restrictions, and blockages. The system utilizes solid-state electromagnetic flow measurement technology to capture flow data without moving parts.</para>
+    </listitem>
+  </itemizedlist>
+  <para xinfo:text="188034">The illustration below shows an overview of the plumbing for a Sentinel system for NH₃.</para>
+  <mediaobject>
+    <imageobject>
+      <imagedata fileref="UUID-32f228d0-21c8-89e8-444a-b50a54cb6a5c" contentwidth="600" xinfo:image="UUID-32f228d0-21c8-89e8-444a-b50a54cb6a5c"/>
+    </imageobject>
+  </mediaobject>
+</section>

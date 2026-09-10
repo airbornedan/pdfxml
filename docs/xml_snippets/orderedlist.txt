@@ -1,0 +1,17 @@
+ <orderedlist>
+    <listitem>
+      <para xinfo:text="188070">Install the NH₃ turbine flowmeter downstream of the Torpedo cooler.</para>
+    </listitem>
+    <listitem>
+      <para xinfo:text="188071">Observe flow direction arrows during installation.</para>
+    </listitem>
+    <listitem>
+      <para xinfo:text="188072">Ensure the flowmeter receives 100% liquid NH₃ from the heat exchanger.</para>
+    </listitem>
+    <listitem>
+      <para xinfo:text="188073">Connect the flowmeter sensor harness to the Sentinel system.</para>
+    </listitem>
+    <listitem>
+      <para xinfo:text="188074">Configure the Sentinel flow calibration value to 580 pulses per gallon.</para>
+    </listitem>
+  </orderedlist>

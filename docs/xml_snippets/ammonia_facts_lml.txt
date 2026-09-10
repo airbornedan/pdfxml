@@ -1,0 +1,38 @@
+<?xml version="1.0"?>
+<section xmlns="http://docbook.org/ns/docbook" xmlns:xinfo="http://ns.expertinfo.se/cms/xmlns/1.0" xml:id="UUID-52c6c98d-3b5a-a4ec-cc74-ae1e7b4fc8d0" version="5.0" xml:lang="en" xinfo:resource="UUID-52c6c98d-3b5a-a4ec-cc74-ae1e7b4fc8d0" xinfo:resource-id="190362" xinfo:resource-type="component" xinfo:resource-title="Anhydrous Ammonia Facts" xinfo:resource-titlelabel="" xinfo:version-major="1" xinfo:version-minor="0">
+  <title xinfo:text="190369">Anhydrous Ammonia Facts</title>
+  <para xinfo:text="190370">Anhydrous ammonia is a colorless non-flammable liquefied gas. Its vapor is lighter than air and has the same pungent odor as household ammonia. Although ammonia vapor is lighter than air, the vapors from a leak may hug the ground appearing as a white cloud. Chemically, ammonia is 82% nitrogen (N) and 18% hydrogen (H) and has the chemical formula NH₃. Ammonia by weight is 14 parts nitrogen to 3 parts hydrogen, or approximately <emphasis>82% nitrogen and 18% hydrogen.</emphasis></para>
+  <para xinfo:text="190371">The definition of <emphasis>anhydrous</emphasis> is <emphasis>without water</emphasis>. Whereas household ammonia is 95% water, anhydrous ammonia has no water. Ammonia is so hygroscopic (water loving) that one cubic foot of water will dissolve 1300 cubic feet of ammonia vapor making water the primary weapon for first responders. Ammonia weighs 5.15 pounds per gallon in contrast to water which weighs 8.33 pounds per gallon. Since ammonia is so soluble in water there will be no layering effect when liquid ammonia is spilled into a surface water body. Booms, pads, sweeps and pillows that are usually used to contain and recover petroleum are ineffective on spills of ammonia into surface water.  </para>
+  <para xinfo:text="190372">Ammonia is a non-flammable gas but will ignite at a temperature of 1204°F within vapor concentration limits between 15% and 28%. (Paper ignites at 450°F, coal at 750°F.) Outside conditions that would support these vapor concentrations are very rare.</para>
+  <para xinfo:text="190373"> Ammonia will corrode galvanized metals, cast iron, copper, brass, or copper alloys. All ammonia piping, valves, tanks and fittings are constructed of steel.</para>
+  <para xinfo:text="190374">Liquid ammonia boils at any temperature greater than –28°F and will expand to 850 times its liquid volume. One gallon of liquid will expand to 850 gallons or 113 cubic feet of gas.</para>
+  <section>
+    <title xinfo:text="190366">Ammonia Fast Facts</title>
+    <para xinfo:text="190387">Keep this important information in mind when working with NH₃</para>
+    <section>
+      <title xinfo:text="190388">NH₃ Vapor</title>
+      <para xinfo:text="190389">Ammonia appears in nature as a natural substance that results from decomposition. Ammonia vapor is a colorless gas with a pungent odor. Ammonia exists as a vapor at atmospheric conditions. Ammonia vapor is lighter than air and tends to rise when released to atmosphere.</para>
+    </section>
+    <section>
+      <title xinfo:text="190390">NH3 Liquid</title>
+      <para xinfo:text="190391">Liquid ammonia released to atmosphere forms a white smoke by freezing the moisture in the air. Liquid ammonia has a very high coefficient of expansion with temperature. One gallon of liquid ammonia weighs approximately 5.15 lbs.; however the weight varies with temperature. When liquid ammonia reaches a temperature between its melting and critical points, it exerts a vapor pressure that increases with temperature. A closed container of liquid ammonia is in equilibrium with ammonia vapor and the container pressure bears a definite relationship to the temperature.</para>
+    </section>
+    <section>
+      <title xinfo:text="190392">Physical Data</title>
+      <para xinfo:text="190393">Boiling point is –28°F. Ignition point is 1,204°F.</para>
+    </section>
+    <section>
+      <title xinfo:text="190394">Storage and Handling</title>
+      <para xinfo:text="190395">Ammonia is stored and transported as a liquid under pressure. The pressure on the tank is the vapor pressure and remains the same whether the tank is 10% full or 80% full. This pressure is dependent on the temperature of the NH₃. The maximum filling level of an anhydrous ammonia tank is 85%.</para>
+    </section>
+    <section>
+      <title xinfo:text="190396">Flammability</title>
+      <para xinfo:text="190397">Anhydrous ammonia is classified by the DOT as a non-flammable gas. Ammonia vapor is flammable over a narrow range of 15% to 28% by volume in air and a strong ignition source must be present.</para>
+      <mediaobject>
+        <imageobject>
+          <imagedata fileref="UUID-6a95b018-370c-64c1-b977-7be74d98b8ff" xinfo:image="UUID-6a95b018-370c-64c1-b977-7be74d98b8ff"/>
+        </imageobject>
+      </mediaobject>
+    </section>
+  </section>
+</section>

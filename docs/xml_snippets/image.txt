@@ -1,0 +1,7 @@
+
+  <mediaobject>
+    <imageobject>
+      <imagedata fileref="UUID-14e26f82-16d3-63ea-9e5d-4b403beee340" contentwidth="600" xinfo:image="UUID-14e26f82-16d3-63ea-9e5d-4b403beee340"/>
+    </imageobject>
+  </mediaobject>
+  

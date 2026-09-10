@@ -1,0 +1,217 @@
+
+  <informaltable frame="box" rules="all">
+    <thead>
+      <tr>
+        <th>
+          <para xinfo:text="189958">ITEM NO.</para>
+        </th>
+        <th>
+          <para xinfo:text="189959">PART NUMBER</para>
+        </th>
+        <th>
+          <para xinfo:text="189960">DESCRIPTION</para>
+        </th>
+        <th>
+          <para xinfo:text="189961">QTY.</para>
+        </th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>
+          <para>1</para>
+        </td>
+        <td>
+          <para xinfo:text="189962">113-06-038050-P</para>
+        </td>
+        <td>
+          <para xinfo:text="189963">QC to MPT - 3/8” QC x 1/2” MPT</para>
+        </td>
+        <td>
+          <para>1</para>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <para>2</para>
+        </td>
+        <td>
+          <para xinfo:text="189964">150-125NIP-SH-S80</para>
+        </td>
+        <td>
+          <para xinfo:text="189965">Seamless Sch 80 Black Iron - 1-1/4” x Short Nipple</para>
+        </td>
+        <td>
+          <para>2</para>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <para>3</para>
+        </td>
+        <td>
+          <para xinfo:text="189966">150-150125RB-S80</para>
+        </td>
+        <td>
+          <para xinfo:text="189967">Forged Steel - 1-1/2” MPT x 1-1/4” FPT Reducer Bushing</para>
+        </td>
+        <td>
+          <para>2</para>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <para>4</para>
+        </td>
+        <td>
+          <para xinfo:text="189968">153-A-14BC</para>
+        </td>
+        <td>
+          <para xinfo:text="189969">1-1/4” NH3 Check Valve</para>
+        </td>
+        <td>
+          <para>1</para>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <para>5</para>
+        </td>
+        <td>
+          <para xinfo:text="189970">153-A-400-B</para>
+        </td>
+        <td>
+          <para xinfo:text="189971">1/4” RELIEF VALVE - 250 PSI</para>
+        </td>
+        <td>
+          <para>1</para>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <para>6</para>
+        </td>
+        <td>
+          <para xinfo:text="189972">153-A-411-HB</para>
+        </td>
+        <td>
+          <para xinfo:text="189973">Remote Bleed Down Valve with 3/8” Hose Barb</para>
+        </td>
+        <td>
+          <para>1</para>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <para>7</para>
+        </td>
+        <td>
+          <para xinfo:text="189974">153-A-MXC-150</para>
+        </td>
+        <td>
+          <para xinfo:text="189975">1-1/2” SS NH3 Mixing Chamber w/ 1/2” Injection Port</para>
+        </td>
+        <td>
+          <para>1</para>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <para>8</para>
+        </td>
+        <td>
+          <para xinfo:text="189976">283-125-5699Y1</para>
+        </td>
+        <td>
+          <para xinfo:text="189977">New Victaulic Torpedo SS Braided Hose</para>
+        </td>
+        <td>
+          <para>1</para>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <para>9</para>
+        </td>
+        <td>
+          <para>300-050100-5</para>
+        </td>
+        <td>
+          <para xinfo:text="189978">5/16” x 1” Hex Head Bolt - G5</para>
+        </td>
+        <td>
+          <para>4</para>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <para>10</para>
+        </td>
+        <td>
+          <para>302-0502040308</para>
+        </td>
+        <td>
+          <para xinfo:text="189979">5/16” x 2-1/4” Round Bend U-Bolt</para>
+        </td>
+        <td>
+          <para>2</para>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <para>11</para>
+        </td>
+        <td>
+          <para>323-05</para>
+        </td>
+        <td>
+          <para xinfo:text="189980">5/16” Flange Nut</para>
+        </td>
+        <td>
+          <para>4</para>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <para>12</para>
+        </td>
+        <td>
+          <para xinfo:text="189981">398-90-3483Y1</para>
+        </td>
+        <td>
+          <para xinfo:text="189982">Flow Direction Arrow Label</para>
+        </td>
+        <td>
+          <para>1</para>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <para>13</para>
+        </td>
+        <td>
+          <para xinfo:text="189983">462-2721Y1</para>
+        </td>
+        <td>
+          <para xinfo:text="189984">Splitter Support Bracket</para>
+        </td>
+        <td>
+          <para>2</para>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <para>14</para>
+        </td>
+        <td>
+          <para>716-333-0011-102</para>
+        </td>
+        <td>
+          <para xinfo:text="189985">1/2” SS N-Serve Checkvalve - 12 PSI w/ Extreme Viton</para>
+        </td>
+        <td>
+          <para>1</para>
+        </td>
+      </tr>
+    </tbody>
+  </informaltable>

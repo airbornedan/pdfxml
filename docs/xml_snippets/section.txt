@@ -1,0 +1,5 @@
+<section xmlns="http://docbook.org/ns/docbook" xmlns:xinfo="http://ns.expertinfo.se/cms/xmlns/1.0" version="5.0" xinfo:resource="UUID-fafac3cd-e1d4-8914-6938-74aedf8946be" xinfo:resource-id="187995" xinfo:resource-title="Functional Verification" xinfo:resource-titlelabel="" xinfo:resource-type="component" xinfo:version-major="1" xinfo:version-minor="0" xml:id="UUID-fafac3cd-e1d4-8914-6938-74aedf8946be" xml:lang="en">
+  <title xinfo:text="187996">Functional Verification</title>
+  <para xinfo:text="189275">Perform the following procedure after installation and Sentinel configuration have been completed. These steps verify that the Rate Control system responds correctly and controls the application rate properly before field use.</para>
+  <para xinfo:text="189276">To verify function:</para>
+</section>

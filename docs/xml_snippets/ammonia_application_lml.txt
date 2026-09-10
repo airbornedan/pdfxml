@@ -1,0 +1,51 @@
+<?xml version="1.0"?>
+<section xmlns="http://docbook.org/ns/docbook" xmlns:xinfo="http://ns.expertinfo.se/cms/xmlns/1.0" version="5.0" xinfo:resource="UUID-3729a533-541b-60ca-2535-671057f70bae" xinfo:resource-id="188921" xinfo:resource-title="Anhydrous Ammonia Application" xinfo:resource-titlelabel="" xinfo:resource-type="component" xinfo:version-major="1" xinfo:version-minor="0" xml:id="UUID-3729a533-541b-60ca-2535-671057f70bae" xml:lang="en">
+  <title xinfo:text="188922">Precision Metering and Application of Anhydrous Ammonia</title>
+  <para xinfo:text="188942">Accurate application of anhydrous ammonia (NH₃) requires a metering and control system that measures and regulates product flow under varying operating conditions.</para>
+  <section>
+    <title xinfo:text="188964">Challenges of Conventional NH₃ Metering Systems</title>
+    <para xinfo:text="188944">Accurate metering of anhydrous ammonia is difficult with conventional variable-orifice metering systems. NH₃ is stored and transported as a liquid and must be maintained either below its boiling point of -28°F (-33°C) or under sufficient pressure to remain in a liquid state. When the temperature rises above -28°F, a portion of the liquid ammonia vaporizes and becomes gas.</para>
+    <para xinfo:text="188945">Most application equipment relies on nurse tank pressure to move NH₃ through the delivery system and into the soil. As tank pressure increases or decreases, the amount of ammonia flowing through the system changes accordingly. Unless continuous adjustments are made, fluctuations in tank pressure can result in application rates that differ from the intended target rate.</para>
+    <para xinfo:text="188946">Anhydrous ammonia presents additional metering challenges due to its rapid expansion when transitioning from liquid to vapor. When released to atmospheric pressure, liquid NH₃ expands to approximately 850 times its original volume. As ammonia travels from the nurse tank through the delivery system, a portion of the liquid continuously vaporizes, causing the ratio of liquid to vapor to change throughout the flow path.</para>
+    <para xinfo:text="188947">Approximately 1% of the liquid ammonia may vaporize between the tank withdrawal tube and the metering point. Although this percentage appears small, the resulting vapor occupies a significant volume within the delivery system. At a tank pressure of 100 PSI, the vapor may occupy approximately 25% to 30% of the meter chamber volume. At 50 PSI, vapor can occupy more than 60% of the chamber volume. These variations make it difficult for conventional systems to meter and distribute NH₃ consistently and accurately.</para>
+  </section>
+  <section>
+    <title xinfo:text="188965">SurePoint Torpedo™ NH₃ System</title>
+    <para xinfo:text="188949">The SurePoint Torpedo™ NH₃ System improves anhydrous ammonia application through flow conditioning and automated rate control.</para>
+    <para xinfo:text="188950">Application accuracy depends on eliminating vapor-related measurement errors and compensating for changes in ground speed and tank pressure.</para>
+    <para xinfo:text="188951">The Torpedo™ system utilizes a heat exchanger to convert NH₃ to a fully liquid state prior to metering. By delivering 100% liquid ammonia to the flow meter, the system enables precise flow measurement and accurate rate control. The controller and control valve automatically adjust for changes in ground speed to maintain the target application rate. Automatic control compensates for changing conditions and reduces misapplication.</para>
+    <mediaobject>
+      <imageobject>
+        <imagedata fileref="UUID-0d0a5e26-a096-5ff3-a750-8376808c97c4" xinfo:image="UUID-0d0a5e26-a096-5ff3-a750-8376808c97c4"/>
+      </imageobject>
+    </mediaobject>
+  </section>
+  <section>
+    <title xinfo:text="190398">System Capacity and High-Flow Performance</title>
+    <para xinfo:text="190090">In high-volume applications, with wide implements, higher operating speeds, or colder operating temperatures, component sizing is critical to maintaining adequate flow capacity.</para>
+    <para xinfo:text="188955">A system capable of delivering the required flow rate at 90°F may not provide sufficient flow at 40°F if key components are improperly sized. Factors affecting system performance include:
+</para>
+    <itemizedlist>
+      <listitem>
+        <para xinfo:text="188956">Tank withdrawal valve capacity</para>
+      </listitem>
+      <listitem>
+        <para xinfo:text="188957">NH₃ delivery hose size and configuration</para>
+      </listitem>
+      <listitem>
+        <para xinfo:text="188958">Breakaway coupler capacity</para>
+      </listitem>
+      <listitem>
+        <para xinfo:text="188959">Heat exchanger capacity and efficiency</para>
+      </listitem>
+    </itemizedlist>
+    <para xinfo:text="188960">The SurePoint Torpedo™ system is engineered with properly matched components to ensure reliable product delivery across a wide range of operating conditions and application rates.
+</para>
+  </section>
+  <section>
+    <title xinfo:text="188966">Row Distribution Accuracy</title>
+    <para xinfo:text="188962">After accurate metering has been achieved, maintaining uniform row-to-row distribution becomes the next critical challenge. The manifold system plays a key role in ensuring consistent product distribution across all application rows. In addition to affecting distribution accuracy, improperly designed manifolds may create flow restrictions in high-rate applications.
+</para>
+    <para xinfo:text="188963">The SurePoint Torpedo™ system utilizes industry-leading Continental 360 Series Manifolds and Continental Vertical Dam Manifolds to provide consistent distribution and minimize flow restrictions, helping maintain uniform application across the implement width.</para>
+  </section>
+</section>

@@ -1,0 +1,118 @@
+<?xml version="1.0"?>
+<section xmlns="http://docbook.org/ns/docbook" xmlns:xinfo="http://ns.expertinfo.se/cms/xmlns/1.0" version="5.0" xinfo:resource="UUID-1da8d759-7935-8da4-f2b1-bceac3e7b238" xinfo:resource-id="188372" xinfo:resource-title="test" xinfo:resource-titlelabel="" xinfo:resource-type="component" xinfo:version-major="1" xinfo:version-minor="0" xml:id="UUID-1da8d759-7935-8da4-f2b1-bceac3e7b238" xml:lang="en">
+  <title xinfo:text="188373">test</title>
+  <orderedlist>
+    <listitem>
+      <para xinfo:text="188409">Attach 400-3450Y1-BK mounting bracket to implement frame using two (2) 400-3451Y1-BK backer plates, four (4) 1/2” x 9-1/2” carriage bolts and four (4) 1/2” flange nuts. Note: This kit is designed to fit 4”-8” wide bars.</para>
+    </listitem>
+    <listitem>
+      <para xinfo:text="188410">Using the four (4) 1/4” x 2-1/2” bolts, flat washers and flange nuts in the kit, mount the ECU to the mounting bracket.</para>
+      <mediaobject>
+        <imageobject>
+          <imagedata fileref="UUID-bcadabe8-32d9-611c-3a00-026a4edb1eb1" xinfo:image="UUID-bcadabe8-32d9-611c-3a00-026a4edb1eb1"/>
+        </imageobject>
+      </mediaobject>
+    </listitem>
+    <para>This is broken.</para>
+  </orderedlist>
+  <section>
+    <title>Section error</title>
+  </section>
+  <informaltable frame="box" rules="all">
+    <thead>
+      <tr>
+        <th>
+          <para xinfo:text="188411">PART NUMBER</para>
+        </th>
+        <th>
+          <para xinfo:text="188412">DESCRIPTION</para>
+        </th>
+        <th>
+          <para xinfo:text="188413">QTY.</para>
+        </th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>
+          <para>300-040208-5</para>
+        </td>
+        <td>
+          <para xinfo:text="188414">1/4" x 2-1/2" Hex Head Bolt - G5</para>
+        </td>
+        <td>
+          <para>4</para>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <para>304-080908-5</para>
+        </td>
+        <td>
+          <para xinfo:text="188415">Carriage Bolt - 1/2” x 9-1/2” - G5</para>
+        </td>
+        <td>
+          <para>4</para>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <para>321-04</para>
+        </td>
+        <td>
+          <para xinfo:text="188416">1/4” Nylock Nut</para>
+        </td>
+        <td>
+          <para>4</para>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <para>323-08</para>
+        </td>
+        <td>
+          <para xinfo:text="188417">1/2” Flange Nut</para>
+        </td>
+        <td>
+          <para>4</para>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <para>330-04</para>
+        </td>
+        <td>
+          <para xinfo:text="188418">1/4” Flat Washer</para>
+        </td>
+        <td>
+          <para>4</para>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <para xinfo:text="188419">400-3450Y1-BK</para>
+        </td>
+        <td>
+          <para xinfo:text="188420">JDRC 2000 / SureFire ISOBUS ECU Mounting Bracket</para>
+        </td>
+        <td>
+          <para>1</para>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <para xinfo:text="188421">400-3451Y1-BK</para>
+        </td>
+        <td>
+          <para xinfo:text="188422">JDRC 2000 / SureFire ISOBUS ECU Mounting Backer Plate</para>
+        </td>
+        <td>
+          <para>2</para>
+        </td>
+      </tr>
+    </tbody>
+  </informaltable>
+  <imageobject>
+    <imagedata fileref="UUID-03cc8bab-9a59-2068-7bc0-d956852375aa" xinfo:image="UUID-03cc8bab-9a59-2068-7bc0-d956852375aa"/>
+  </imageobject>
+</section>

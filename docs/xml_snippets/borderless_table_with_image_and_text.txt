@@ -1,0 +1,55 @@
+<informalfigure>
+    <informaltable frame="void" role="sidebyside" rules="none" tabstyle="tabstyle2" width="100%">
+      <colgroup>
+        <col width="50%"></col>
+        <col width="50%"></col>
+      </colgroup>
+      <tbody>
+        <tr>
+          <td>
+            <para xinfo:text="184950">ECU</para>
+            <mediaobject>
+              <imageobject>
+                <imagedata fileref="UUID-a37ebe63-7f1a-ad80-609f-26d876e5373f" width="40%" xinfo:image="UUID-a37ebe63-7f1a-ad80-609f-26d876e5373f"/>
+              </imageobject>
+            </mediaobject>
+          </td>
+          <td rowspan="2" valign="top">
+            <para xinfo:text="184951">
+              <emphasis role="bold">Installation Steps</emphasis>
+            </para>
+            <orderedlist>
+              <listitem>
+                <para xinfo:text="184952">Install the ECU on your implement or tractor in a location where it will not interfere with operation. Use the provided bracket and bolts to mount the ECU. The bracket supports both vertical and horizontal mounting of the ECU. <emphasis role="bold">Note:</emphasis> When mounted vertically, the connector should point downward.<indexterm><primary>ECU</primary><secondary>orientation</secondary></indexterm></para>
+              </listitem>
+              <listitem>
+                <para xinfo:text="184954">If necessary, route the provided ISO extension cable from the implement hitch to the desired Sentinel ECU mounting location.</para>
+              </listitem>
+              <listitem>
+                <para xinfo:text="184955">Locate the 2-pin Molex power connector and the 12-pin Ampseal POWER/CAN connector or the 9-pin ISO connector that the Sentinel ECU will be connected to. These connectors are labeled. Remove the terminator.</para>
+              </listitem>
+              <listitem>
+                <para xinfo:text="184956">Connect the harness connector labeled ECU to the Sentinel ECU.</para>
+              </listitem>
+              <listitem>
+                <para xinfo:text="184957">Connect the other end of the harness to the Molex/Ampseal POWER/CAN connection.</para>
+              </listitem>
+              <listitem>
+                <para xinfo:text="184958">Use the previously removed terminator to terminate the ISO OUT POWER/CAN connection found on the ECU harness.</para>
+              </listitem>
+            </orderedlist>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <para xinfo:text="184959">Bracket<indexterm><primary>ECU</primary><secondary>bracket</secondary></indexterm></para>
+            <mediaobject>
+              <imageobject>
+                <imagedata fileref="UUID-8e9f2647-d681-eaff-04bd-335efd82bef4" contentwidth="100" width="200px" xinfo:image="UUID-8e9f2647-d681-eaff-04bd-335efd82bef4"/>
+              </imageobject>
+            </mediaobject>
+          </td>
+        </tr>
+      </tbody>
+    </informaltable>
+  </informalfigure>
