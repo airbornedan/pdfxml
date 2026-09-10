@@ -25,6 +25,19 @@
 	</p>
 	<pre class="lml-output">{{ marked|safe }}</pre>
 
+	{% if has_lists %}
+	<h2 class="check-subhead">List structure</h2>
+	{% if list_findings %}
+	<ul class="check-findings">
+		{% for f in list_findings %}
+		<li>{% if f.line %}<span class="check-line">line {{ f.line }}</span> {% endif %}{{ f.message }}</li>
+		{% endfor %}
+	</ul>
+	{% else %}
+	<p class="subtitle">Every list has paired <code>&lt;listitem&gt;</code> tags with content, and nothing loose between the items.</p>
+	{% endif %}
+	{% endif %}
+
 	{% if has_tables %}
 	<h2 class="check-subhead">Table structure</h2>
 	{% if table_findings %}

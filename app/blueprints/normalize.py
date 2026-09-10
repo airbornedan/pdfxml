@@ -34,11 +34,15 @@ def fix_xml():
 @bp.route("/check", methods=["GET", "POST"])
 def check_xml():
     src = request.form.get("xml", "") if request.method == "POST" else ""
-    marked, unmatched, table_findings, has_tables = (None, 0, [], False)
+    marked, unmatched = (None, 0)
+    table_findings, has_tables = ([], False)
+    list_findings, has_lists = ([], False)
     if request.method == "POST":
         marked, unmatched = lml.check_tags(src)
         table_findings = lml.check_tables(src)
         has_tables = "<informaltable" in src.lower()
+        list_findings = lml.check_lists(src)
+        has_lists = "<orderedlist" in src.lower() or "<itemizedlist" in src.lower()
 
     return render_template(
         "check.html",
@@ -48,4 +52,6 @@ def check_xml():
         unmatched=unmatched,
         table_findings=table_findings,
         has_tables=has_tables,
+        list_findings=list_findings,
+        has_lists=has_lists,
     )

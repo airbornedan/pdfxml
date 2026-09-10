@@ -220,3 +220,145 @@ def _finalize_table(table, add):
         add(table["line"],
             f"Rows have different column counts ({detail}). Every row in "
             f"these tables should have the same number of columns.")
+
+
+########################################################################
+### LIST STRUCTURE CHECK
+###
+### <orderedlist> / <itemizedlist> rules for these books:
+###   * the list has a closing tag and holds at least one <listitem>
+###   * every <listitem> has exactly one </listitem>
+###   * nothing sits directly in the list except <listitem> -- every
+###     <para>, <mediaobject>, sublist, or stray text between the items
+###     must be inside a <listitem>
+###   * every <listitem> has real content: a <para>, a <mediaobject>,
+###     or a nested list (sublists are allowed)
+########################################################################
+
+_LIST_TAGS = frozenset({"orderedlist", "itemizedlist"})
+_ITEM_TAG = "listitem"
+### what makes a <listitem> "have content"
+_LI_CONTENT = frozenset({"para", "mediaobject", "orderedlist", "itemizedlist"})
+
+
+def check_lists(text):
+    """Return a list of {"line": int, "message": str} findings for every
+    <orderedlist>/<itemizedlist> in `text`. Empty == no problems (or no
+    lists). A lenient nested walk: a closing tag unwinds to the nearest
+    open element of the same name, and a new <listitem> implicitly
+    closes anything still open inside the previous one."""
+    findings = []
+    stack = []          # {"tag","line","kind": "list"|"li"|"other", ...}
+    last_end = 0
+
+    def add(line, message):
+        findings.append({"line": line, "message": message})
+
+    def finalize(frame, dangling=False):
+        if frame["kind"] == "li":
+            if dangling:
+                add(frame["line"],
+                    f"<listitem> (line {frame['line']}) has no </listitem>.")
+            if not frame["content"]:
+                add(frame["line"],
+                    f"<listitem> (line {frame['line']}) has no content -- it "
+                    f"needs a <para>, a <mediaobject>, or a nested list.")
+        elif frame["kind"] == "list":
+            if dangling:
+                add(frame["line"],
+                    f"<{frame['tag']}> (line {frame['line']}) has no closing tag.")
+            if frame["items"] == 0:
+                add(frame["line"],
+                    f"<{frame['tag']}> (line {frame['line']}) has no "
+                    f"<listitem> elements.")
+        # a dangling "other" element is a tag-balance problem, reported by
+        # check_tags -- not repeated here
+
+    def note_content(name):
+        """Register `name` as content of the nearest enclosing <listitem>,
+        unless a list sits between here and it."""
+        for frame in reversed(stack):
+            if frame["kind"] == "li":
+                frame["content"].add(name)
+                return
+            if frame["kind"] == "list":
+                return
+
+    for match in _TAG_RE.finditer(text):
+        name = match.group(2).lower()
+        is_close = match.group(1) == "/"
+        is_self = match.group(4) == "/" and not is_close
+        start, end = match.start(), match.end()
+        line = _line_of(text, start)
+        cont = stack[-1] if stack else None
+
+        if text[last_end:start].strip() and cont and cont["kind"] == "list":
+            add(_line_of(text, last_end),
+                "Text sits directly inside a list; it must be in a <listitem>.")
+        last_end = end
+
+        kind = ("list" if name in _LIST_TAGS
+                else "li" if name == _ITEM_TAG
+                else "other")
+
+        if is_self:
+            if kind == "li":
+                if cont and cont["kind"] == "list":
+                    cont["items"] += 1
+                add(line, f"<listitem/> (line {line}) is empty; it needs content.")
+            elif kind == "other":
+                if cont and cont["kind"] == "list":
+                    add(line, f"<{name}/> sits directly inside a list; it must "
+                              f"be inside a <listitem>.")
+                elif name == "mediaobject":
+                    note_content("mediaobject")
+            continue
+
+        if not is_close:                       # opening tag
+            if kind == "list":
+                if cont and cont["kind"] == "list":
+                    add(line, "A sublist sits directly inside a list; it must "
+                              "be inside a <listitem>.")
+                elif cont and cont["kind"] == "li":
+                    cont["content"].add("list")
+                stack.append({"tag": name, "line": line, "kind": "list",
+                              "items": 0})
+            elif kind == "li":
+                while stack and stack[-1]["kind"] != "list":
+                    finalize(stack.pop(), dangling=True)   # implicit close
+                cont = stack[-1] if stack else None
+                if not cont or cont["kind"] != "list":
+                    add(line, "<listitem> outside any list.")
+                else:
+                    cont["items"] += 1
+                stack.append({"tag": name, "line": line, "kind": "li",
+                              "content": set()})
+            else:                              # other element
+                if cont and cont["kind"] == "list":
+                    add(line, f"<{name}> sits directly inside a list; it must "
+                              f"be inside a <listitem>.")
+                elif name in ("para", "mediaobject"):
+                    note_content(name)
+                stack.append({"tag": name, "line": line, "kind": "other"})
+            continue
+
+        # closing tag -- unwind to the matching name
+        depth = next((i for i in range(len(stack) - 1, -1, -1)
+                      if stack[i]["tag"] == name), None)
+        if depth is None:
+            if kind == "li":
+                add(line, "</listitem> with no matching <listitem>.")
+            elif kind == "list":
+                add(line, f"</{name}> with no matching opening tag.")
+            continue
+        for frame in stack[depth + 1:]:
+            finalize(frame, dangling=True)
+        closed = stack[depth]
+        del stack[depth:]
+        finalize(closed, dangling=False)
+
+    for frame in reversed(stack):
+        finalize(frame, dangling=True)
+
+    findings.sort(key=lambda f: f["line"] or 0)
+    return findings

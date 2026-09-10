@@ -135,3 +135,88 @@ def test_finding_carries_a_line_number():
     src = "<informaltable><tbody>\n<tr><td>1</td></tr>\n<tr><td>2</td><td>3</td></tr>\n</tbody></informaltable>"
     findings = check_tables(src)
     assert findings and all(isinstance(f["line"], int) for f in findings)
+
+
+# --- check_lists -------------------------------------------------------
+from app.lml import check_lists
+
+
+def test_well_formed_list_has_no_findings():
+    src = ("<orderedlist>"
+           "<listitem><para>one</para></listitem>"
+           "<listitem><para>two</para></listitem>"
+           "</orderedlist>")
+    assert check_lists(src) == []
+
+
+def test_no_findings_without_a_list():
+    assert check_lists("<para>text</para>") == []
+
+
+def test_loose_para_directly_in_list_is_reported():
+    src = ("<orderedlist>"
+           "<para>Step one</para>"
+           "<listitem><para>Step two</para></listitem>"
+           "</orderedlist>")
+    msgs = " ".join(f["message"] for f in check_lists(src))
+    assert "directly inside a list" in msgs
+
+
+def test_loose_text_between_items_is_reported():
+    src = ("<itemizedlist><listitem><para>a</para></listitem>"
+           " and also "
+           "<listitem><para>b</para></listitem></itemizedlist>")
+    msgs = " ".join(f["message"] for f in check_lists(src))
+    assert "Text sits directly inside a list" in msgs
+
+
+def test_empty_listitem_is_reported():
+    src = "<orderedlist><listitem></listitem></orderedlist>"
+    msgs = " ".join(f["message"] for f in check_lists(src))
+    assert "has no content" in msgs
+
+
+def test_listitem_with_only_bare_text_is_reported():
+    src = "<orderedlist><listitem>just words</listitem></orderedlist>"
+    msgs = " ".join(f["message"] for f in check_lists(src))
+    assert "has no content" in msgs
+
+
+def test_listitem_with_only_a_mediaobject_is_ok():
+    src = ("<itemizedlist><listitem>"
+           "<mediaobject><imageobject/></mediaobject>"
+           "</listitem></itemizedlist>")
+    assert check_lists(src) == []
+
+
+def test_listitem_with_only_a_sublist_is_ok():
+    src = ("<orderedlist><listitem>"
+           "<itemizedlist><listitem><para>x</para></listitem></itemizedlist>"
+           "</listitem></orderedlist>")
+    assert check_lists(src) == []
+
+
+def test_dangling_listitem_is_reported():
+    src = ("<orderedlist>"
+           "<listitem><para>a</para>"
+           "<listitem><para>b</para></listitem>"
+           "</orderedlist>")
+    msgs = " ".join(f["message"] for f in check_lists(src))
+    assert "has no </listitem>" in msgs
+
+
+def test_stray_closing_listitem_is_reported():
+    src = "<orderedlist><listitem><para>a</para></listitem></listitem></orderedlist>"
+    msgs = " ".join(f["message"] for f in check_lists(src))
+    assert "no matching <listitem>" in msgs
+
+
+def test_unclosed_list_is_reported():
+    src = "<orderedlist><listitem><para>a</para></listitem>"
+    msgs = " ".join(f["message"] for f in check_lists(src))
+    assert "has no closing tag" in msgs
+
+
+def test_list_with_no_items_is_reported():
+    msgs = " ".join(f["message"] for f in check_lists("<itemizedlist></itemizedlist>"))
+    assert "has no <listitem> elements" in msgs
