@@ -139,6 +139,9 @@ _The growing `{parent → allowed children}` table._
 - **[known]** (~99% — verify against an exported topic) Column widths
   are a percentage `width` attribute on the header cell:
   `<th width="30%">`. No `<colgroup>` / `<colspec>`.
+  - The widths must total **100%**. Unknown whether Paligo's validator
+    enforces this — but the tool can lint it regardless (flag "column
+    widths sum to N%, not 100%").
 
 ### Fault-injection log
 
