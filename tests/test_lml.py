@@ -1,66 +1,90 @@
-"""Tag-balance check for Paligo's pseudo-DocBook (app/lml.py)."""
-from app.lml import check_sections, check_tags
+"""Structural checks for Paligo's pseudo-DocBook / LML (app/lml.py)."""
+from app.lml import (
+    build_lines,
+    check_sections,
+    check_tags,
+    summarize,
+)
 
 
 def test_balanced_input_flags_nothing():
-    html, n = check_tags("<para>hello</para>")
-    assert n == 0
-    assert "lml-bad" not in html
-    assert html == "&lt;para&gt;hello&lt;/para&gt;"
+    assert check_tags("<para>hello</para>") == []
 
 
 def test_unclosed_opener_is_flagged():
-    html, n = check_tags("<para>hello")
-    assert n == 1
-    assert '<span class="lml-bad">&lt;para&gt;</span>hello' == html
+    findings = check_tags("<para>hello")
+    assert len(findings) == 1
+    assert findings[0]["tag"] == "para"
+    assert findings[0]["line"] == 1
+    assert "never closed" in findings[0]["message"]
 
 
 def test_extra_closing_tag_is_flagged():
-    html, n = check_tags("<para>x</para></para>")
-    assert n == 1
+    findings = check_tags("<para>x</para></para>")
     # the first </para> matched; the second is the orphan
-    assert html.count("lml-bad") == 1
-    assert html.endswith('<span class="lml-bad">&lt;/para&gt;</span>')
+    assert len(findings) == 1
+    assert "no matching <para>" in findings[0]["message"]
 
 
 def test_only_the_unmatched_tag_of_a_pair_type_is_flagged():
     src = "<section><title>T</title><para>a<para>b</para></section>"
-    html, n = check_tags(src)
-    assert n == 1
-    # section + title + the inner para all close; the first <para> does not
-    assert html.count("lml-bad") == 1
-    assert '<span class="lml-bad">&lt;para&gt;</span>a' in html
+    findings = check_tags(src)
+    assert len(findings) == 1
+    assert findings[0]["tag"] == "para"
+    assert "never closed" in findings[0]["message"]
 
 
 def test_unknown_tags_are_ignored():
-    html, n = check_tags("<foo>x<bar>")
-    assert n == 0
-    assert "lml-bad" not in html
+    assert check_tags("<foo>x<bar>") == []
 
 
 def test_self_closing_tag_balances_itself():
-    html, n = check_tags("<mediaobject/>")
-    assert n == 0
-    assert "lml-bad" not in html
+    assert check_tags("<mediaobject/>") == []
 
 
 def test_attributes_and_case_do_not_break_matching():
-    html, n = check_tags('<Para><emphasis role="bold">hi</emphasis></para>')
-    assert n == 0
-    assert "lml-bad" not in html
+    assert check_tags('<Para><emphasis role="bold">hi</emphasis></para>') == []
 
 
-def test_text_is_html_escaped():
-    html, _ = check_tags("<para>a &amp; b &lt; c</para>")
-    assert "&amp;amp;" in html and "&amp;lt;" in html
-    assert "<span" not in html  # nothing flagged, so no markup added
+def test_counts_multiple_orphans():
+    # </listitem> closes the listitem; both <para> stay open
+    findings = check_tags("<listitem><para>one<para>two</listitem>")
+    assert len(findings) == 2
+    assert [f["tag"] for f in findings] == ["para", "para"]
 
 
-def test_counts_multiple_orphans_across_elements():
-    html, n = check_tags("<listitem><para>one<para>two</listitem>")
-    # listitem never closes, and one <para> is left open
-    assert n == 2
-    assert html.count("lml-bad") == 2
+# --- report assembly -------------------------------------------------
+def test_summarize_counts_by_category():
+    findings = [
+        {"line": 1, "message": "<para> is never closed -- add a </para>."},
+        {"line": 3, "message": "<para> sits directly inside a list; move it into a <listitem>."},
+        {"line": 3, "message": "<para> sits directly inside a list; move it into a <listitem>."},
+    ]
+    text = summarize(findings)
+    assert text.startswith("3 problems:")
+    assert "1 unclosed tag" in text
+    assert "2 misplaced elements" in text
+
+
+def test_summarize_clean():
+    assert summarize([]) == "No problems found."
+
+
+def test_build_lines_wraps_offending_tag_and_attaches_note():
+    src = "<orderedlist>\n<para>x</para>\n</orderedlist>"
+    findings = [{"line": 2, "tag": "para",
+                 "message": "move it into a <listitem>."}]
+    lines = build_lines(src, findings)
+    assert len(lines) == 3
+    assert '<span class="lml-bad">&lt;para&gt;</span>' in lines[1]["html"]
+    assert lines[1]["notes"] == ["move it into a <listitem>."]
+    assert lines[0]["notes"] == [] and lines[2]["notes"] == []
+
+
+def test_build_lines_escapes_text():
+    lines = build_lines("<para>a &amp; b</para>", [])
+    assert "&amp;amp;" in lines[0]["html"]
+    assert "<span" not in lines[0]["html"]
 
 
 from app.lml import strip_xinfo_attrs

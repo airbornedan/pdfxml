@@ -968,46 +968,80 @@ button.is-busy,
 	.busy-overlay { transition: none; }
 }
 
-/* --- Check XML: tag-balance output --- */
-.lml-output {
-	margin-top: 8px;
-	padding: 12px 14px;
-	border: 1px solid #ccc;
+/* --- Check XML report --- */
+.lml-summary {
+	margin: 16px 0 10px;
+	padding: 8px 12px;
 	border-radius: 4px;
-	background: #fafafa;
-	font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-	font-size: 0.9rem;
-	line-height: 1.55;
-	white-space: pre-wrap;
-	word-break: break-word;
-	overflow-x: auto;
+	font-weight: 600;
 }
-.lml-bad {
-	background: #fbdcdc;               /* reddish -- unmatched tag */
-	box-shadow: 0 0 0 1px #e08b8b;
-	border-radius: 2px;
-}
+.lml-summary--ok  { background: #e6f4ea; color: #1a7f37; }
+.lml-summary--bad { background: #fbdcdc; color: #7a1f1f; }
 
-.check-subhead {
-	margin: 22px 0 6px;
-	font-size: 1.05rem;
-}
 .check-findings {
-	margin: 0;
+	margin: 0 0 16px;
 	padding-left: 20px;
-	line-height: 1.6;
+	line-height: 1.7;
 }
-.check-findings li {
-	margin-bottom: 3px;
-}
-.check-line {
+.check-findings li { margin-bottom: 3px; }
+a.check-line {
 	display: inline-block;
-	min-width: 4.5em;
+	min-width: 4.3em;
 	padding: 0 6px;
 	margin-right: 6px;
 	border-radius: 3px;
 	background: #fbdcdc;
+	color: #7a1f1f;
 	font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 	font-size: 0.82rem;
+	text-align: right;
+	text-decoration: none;
+}
+a.check-line:hover { background: #f2b8b8; }
+
+.lml-report {
+	margin-top: 8px;
+	border: 1px solid #ccc;
+	border-radius: 4px;
+	background: #fafafa;
+	font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+	font-size: 0.88rem;
+	line-height: 1.5;
+	overflow-x: auto;
+}
+.lml-line {
+	display: flex;
+	white-space: pre;
+}
+.lml-line--bad { background: #fdeaea; }
+.lml-line:target { animation: lml-flash 1.4s ease; }
+@keyframes lml-flash {
+	from { background: #fde68a; }
+	to   { background: #fdeaea; }
+}
+.lml-gutter {
+	flex: 0 0 3.2em;
+	padding: 0 8px 0 0;
+	text-align: right;
+	color: #999;
+	user-select: none;
+}
+.lml-src { white-space: pre; }
+.lml-bad {
+	background: #fbdcdc;
+	box-shadow: 0 0 0 1px #e08b8b;
+	border-radius: 2px;
+}
+.lml-annot {
+	display: flex;
+	white-space: normal;
+	background: #fdeaea;
+}
+.lml-annot-text {
+	padding: 1px 0 3px 8px;
 	color: #7a1f1f;
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+@media (prefers-reduced-motion: reduce) {
+	.lml-line:target { animation: none; background: #fde68a; }
 }

@@ -74,47 +74,6 @@ KNOWN_TAGS = _load_known_tags()
 _TAG_RE = re.compile(r"<\s*(/?)\s*([A-Za-z][\w.-]*)([^<>]*?)(/?)\s*>")
 
 
-def highlight_findings(html, findings):
-    """Wrap only the offending tags for structural findings.
-
-    The returned `html` is already escaped for display, so this looks for
-    the escaped tag text on the affected line and wraps just that tag.
-    """
-    if not html or not findings:
-        return html
-
-    tags_by_line = {}
-    for finding in findings:
-        line = finding.get("line")
-        tag = finding.get("tag")
-        if line is None or not tag:
-            continue
-        tags_by_line.setdefault(line, set()).add(tag.lower())
-
-    if not tags_by_line:
-        return html
-
-    lines = html.splitlines(keepends=True)
-    parts = []
-    for idx, line in enumerate(lines, start=1):
-        tags = tags_by_line.get(idx)
-        if not tags:
-            parts.append(line)
-            continue
-
-        pattern = re.compile(r"&lt;(/?)([A-Za-z][\w.-]*)([^&]*?)&gt;")
-
-        def _wrap(match):
-            name = match.group(2).lower()
-            if name in tags:
-                return f'<span class="lml-bad">{match.group(0)}</span>'
-            return match.group(0)
-
-        parts.append(pattern.sub(_wrap, line))
-
-    return "".join(parts)
-
-
 def strip_xinfo_attrs(text):
     """Return `text` with xinfo attributes stripped except on the first
     <section> tag, which is preserved as-is.
@@ -158,19 +117,14 @@ def strip_xinfo_attrs(text):
 
 
 def check_tags(text):
-    """Pair opening and closing tags of known elements in `text`.
+    """Findings for opening/closing tags of known elements that have no
+    partner. One independent stack per element name -- nesting order is
+    ignored, so a </para> pairs with the most recent open <para>
+    regardless of what else is open in between.
 
-    Returns (html, unmatched_count):
-      * html  -- `text`, HTML-escaped for display, with every unmatched
-                 tag wrapped in <span class="lml-bad">...</span>. Order
-                 and surrounding text are otherwise untouched.
-      * unmatched_count -- how many tags had no partner.
-
-    Nesting/order between different elements is deliberately ignored: a
-    closing tag matches the most recent still-open tag of the SAME name,
-    regardless of what else is open.
+    Each finding: {"line", "start", "end", "tag", "message"}.
     """
-    entries = []        # every known-element tag, in document order
+    findings = []
     open_stacks = {}     # name -> [opener entries not yet closed]
 
     for match in _TAG_RE.finditer(text):
@@ -182,37 +136,32 @@ def check_tags(text):
         if is_self_close:
             continue     # <foo/> balances itself
 
-        entry = {"start": match.start(), "end": match.end(), "bad": False}
-        entries.append(entry)
-
+        entry = {
+            "start": match.start(), "end": match.end(),
+            "line": _line_of(text, match.start()), "tag": name,
+        }
         if is_close:
             stack = open_stacks.get(name)
             if stack:
                 stack.pop()             # closes the most recent opener
             else:
-                entry["bad"] = True      # closing tag with nothing open
+                entry["message"] = (
+                    f"</{name}> has no matching <{name}> before it -- "
+                    f"add the opening tag or delete this one."
+                )
+                findings.append(entry)
         else:
             open_stacks.setdefault(name, []).append(entry)
 
     for stack in open_stacks.values():
         for entry in stack:
-            entry["bad"] = True          # opener that never closed
+            entry["message"] = (
+                f"<{entry['tag']}> is never closed -- add a </{entry['tag']}>."
+            )
+            findings.append(entry)
 
-    unmatched_count = sum(1 for e in entries if e["bad"])
-
-    parts = []
-    cursor = 0
-    for entry in entries:
-        if not entry["bad"]:
-            continue
-        parts.append(str(escape(text[cursor:entry["start"]])))
-        parts.append('<span class="lml-bad">')
-        parts.append(str(escape(text[entry["start"]:entry["end"]])))
-        parts.append("</span>")
-        cursor = entry["end"]
-    parts.append(str(escape(text[cursor:])))
-
-    return "".join(parts), unmatched_count
+    findings.sort(key=lambda f: (f["line"], f["start"]))
+    return findings
 
 
 ########################################################################
@@ -747,3 +696,100 @@ def check_lists(text):
 
     findings.sort(key=lambda f: f["line"] or 0)
     return findings
+
+
+########################################################################
+### REPORT ASSEMBLY -- summary line + numbered lines with inline notes
+########################################################################
+
+### message-substring -> summary bucket, checked in order
+_SUMMARY_BUCKETS = (
+    ("unclosed tag", ("is never closed", "has no closing tag")),
+    ("extra closing tag", ("has no matching <", "with no matching",
+                           "with no opening tag")),
+    ("misplaced element", ("sits directly inside", "appears after",
+                           "appears before", "outside any", "must be inside",
+                           "move it into", "closes a <", "must start with a <title>")),
+    ("missing piece", ("has no content", "is missing a <title>",
+                       "has no rows", "has no <listitem>", "has no cells",
+                       "must contain at least", "but no <imagedata>",
+                       "is missing the required")),
+    ("table layout", ("different column counts", "<colgroup> declares")),
+)
+
+
+def summarize(findings):
+    """One-line count-by-category summary, e.g.
+    "3 problems: 1 unclosed tag, 2 misplaced elements"."""
+    total = len(findings)
+    if total == 0:
+        return "No problems found."
+
+    counts = {}
+    for finding in findings:
+        message = finding.get("message", "")
+        label = next(
+            (lbl for lbl, keys in _SUMMARY_BUCKETS if any(k in message for k in keys)),
+            "other issue",
+        )
+        counts[label] = counts.get(label, 0) + 1
+
+    order = [lbl for lbl, _ in _SUMMARY_BUCKETS] + ["other issue"]
+    parts = [
+        f"{counts[label]} {label}{'s' if counts[label] != 1 else ''}"
+        for label in order if label in counts
+    ]
+    return f"{total} problem{'s' if total != 1 else ''}: " + ", ".join(parts)
+
+
+def build_lines(text, findings):
+    """Render `text` as numbered lines. Returns
+    [{"num": int, "html": str, "notes": [str]}] where `html` is the line
+    escaped for display with each offending tag wrapped in
+    <span class="lml-bad">, and `notes` are the messages anchored to that
+    line."""
+    raw_lines = text.split("\n")
+    line_start = []
+    pos = 0
+    for line in raw_lines:
+        line_start.append(pos)
+        pos += len(line) + 1
+
+    spans_by_line = {}     # 1-based line -> [(col_start, col_end)]
+    notes_by_line = {}
+    for finding in findings:
+        line = min(max(finding.get("line") or 1, 1), len(raw_lines) or 1)
+        notes_by_line.setdefault(line, []).append(finding.get("message", ""))
+
+        start, end = finding.get("start"), finding.get("end")
+        if start is not None and end is not None:
+            base = line_start[line - 1]
+            spans_by_line.setdefault(line, []).append((start - base, end - base))
+        elif finding.get("tag") and raw_lines:
+            tag = re.escape(finding["tag"])
+            hit = re.search(rf"</?{tag}(?:\s[^<>]*)?/?>", raw_lines[line - 1])
+            if hit:
+                spans_by_line.setdefault(line, []).append((hit.start(), hit.end()))
+
+    out = []
+    for num, line in enumerate(raw_lines, start=1):
+        spans = sorted(set(spans_by_line.get(num, [])))
+        if spans:
+            chunks = []
+            cursor = 0
+            for col_start, col_end in spans:
+                col_start = max(col_start, cursor)
+                col_end = min(col_end, len(line))
+                if col_end <= col_start:
+                    continue
+                chunks.append(str(escape(line[cursor:col_start])))
+                chunks.append('<span class="lml-bad">')
+                chunks.append(str(escape(line[col_start:col_end])))
+                chunks.append("</span>")
+                cursor = col_end
+            chunks.append(str(escape(line[cursor:])))
+            html = "".join(chunks)
+        else:
+            html = str(escape(line))
+        out.append({"num": num, "html": html, "notes": notes_by_line.get(num, [])})
+    return out

@@ -34,37 +34,40 @@ def fix_xml():
 @bp.route("/check", methods=["GET", "POST"])
 def check_xml():
     src = request.form.get("xml", "") if request.method == "POST" else ""
-    marked, unmatched = (None, 0)
-    errors = []
-    if request.method == "POST":
-        src = lml.strip_xinfo_attrs(src)
-        marked, unmatched = lml.check_tags(src)
-        table_findings = lml.check_tables(src)
-        list_findings = lml.check_lists(src)
-        media_findings = lml.check_mediaobjects(src)
-        section_findings = lml.check_sections(src)
+    submitted = request.method == "POST"
+    summary, findings, lines = (None, [], [])
 
-        errors = list(table_findings) + list(list_findings) + list(media_findings) + list(section_findings)
-        errors.sort(key=lambda f: f.get("line") or 0)
+    if submitted:
+        src = lml.strip_xinfo_attrs(src)
+        findings = (
+            lml.check_tags(src)
+            + lml.check_tables(src)
+            + lml.check_lists(src)
+            + lml.check_mediaobjects(src)
+            + lml.check_sections(src)
+        )
 
         seen = set()
         deduped = []
-        for finding in errors:
+        for finding in findings:
             key = (finding.get("line") or 0, finding.get("message"), finding.get("tag"))
             if key in seen:
                 continue
             seen.add(key)
             deduped.append(finding)
-        errors = deduped
+        findings = sorted(
+            deduped, key=lambda f: (f.get("line") or 0, f.get("start") or 0)
+        )
 
-        if errors:
-            marked = lml.highlight_findings(marked, errors)
+        summary = lml.summarize(findings)
+        lines = lml.build_lines(src, findings)
 
     return render_template(
         "check.html",
         breadcrumbs=[("Home", url_for("extract.index")), ("Check XML", "")],
         src=src,
-        marked=marked,
-        unmatched=unmatched,
-        errors=errors,
+        submitted=submitted,
+        summary=summary,
+        findings=findings,
+        lines=lines,
     )
