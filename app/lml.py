@@ -30,6 +30,89 @@ KNOWN_TAGS = frozenset({
 _TAG_RE = re.compile(r"<\s*(/?)\s*([A-Za-z][\w.-]*)([^<>]*?)(/?)\s*>")
 
 
+def highlight_findings(html, findings):
+    """Wrap only the offending tags for structural findings.
+
+    The returned `html` is already escaped for display, so this looks for
+    the escaped tag text on the affected line and wraps just that tag.
+    """
+    if not html or not findings:
+        return html
+
+    tags_by_line = {}
+    for finding in findings:
+        line = finding.get("line")
+        tag = finding.get("tag")
+        if line is None or not tag:
+            continue
+        tags_by_line.setdefault(line, set()).add(tag.lower())
+
+    if not tags_by_line:
+        return html
+
+    lines = html.splitlines(keepends=True)
+    parts = []
+    for idx, line in enumerate(lines, start=1):
+        tags = tags_by_line.get(idx)
+        if not tags:
+            parts.append(line)
+            continue
+
+        pattern = re.compile(r"&lt;(/?)([A-Za-z][\w.-]*)([^&]*?)&gt;")
+
+        def _wrap(match):
+            name = match.group(2).lower()
+            if name in tags:
+                return f'<span class="lml-bad">{match.group(0)}</span>'
+            return match.group(0)
+
+        parts.append(pattern.sub(_wrap, line))
+
+    return "".join(parts)
+
+
+def strip_xinfo_attrs(text):
+    """Return `text` with xinfo attributes stripped except on the first
+    <section> tag, which is preserved as-is.
+    """
+    parts = []
+    last_end = 0
+    first_section = True
+
+    for match in _TAG_RE.finditer(text):
+        name = match.group(2).lower()
+        attrs = match.group(3) or ""
+        is_close = match.group(1) == "/"
+        is_self = match.group(4) == "/" and not is_close
+
+        if name == "section" and not is_close and not is_self and first_section:
+            first_section = False
+            parts.append(text[last_end:match.end()])
+            last_end = match.end()
+            continue
+
+        if attrs:
+            stripped_attrs = re.sub(
+                r"\s+xinfo:[A-Za-z0-9_.-]+\s*=\s*(?:\"[^\"]*\"|'[^']*')",
+                "",
+                attrs,
+            )
+            if stripped_attrs != attrs:
+                parts.append(text[last_end:match.start()])
+                parts.append(
+                    f"<{match.group(1) if match.group(1) else ''}{name}{stripped_attrs}{match.group(4) or ''}>"
+                )
+                last_end = match.end()
+                continue
+
+        parts.append(text[last_end:match.start()])
+        parts.append(match.group(0))
+        last_end = match.end()
+
+    parts.append(text[last_end:])
+    return "".join(parts)
+
+
 def check_tags(text):
     """Pair opening and closing tags of known elements in `text`.
 
@@ -115,10 +198,18 @@ def check_tables(text):
     every <informaltable> in `text`. Empty list == no table problems (or
     no tables)."""
     findings = []
+    seen = set()
     stack = []   # open <informaltable> contexts, innermost last
 
-    def add(line, message):
-        findings.append({"line": line, "message": message})
+    def add(line, message, tag=None):
+        key = (line, message, tag)
+        if key in seen:
+            return
+        seen.add(key)
+        finding = {"line": line, "message": message}
+        if tag is not None:
+            finding["tag"] = tag
+        findings.append(finding)
 
     for match in _TAG_RE.finditer(text):
         name = match.group(2).lower()
@@ -133,7 +224,7 @@ def check_tables(text):
                 if stack:
                     _finalize_table(stack.pop(), add)
                 else:
-                    add(line, "</informaltable> with no opening tag.")
+                    add(line, "</informaltable> with no opening tag.", tag="informaltable")
             else:
                 stack.append({"line": line, "rows": [], "row": None})
             continue
@@ -166,9 +257,9 @@ def check_tables(text):
                 continue
             if is_close:
                 if row["open_cell"] is None:
-                    add(line, f"</{name}> with no matching open cell.")
+                    add(line, f"</{name}> with no matching open cell.", tag=name)
                 elif row["open_cell"] != name:
-                    add(line, f"</{name}> closes a <{row['open_cell']}> cell.")
+                    add(line, f"</{name}> closes a <{row['open_cell']}> cell.", tag=name)
                     row["open_cell"] = None
                 else:
                     row["open_cell"] = None
@@ -180,9 +271,23 @@ def check_tables(text):
                 row["cells"] += 1
             continue
 
+        if table["row"] is not None:
+            row = table["row"]
+            if row["cells"] == 0:
+                add(line, "Content appears before the first <td> or <th> inside a row; move it into a cell.", tag=name)
+            elif row["open_cell"] is None:
+                add(line, "Content appears after the last <td> or <th> inside a row; move it into a cell.", tag=name)
+
+        if table["row"] is not None:
+            row = table["row"]
+            if row["cells"] == 0:
+                add(line, "Content appears before the first <td> or <th> inside a row; move it into a cell.", tag=name)
+            elif row["open_cell"] is None:
+                add(line, "Content appears after the last <td> or <th> inside a row; move it into a cell.", tag=name)
+
     for table in stack:                  # never closed
         add(table["line"],
-            f"<informaltable> (line {table['line']}) has no </informaltable>.")
+            f"<informaltable> (line {table['line']}) has no </informaltable>.", tag="informaltable")
         _finalize_table(table, add)
 
     findings.sort(key=lambda f: f["line"] or 0)
@@ -241,6 +346,94 @@ _ITEM_TAG = "listitem"
 _LI_CONTENT = frozenset({"para", "mediaobject", "orderedlist", "itemizedlist"})
 
 
+def check_mediaobjects(text):
+    """Return findings for any <imageobject> not nested inside a
+    <mediaobject> anywhere in `text`."""
+    findings = []
+    stack = []
+
+    for match in _TAG_RE.finditer(text):
+        name = match.group(2).lower()
+        is_close = match.group(1) == "/"
+        is_self = match.group(4) == "/" and not is_close
+        line = _line_of(text, match.start())
+
+        if name == "imageobject":
+            if is_self:
+                findings.append({
+                    "line": line,
+                    "tag": name,
+                    "message": f"<{name}/> must be inside a <mediaobject>.",
+                })
+                continue
+            if not is_close and not any(frame["tag"] == "mediaobject" for frame in stack):
+                findings.append({
+                    "line": line,
+                    "tag": name,
+                    "message": f"<{name}> must be inside a <mediaobject>.",
+                })
+
+        if is_self:
+            continue
+
+        if is_close:
+            for idx in range(len(stack) - 1, -1, -1):
+                if stack[idx]["tag"] == name:
+                    del stack[idx:]
+                    break
+        else:
+            stack.append({"tag": name})
+
+    return findings
+
+
+def check_sections(text):
+    """Report only the first content tag that appears after a nested
+    <section> inside the same parent <section>.
+
+    Once a subsection starts, later siblings at that parent level are not
+    allowed and must move into their own nested <section> or be placed
+    before the first subsection. Reporting only the first offending tag
+    keeps the output actionable instead of drowning interns in cascade
+    errors from the rest of the document.
+    """
+    findings = []
+    stack = []
+
+    for match in _TAG_RE.finditer(text):
+        name = match.group(2).lower()
+        is_close = match.group(1) == "/"
+        is_self = match.group(4) == "/" and not is_close
+        line = _line_of(text, match.start())
+
+        if name != "section":
+            if len(stack) == 1 and stack[0]["nested"] and not stack[0]["reported"]:
+                findings.append({
+                    "line": line,
+                    "tag": name,
+                    "message": (
+                        f"<{name}> appears after a nested <section>; move it "
+                        f"into its own nested <section> or place it before the first subsection."
+                    ),
+                })
+                stack[0]["reported"] = True
+            continue
+
+        if is_self:
+            continue
+
+        if not is_close:
+            if stack:
+                stack[-1]["nested"] = True
+            stack.append({"line": line, "nested": False, "reported": False})
+        else:
+            if stack:
+                stack.pop()
+
+    findings.sort(key=lambda f: f["line"] or 0)
+    return findings
+
+
 def check_lists(text):
     """Return a list of {"line": int, "message": str} findings for every
     <orderedlist>/<itemizedlist> in `text`. Empty == no problems (or no
@@ -251,26 +444,29 @@ def check_lists(text):
     stack = []          # {"tag","line","kind": "list"|"li"|"other", ...}
     last_end = 0
 
-    def add(line, message):
-        findings.append({"line": line, "message": message})
+    def add(line, message, tag=None):
+        finding = {"line": line, "message": message}
+        if tag is not None:
+            finding["tag"] = tag
+        findings.append(finding)
 
     def finalize(frame, dangling=False):
         if frame["kind"] == "li":
             if dangling:
                 add(frame["line"],
-                    f"<listitem> (line {frame['line']}) has no </listitem>.")
+                    f"<listitem> (line {frame['line']}) has no </listitem>.", tag="listitem")
             if not frame["content"]:
                 add(frame["line"],
                     f"<listitem> (line {frame['line']}) has no content -- it "
-                    f"needs a <para>, a <mediaobject>, or a nested list.")
+                    f"needs a <para>, a <mediaobject>, or a nested list.", tag="listitem")
         elif frame["kind"] == "list":
             if dangling:
                 add(frame["line"],
-                    f"<{frame['tag']}> (line {frame['line']}) has no closing tag.")
+                    f"<{frame['tag']}> (line {frame['line']}) has no closing tag.", tag=frame["tag"])
             if frame["items"] == 0:
                 add(frame["line"],
                     f"<{frame['tag']}> (line {frame['line']}) has no "
-                    f"<listitem> elements.")
+                    f"<listitem> elements.", tag=frame["tag"])
         # a dangling "other" element is a tag-balance problem, reported by
         # check_tags -- not repeated here
 
@@ -283,6 +479,15 @@ def check_lists(text):
                 return
             if frame["kind"] == "list":
                 return
+
+    def in_mediaobject():
+        """True when the nearest enclosing block is a <mediaobject>."""
+        for frame in reversed(stack):
+            if frame["kind"] == "list":
+                return False
+            if frame["tag"] == "mediaobject":
+                return True
+        return False
 
     for match in _TAG_RE.finditer(text):
         name = match.group(2).lower()
@@ -309,7 +514,9 @@ def check_lists(text):
             elif kind == "other":
                 if cont and cont["kind"] == "list":
                     add(line, f"<{name}/> sits directly inside a list; it must "
-                              f"be inside a <listitem>.")
+                              f"be inside a <listitem>.", tag=name)
+                elif name == "imageobject" and not in_mediaobject():
+                    add(line, f"<{name}/> must be inside a <mediaobject>.", tag=name)
                 elif name == "mediaobject":
                     note_content("mediaobject")
             continue
@@ -318,7 +525,7 @@ def check_lists(text):
             if kind == "list":
                 if cont and cont["kind"] == "list":
                     add(line, "A sublist sits directly inside a list; it must "
-                              "be inside a <listitem>.")
+                              "be inside a <listitem>.", tag=name)
                 elif cont and cont["kind"] == "li":
                     cont["content"].add("list")
                 stack.append({"tag": name, "line": line, "kind": "list",
@@ -328,7 +535,7 @@ def check_lists(text):
                     finalize(stack.pop(), dangling=True)   # implicit close
                 cont = stack[-1] if stack else None
                 if not cont or cont["kind"] != "list":
-                    add(line, "<listitem> outside any list.")
+                    add(line, "<listitem> outside any list.", tag="listitem")
                 else:
                     cont["items"] += 1
                 stack.append({"tag": name, "line": line, "kind": "li",
@@ -336,7 +543,9 @@ def check_lists(text):
             else:                              # other element
                 if cont and cont["kind"] == "list":
                     add(line, f"<{name}> sits directly inside a list; it must "
-                              f"be inside a <listitem>.")
+                              f"be inside a <listitem>.", tag=name)
+                elif name == "imageobject" and not in_mediaobject():
+                    add(line, f"<{name}> must be inside a <mediaobject>.", tag=name)
                 elif name in ("para", "mediaobject"):
                     note_content(name)
                 stack.append({"tag": name, "line": line, "kind": "other"})
@@ -349,7 +558,7 @@ def check_lists(text):
             if kind == "li":
                 add(line, "</listitem> with no matching <listitem>.")
             elif kind == "list":
-                add(line, f"</{name}> with no matching opening tag.")
+                add(line, f"</{name}> with no matching opening tag.", tag=name)
             continue
         for frame in stack[depth + 1:]:
             finalize(frame, dangling=True)

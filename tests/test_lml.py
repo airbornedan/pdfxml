@@ -1,5 +1,5 @@
 """Tag-balance check for Paligo's pseudo-DocBook (app/lml.py)."""
-from app.lml import check_tags
+from app.lml import check_sections, check_tags
 
 
 def test_balanced_input_flags_nothing():
@@ -61,6 +61,26 @@ def test_counts_multiple_orphans_across_elements():
     # listitem never closes, and one <para> is left open
     assert n == 2
     assert html.count("lml-bad") == 2
+
+
+from app.lml import strip_xinfo_attrs
+
+
+def test_xinfo_attrs_are_stripped_everywhere_but_the_first_section():
+    src = (
+        '<section xmlns="http://docbook.org/ns/docbook" '
+        'xmlns:xinfo="http://ns.expertinfo.se/cms/xmlns/1.0" '
+        'xinfo:resource="UUID-1" xinfo:resource-id="188372">'
+        '<title>test</title>'
+        '<orderedlist><listitem><para xinfo:text="188409">one</para></listitem></orderedlist>'
+        '<section xinfo:resource="UUID-2"><title>nested</title></section>'
+        '</section>'
+    )
+    out = strip_xinfo_attrs(src)
+    assert 'xinfo:resource="UUID-1"' in out
+    assert 'xinfo:resource-id="188372"' in out
+    assert 'xinfo:text="188409"' not in out
+    assert 'xinfo:resource="UUID-2"' not in out
 
 
 # --- check_tables --------------------------------------------------------
@@ -131,6 +151,18 @@ def test_cell_closed_by_wrong_tag_is_reported():
     assert "closes a <th> cell" in msgs
 
 
+def test_stray_content_in_row_is_reported():
+    src = (
+        "<informaltable><tbody>"
+        "<tr><para>oops</para><td>1</td></tr>"
+        "<tr><td>2</td><para>still oops</para></tr>"
+        "</tbody></informaltable>"
+    )
+    msgs = " ".join(f["message"] for f in check_tables(src))
+    assert "before the first <td> or <th>" in msgs
+    assert "after the last <td> or <th>" in msgs
+
+
 def test_finding_carries_a_line_number():
     src = "<informaltable><tbody>\n<tr><td>1</td></tr>\n<tr><td>2</td><td>3</td></tr>\n</tbody></informaltable>"
     findings = check_tables(src)
@@ -187,6 +219,33 @@ def test_listitem_with_only_a_mediaobject_is_ok():
            "<mediaobject><imageobject/></mediaobject>"
            "</listitem></itemizedlist>")
     assert check_lists(src) == []
+
+
+def test_imageobject_outside_mediaobject_is_reported():
+    src = "<itemizedlist><listitem><imageobject/></listitem></itemizedlist>"
+    msgs = " ".join(f["message"] for f in check_lists(src))
+    assert "inside a <mediaobject>" in msgs
+
+
+def test_imageobject_outside_mediaobject_is_reported_globally():
+    from app.lml import check_mediaobjects
+    src = "<section><imageobject/></section>"
+    msgs = " ".join(f["message"] for f in check_mediaobjects(src))
+    assert "inside a <mediaobject>" in msgs
+
+
+def test_content_after_nested_section_is_reported():
+    src = (
+        "<section><title>T</title>"
+        "<para>before</para>"
+        "<section><title>S</title><para>sub</para></section>"
+        "<informaltable><tbody><tr><td>later</td></tr></tbody></informaltable>"
+        "</section>"
+    )
+    findings = check_sections(src)
+    assert len(findings) == 1
+    assert findings[0]["tag"] == "informaltable"
+    assert "after a nested <section>" in findings[0]["message"]
 
 
 def test_listitem_with_only_a_sublist_is_ok():

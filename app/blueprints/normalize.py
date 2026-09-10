@@ -35,14 +35,30 @@ def fix_xml():
 def check_xml():
     src = request.form.get("xml", "") if request.method == "POST" else ""
     marked, unmatched = (None, 0)
-    table_findings, has_tables = ([], False)
-    list_findings, has_lists = ([], False)
+    errors = []
     if request.method == "POST":
+        src = lml.strip_xinfo_attrs(src)
         marked, unmatched = lml.check_tags(src)
         table_findings = lml.check_tables(src)
-        has_tables = "<informaltable" in src.lower()
         list_findings = lml.check_lists(src)
-        has_lists = "<orderedlist" in src.lower() or "<itemizedlist" in src.lower()
+        media_findings = lml.check_mediaobjects(src)
+        section_findings = lml.check_sections(src)
+
+        errors = list(table_findings) + list(list_findings) + list(media_findings) + list(section_findings)
+        errors.sort(key=lambda f: f.get("line") or 0)
+
+        seen = set()
+        deduped = []
+        for finding in errors:
+            key = (finding.get("line") or 0, finding.get("message"), finding.get("tag"))
+            if key in seen:
+                continue
+            seen.add(key)
+            deduped.append(finding)
+        errors = deduped
+
+        if errors:
+            marked = lml.highlight_findings(marked, errors)
 
     return render_template(
         "check.html",
@@ -50,8 +66,5 @@ def check_xml():
         src=src,
         marked=marked,
         unmatched=unmatched,
-        table_findings=table_findings,
-        has_tables=has_tables,
-        list_findings=list_findings,
-        has_lists=has_lists,
+        errors=errors,
     )

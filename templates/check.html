@@ -5,6 +5,7 @@
 	<h1>Check XML tags</h1>
 	<p class="subtitle">Paste a Paligo topic. Each opening tag of a known element is paired with its closing tag; any tag left without a partner is highlighted. Nothing is changed &mdash; this only points at the mismatch.</p>
 
+	{% if marked is none %}
 	<form method="post">
 		<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 		<label class="field-label" for="xml-in">Your code</label>
@@ -14,49 +15,34 @@
 			<button type="button" class="btn" id="clear-btn">Clear</button>
 		</p>
 	</form>
+	{% else %}
+	<p>
+		<a class="btn" href="{{ url_for('normalize.check_xml') }}">Check another topic</a>
+	</p>
+	{% endif %}
 
 	{% if marked is not none %}
-	<p class="subtitle">
-		{% if unmatched %}
-		<strong>{{ unmatched }} unmatched tag{{ "s" if unmatched != 1 }}</strong> &mdash; shown with a red background below.
-		{% else %}
-		Every known tag has a matching partner.
-		{% endif %}
-	</p>
+	{% if errors %}
+	<h2 class="check-subhead">Errors</h2>
+	<ul class="check-findings">
+		{% for f in errors %}
+		<li>{% if f.line %}<span class="check-line">line {{ f.line }}</span> {% endif %}{{ f.message }}</li>
+		{% endfor %}
+	</ul>
+	{% endif %}
 	<pre class="lml-output">{{ marked|safe }}</pre>
-
-	{% if has_lists %}
-	<h2 class="check-subhead">List structure</h2>
-	{% if list_findings %}
-	<ul class="check-findings">
-		{% for f in list_findings %}
-		<li>{% if f.line %}<span class="check-line">line {{ f.line }}</span> {% endif %}{{ f.message }}</li>
-		{% endfor %}
-	</ul>
-	{% else %}
-	<p class="subtitle">Every list has paired <code>&lt;listitem&gt;</code> tags with content, and nothing loose between the items.</p>
-	{% endif %}
-	{% endif %}
-
-	{% if has_tables %}
-	<h2 class="check-subhead">Table structure</h2>
-	{% if table_findings %}
-	<ul class="check-findings">
-		{% for f in table_findings %}
-		<li>{% if f.line %}<span class="check-line">line {{ f.line }}</span> {% endif %}{{ f.message }}</li>
-		{% endfor %}
-	</ul>
-	{% else %}
-	<p class="subtitle">Every <code>&lt;informaltable&gt;</code> has rows and cells, a matching close, and the same number of columns in every row.</p>
-	{% endif %}
-	{% endif %}
 	{% endif %}
 </div>
 <script nonce="{{ g.csp_nonce }}">
-document.getElementById("clear-btn").addEventListener("click", () => {
-	const input = document.getElementById("xml-in");
-	input.value = "";
-	input.focus();
-});
+const clearBtn = document.getElementById("clear-btn");
+if (clearBtn) {
+	clearBtn.addEventListener("click", () => {
+		const input = document.getElementById("xml-in");
+		if (input) {
+			input.value = "";
+			input.focus();
+		}
+	});
+}
 </script>
 {% endblock %}
