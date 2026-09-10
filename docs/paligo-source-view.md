@@ -89,7 +89,8 @@ cover._
 
 - Known so far: `section`, `title`, `para`, `orderedlist`,
   `itemizedlist`, `listitem`, `informaltable`, `thead`, `tbody`, `tr`,
-  `th`, `td`. Extend as we survey real topics.
+  `th`, `td`, `mediaobject`, `imageobject`. Extend as we survey real
+  topics.
 
 ### Content-model rules observed
 
@@ -106,6 +107,22 @@ _The growing `{parent → allowed children}` table._
 | `tbody` | `tr` | **[known]** body rows |
 | `tr` | `th` (in `thead`), `td` (in `tbody`) | **[known]** |
 | `th` / `td` | **[?]** bare text, or `para`-wrapped? | the Extract tool emits `<para>`-wrapped cells; confirm whether the source view *requires* that or also takes bare text |
+| `mediaobject` | `imageobject` | **[known]** image wrapper |
+| `imageobject` | the image reference (**[?]** `imagedata fileref=…`?) | **[known]** nests inside `mediaobject` |
+
+### Images — diagnose only, no auto-fix
+
+- **[known]** Structure: `<mediaobject><imageobject>` … image reference …
+  `</imageobject></mediaobject>`.
+- **[known]** If the image markup itself is broken, it **cannot be
+  repaired in the source view** — the fix has to happen in the visual
+  editor (re-insert the image), because the actual image reference lives
+  in the CMS, not the XML (consistent with: images must be uploaded to
+  the CMS before they can be referenced at all).
+- **Tool behavior:** detect a malformed `<mediaobject>` / `<imageobject>`
+  and tell the intern plainly that this one is not fixable here and what
+  to do in the editor instead. Do **not** attempt a wrap/move/unwrap fix
+  on it.
 
 ### Table borders and column widths
 
