@@ -52,6 +52,12 @@
       "description": "Each <section> requires exactly one <title>, and that title must be the first non-whitespace child."
     },
     {
+      "id": "section-not-empty",
+      "kind": "structure",
+      "severity": "caution",
+      "description": "A <section> with only a <title> and nothing else -- no paragraphs, lists, tables, media, or subsections -- is nonsensical. Not otherwise invalid, so flagged as a caution rather than blocked."
+    },
+    {
       "id": "lists-content",
       "kind": "structure",
       "description": "Every <orderedlist> or <itemizedlist> must contain at least one <listitem>; each list item must have real content."
