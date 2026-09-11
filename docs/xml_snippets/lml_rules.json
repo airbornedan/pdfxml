@@ -132,6 +132,7 @@
   ],
   "notes": [
     "This JSON file is the source of truth for the rule catalog -- rules are written directly here, not in a separate prose doc.",
-    "Severity scale (rules opt in via a \"severity\" field; absent means treat as an error for now): error (blocks save / structurally broken) > warning (real problem, not fatal) > caution (structurally valid, still worth flagging)."
+    "Severity scale (rules opt in via a \"severity\" field; absent means treat as an error for now): error (blocks save / structurally broken) > warning (real problem, not fatal) > caution (structurally valid, still worth flagging).",
+    "xref/indexterm/primary/secondary are recognized (tags.inline) but deliberately have no dedicated rules: what interns paste in always traces back to PDF-extracted content, which never produces indexing or cross-references. Kept in the vocabulary only so they don't false-flag as unknown elements in real topics that already use them."
   ]
 }
