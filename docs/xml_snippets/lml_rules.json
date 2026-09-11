@@ -79,7 +79,9 @@
     {
       "id": "admonitions-para",
       "kind": "admonitions",
-      "description": "<note>, <warning>, and <caution> must contain a <para>."
+      "description": "An admonition (<note>, <warning>, <caution>) may contain only <para> elements as direct children -- nothing else (no lists, tables, or media) is allowed directly inside it. At least one <para> is required; multiple are allowed. Inline/block content within those <para> tags follows the normal <para> content rules.",
+      "allowed_children": ["para"],
+      "min_children": 1
     },
     {
       "id": "inline-only",
