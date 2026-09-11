@@ -7,6 +7,7 @@
 ### is applied automatically.
 ########################################################################
 import re
+from collections import Counter
 
 _WS = re.compile(r"\s+")
 _TAG = re.compile(r"<[^<>]*>")
@@ -14,13 +15,17 @@ _OPEN_TAG = re.compile(r"<\s*([A-Za-z][\w.-]*)([^<>]*?)(/?)\s*>")
 
 
 def _words(text):
-    """Whitespace-separated words with all tags removed -- the content
-    that a fix must preserve exactly (order-independent)."""
+    """Whitespace-separated words with all tags removed -- the content a
+    fix must not lose (order-independent)."""
     return sorted(_TAG.sub(" ", text).split())
 
 
 def _guard(original, candidate):
-    return _words(original) == _words(candidate)
+    """True when every word of `original` survives in `candidate` with at
+    least its original count. Additions (a placeholder title, wrapper
+    tags) are allowed; losing or dropping a word is not."""
+    have = Counter(_words(candidate))
+    return all(have[word] >= count for word, count in Counter(_words(original)).items())
 
 
 def _indent_of(text, pos):
@@ -166,6 +171,103 @@ def _empty_listitem(text, finding):
     return options
 
 
+_SECTION_TAG = re.compile(r"<\s*(/?)\s*section(?:\s[^<>]*)?(/?)\s*>", re.IGNORECASE)
+
+
+def _section_bounds(text, open_start):
+    """From the offset of a <section> opening tag, return
+    (close_start, [(child_start, child_end), ...]) -- the offset of that
+    section's own </section> and the spans of its direct <section>
+    children."""
+    depth = 0
+    children = []
+    child_start = None
+    for tag in _SECTION_TAG.finditer(text, open_start):
+        if tag.group(2) == "/":
+            continue
+        if tag.group(1):                       # </section>
+            depth -= 1
+            if depth == 1 and child_start is not None:
+                children.append((child_start, tag.end()))
+                child_start = None
+            if depth == 0:
+                return tag.start(), children
+        else:                                  # <section>
+            depth += 1
+            if depth == 2 and child_start is None:
+                child_start = tag.start()
+    return len(text), children
+
+
+def _content_after_subsection(text, finding):
+    spec = finding["fix"]
+    el_start = spec["el_start"]
+    close_start, children = _section_bounds(text, spec["section_open_start"])
+    if not children:
+        return []
+
+    # run = the offending element through the next <section> or the
+    # parent's </section>, whichever comes first
+    nxt = re.search(r"<\s*section(?:\s|/|>)", text[el_start + 1:close_start])
+    run_end = el_start + 1 + nxt.start() if nxt else close_start
+    while run_end > el_start and text[run_end - 1] in " \t\n":
+        run_end -= 1
+    run_block = text[el_start:run_end].strip()
+    if not run_block:
+        return []
+
+    line_start = text.rfind("\n", 0, el_start) + 1
+    cut_start = line_start if not text[line_start:el_start].strip() else el_start
+    cut_end = run_end + 1 if text[run_end:run_end + 1] == "\n" else run_end
+    stripped = text[:cut_start] + text[cut_end:]
+    section_indent = _indent_of(text, spec["section_open_start"])
+
+    options = []
+
+    # options 1 and 2 splice `stripped` at offsets from the original
+    # text; only safe when the target sits before the removed run. The
+    # line's own leading indent is already in stripped[:offset].
+    last_close = text.rfind("</section>", children[-1][0], children[-1][1])
+    if last_close != -1 and last_close < cut_start:
+        close_indent = _indent_of(text, last_close)
+        options.append({
+            "label": "Move it into the previous subsection",
+            "before": run_block,
+            "after": f"…\n{close_indent}  {run_block}\n{close_indent}</section>",
+            "new_text": (stripped[:last_close]
+                         + f"  {run_block}\n{close_indent}"
+                         + stripped[last_close:]),
+        })
+
+    first_sub = spec.get("first_sub_start")
+    if first_sub is not None and first_sub < cut_start:
+        sub_indent = _indent_of(text, first_sub)
+        options.append({
+            "label": "Move it above the subsections",
+            "before": run_block,
+            "after": f"{sub_indent}{run_block}\n{sub_indent}<section>…",
+            "new_text": (stripped[:first_sub]
+                         + f"{run_block}\n{sub_indent}"
+                         + stripped[first_sub:]),
+        })
+
+    new_section = (
+        f"{section_indent}  <section>\n"
+        f"{section_indent}    <title>Untitled section</title>\n"
+        f"{section_indent}    {run_block}\n"
+        f"{section_indent}  </section>\n"
+    )
+    options.append({
+        "label": "Wrap it in its own new subsection (rename the title)",
+        "before": run_block,
+        "after": (f"<section>\n{section_indent}    <title>Untitled section</title>\n"
+                  f"{section_indent}    {run_block}\n{section_indent}  </section>"),
+        "new_text": stripped[:cut_start] + new_section + stripped[cut_start:],
+    })
+
+    return options
+
+
 def _bare_text_in_list(text, finding):
     spec = finding["fix"]
     seg_start, seg_end = spec["text_start"], spec["text_end"]
@@ -189,4 +291,5 @@ _BUILDERS = {
     "delete-stray-close": _delete_stray_close,
     "empty-listitem": _empty_listitem,
     "bare-text-in-list": _bare_text_in_list,
+    "content-after-subsection": _content_after_subsection,
 }

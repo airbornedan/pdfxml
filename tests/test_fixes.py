@@ -102,3 +102,59 @@ def test_guard_rejects_content_loss():
     src = "<listitem>keep this</listitem>"
     assert not fx._guard(src, "<listitem>keep</listitem>")   # 'this' lost
     assert fx._guard(src, "<listitem><para>keep this</para></listitem>")
+
+
+# --- content after a subsection -------------------------------------
+from app.lml import check_sections
+
+_AFTER_SUB = (
+    "<section>\n"
+    "  <title>Parent</title>\n"
+    "  <para>Intro.</para>\n"
+    "  <section>\n"
+    "    <title>First sub</title>\n"
+    "    <para>Sub body.</para>\n"
+    "  </section>\n"
+    "  <para>This got pasted too low.</para>\n"
+    "</section>"
+)
+
+
+def test_content_after_subsection_three_fixes():
+    from app import fixes as fx
+
+    finding = _finding_with_fix(check_sections(_AFTER_SUB), "content-after-subsection")
+    fixes = suggest_fixes(_AFTER_SUB, finding)
+    assert [f["label"] for f in fixes] == [
+        "Move it into the previous subsection",
+        "Move it above the subsections",
+        "Wrap it in its own new subsection (rename the title)",
+    ]
+    for fix in fixes:
+        assert fx._guard(_AFTER_SUB, fix["new_text"])   # no input word lost
+
+
+def test_move_above_subsections_reclears():
+    finding = _finding_with_fix(check_sections(_AFTER_SUB), "content-after-subsection")
+    fixes = suggest_fixes(_AFTER_SUB, finding)
+    above = next(f for f in fixes if f["label"] == "Move it above the subsections")
+    new = above["new_text"]
+    assert new.index("pasted too low") < new.index("<title>First sub")
+    assert check_sections(new) == []
+
+
+def test_into_previous_subsection_reclears():
+    finding = _finding_with_fix(check_sections(_AFTER_SUB), "content-after-subsection")
+    fixes = suggest_fixes(_AFTER_SUB, finding)
+    into = next(f for f in fixes if f["label"] == "Move it into the previous subsection")
+    new = into["new_text"]
+    assert new.index("Sub body") < new.index("pasted too low") < new.index("</section>\n</section>")
+    assert check_sections(new) == []
+
+
+def test_wrap_in_new_subsection_is_valid_with_placeholder_title():
+    finding = _finding_with_fix(check_sections(_AFTER_SUB), "content-after-subsection")
+    fixes = suggest_fixes(_AFTER_SUB, finding)
+    wrap = fixes[-1]["new_text"]
+    assert "<title>Untitled section</title>" in wrap
+    assert check_sections(wrap) == []   # structurally clean; title is the to-do

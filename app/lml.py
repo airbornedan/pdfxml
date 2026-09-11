@@ -498,14 +498,19 @@ def check_sections(text):
             if not is_close:
                 stack.append({
                     "line": line,
+                    "open_start": match.start(),
                     "nested": False,
                     "reported": False,
+                    "first_sub_start": None,
                     "title_count": 0,
                     "title_lines": [],
                     "first_child": None,
                 })
                 if stack[:-1]:
-                    stack[-2]["nested"] = True
+                    parent = stack[-2]
+                    parent["nested"] = True
+                    if parent["first_sub_start"] is None:
+                        parent["first_sub_start"] = match.start()
             else:
                 if stack:
                     frame = stack.pop()
@@ -545,7 +550,9 @@ def check_sections(text):
         if frame["first_child"] is None:
             frame["first_child"] = name
 
-        if len(stack) == 1 and frame["nested"] and not frame["reported"]:
+        ### rule 2 (recursive): once a section has a child <section>, no
+        ### more flow content is allowed at that level.
+        if frame["nested"] and not frame["reported"]:
             findings.append({
                 "line": line,
                 "tag": name,
@@ -553,6 +560,12 @@ def check_sections(text):
                     f"<{name}> appears after a nested <section>; move it "
                     f"into its own nested <section> or place it before the first subsection."
                 ),
+                "fix": {
+                    "kind": "content-after-subsection",
+                    "el_start": match.start(),
+                    "section_open_start": frame["open_start"],
+                    "first_sub_start": frame["first_sub_start"],
+                },
             })
             frame["reported"] = True
 
