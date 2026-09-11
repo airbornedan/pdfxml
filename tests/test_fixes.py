@@ -212,3 +212,36 @@ def test_wrap_imageobject_in_mediaobject():
     assert 'fileref="UUID-abc"' in new
     assert _words(new) == _words(src)                 # nothing lost
     assert check_mediaobjects(new) == []              # cascades clean
+
+
+# --- content outside the root <section> -------------------------------
+def test_move_inside_root_after_close():
+    src = "<section>\n  <title>x</title>\n  <para>y</para>\n</section>\n<para>stray after</para>"
+    finding = _finding_with_fix(check_sections(src), "move-inside-root")
+    fixes = suggest_fixes(src, finding)
+    assert [f["label"] for f in fixes] == ["Move it inside the section"]
+    new = fixes[0]["new_text"]
+    assert new.rstrip().endswith("</section>")
+    assert "stray after" in new
+    assert check_sections(new) == []
+
+
+def test_move_inside_root_before_open():
+    src = "<para>stray before</para>\n<section>\n  <title>x</title>\n  <para>y</para>\n</section>"
+    finding = _finding_with_fix(check_sections(src), "move-inside-root")
+    fixes = suggest_fixes(src, finding)
+    new = fixes[0]["new_text"]
+    assert new.lstrip().startswith("<section>")
+    assert new.index("<title>x</title>") < new.index("stray before") < new.index("<para>y</para>")
+    assert check_sections(new) == []
+
+
+def test_second_top_level_section_becomes_a_subsection():
+    src = ("<section><title>x</title><para>y</para></section>"
+           "<section><title>z</title><para>w</para></section>")
+    finding = _finding_with_fix(check_sections(src), "move-inside-root")
+    new = suggest_fixes(src, finding)[0]["new_text"]
+    assert check_sections(new) == []
+    # the second section now nests inside the first, as a real subsection
+    assert new.count("<section>") == 2
+    assert new.rstrip().endswith("</section>\n</section>") or new.rstrip().endswith("</section></section>")

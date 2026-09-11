@@ -323,6 +323,71 @@ def _insert_close(text, finding):
     return options
 
 
+def _root_bounds(text):
+    """(open_start, open_end, title_end_or_None, close_start, close_end)
+    for the topic's root <section> -- the first one in `text`. None if
+    there isn't one."""
+    opener = None
+    for tag in _SECTION_TAG.finditer(text):
+        if tag.group(1) or tag.group(2):
+            continue                       # a stray close/self-close first
+        opener = tag
+        break
+    if opener is None:
+        return None
+    open_start, open_end = opener.start(), opener.end()
+
+    depth = 1
+    close_start = close_end = None
+    for tag in _SECTION_TAG.finditer(text, open_end):
+        if tag.group(2):
+            continue
+        depth += -1 if tag.group(1) else 1
+        if depth == 0:
+            close_start, close_end = tag.start(), tag.end()
+            break
+
+    title_end = None
+    title = re.match(r"\s*<title[^>]*>.*?</title>", text[open_end:], re.DOTALL)
+    if title:
+        title_end = open_end + title.end()
+
+    return open_start, open_end, title_end, close_start, close_end
+
+
+def _move_inside_root(text, finding):
+    bounds = _root_bounds(text)
+    if not bounds:
+        return []
+    open_start, open_end, title_end, close_start, close_end = bounds
+    phase = finding["fix"]["phase"]
+
+    if phase == "before":
+        if open_start == 0:
+            return []
+        run = text[:open_start].strip()
+        if not run:
+            return []
+        insert_at = title_end if title_end is not None else open_end
+        indent = _indent_of(text, open_end)
+        remainder = text[open_start:]
+        rel_insert = insert_at - open_start
+        new_text = (remainder[:rel_insert] + f"\n{indent}{run}"
+                    + remainder[rel_insert:])
+    else:
+        if close_start is None:
+            return []
+        run = text[close_end:].strip()
+        if not run:
+            return []
+        indent = _indent_of(text, close_start)
+        new_text = (text[:close_start].rstrip(" \t\n") + "\n"
+                    + indent + "  " + run + "\n"
+                    + indent + text[close_start:close_end])
+
+    return [{"label": "Move it inside the section", "new_text": new_text}]
+
+
 _BUILDERS = {
     "loose-block-in-list": _loose_block_in_list,
     "delete-stray-close": _delete_stray_close,
@@ -331,4 +396,5 @@ _BUILDERS = {
     "content-after-subsection": _content_after_subsection,
     "insert-close": _insert_close,
     "wrap-in-mediaobject": _wrap_in_mediaobject,
+    "move-inside-root": _move_inside_root,
 }

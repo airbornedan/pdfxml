@@ -686,6 +686,7 @@ def check_sections(text):
         findings.append({
             "line": line,
             "message": f"Content sits {where}; a topic is exactly one <section>.",
+            "fix": {"kind": "move-inside-root", "phase": phase},
         })
 
     for match in _TAG_RE.finditer(text):
