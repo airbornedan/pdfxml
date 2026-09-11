@@ -91,6 +91,16 @@
       "description": "A table must contain <tbody>, each row must be a <tr> with <td> or <th> cells, and bare text inside a cell is not allowed."
     },
     {
+      "id": "table-border-pairing",
+      "kind": "structure",
+      "severity": "warning",
+      "description": "An <informaltable>'s frame and rules attributes must be one of exactly two paired combinations: frame=\"box\" rules=\"all\" (a bordered table) or frame=\"void\" rules=\"none\" (a borderless layout table, e.g. image-and-text side by side). No mixing -- box with none, void with all, or any other combination is invalid. Pick one type per table.",
+      "allowed_pairs": [
+        {"frame": "box", "rules": "all"},
+        {"frame": "void", "rules": "none"}
+      ]
+    },
+    {
       "id": "admonitions-para",
       "kind": "admonitions",
       "description": "An admonition (<note>, <warning>, <caution>) may contain only <para> elements as direct children -- nothing else (no lists, tables, or media) is allowed directly inside it. At least one <para> is required; multiple are allowed. Inline/block content within those <para> tags follows the normal <para> content rules.",
