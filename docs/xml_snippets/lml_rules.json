@@ -93,12 +93,13 @@
     {
       "id": "table-border-pairing",
       "kind": "structure",
-      "severity": "warning",
-      "description": "An <informaltable>'s frame and rules attributes must be one of exactly two paired combinations: frame=\"box\" rules=\"all\" (a bordered table) or frame=\"void\" rules=\"none\" (a borderless layout table, e.g. image-and-text side by side). No mixing -- box with none, void with all, or any other combination is invalid. Pick one type per table.",
+      "description": "An <informaltable>'s frame and rules attributes, when present, must be one of exactly two paired combinations: frame=\"box\" rules=\"all\" (a bordered table) or frame=\"void\" rules=\"none\" (a borderless layout table, e.g. image-and-text side by side). No mixing -- box with none, void with all, or any other combination is invalid; pick one type per table. The attributes are not required, but a table with neither is worth a nudge -- a real data table (one with a <thead>) usually wants borders.",
       "allowed_pairs": [
         {"frame": "box", "rules": "all"},
         {"frame": "void", "rules": "none"}
-      ]
+      ],
+      "on_mismatch": "warning",
+      "on_missing": "caution"
     },
     {
       "id": "admonitions-para",
