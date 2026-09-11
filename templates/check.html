@@ -32,10 +32,11 @@
 		{% endfor %}
 	</ul>
 
-	<div class="lml-report">
+	<p class="edit-hint">Click directly into the code below to fix it in place, then Check again.</p>
+	<div class="lml-report" id="lml-report">
 		{% for ln in lines %}
 		<div class="lml-line{{ ' lml-line--bad' if ln.notes else '' }}" id="L{{ ln.num }}">
-			<span class="lml-gutter">{{ ln.num }}</span><code class="lml-src">{{ ln.html|safe }}</code>
+			<span class="lml-gutter">{{ ln.num }}</span><code class="lml-src" contenteditable="true" spellcheck="false">{{ ln.html|safe }}</code>
 		</div>
 		{% for note in ln.notes %}
 		<div class="lml-annot">
@@ -61,10 +62,9 @@
 		{% endfor %}
 	</div>
 
-	<form method="post" class="recheck-form">
+	<form method="post" class="recheck-form" id="recheck-form">
 		<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-		<label class="field-label" for="xml-edit">Your code &mdash; edit directly if a suggested fix doesn't match your intent</label>
-		<textarea class="xml-io" id="xml-edit" name="xml" rows="16" spellcheck="false">{{ src }}</textarea>
+		<textarea name="xml" id="xml-hidden" hidden></textarea>
 		<p><button type="submit" class="btn">Check again</button></p>
 	</form>
 
@@ -98,6 +98,16 @@ if (copyBtn) {
 		}
 		copyBtn.textContent = ok ? "Copied" : "Copy failed";
 		setTimeout(() => { copyBtn.textContent = "Copy all"; }, 1500);
+	});
+}
+const recheckForm = document.getElementById("recheck-form");
+if (recheckForm) {
+	const report = document.getElementById("lml-report");
+	const hidden = document.getElementById("xml-hidden");
+	recheckForm.addEventListener("submit", () => {
+		const lines = Array.from(report.querySelectorAll(".lml-src"))
+			.map((el) => el.innerText.replace(/\n+$/, ""));
+		hidden.value = lines.join("\n");
 	});
 }
 </script>

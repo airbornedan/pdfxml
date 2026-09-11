@@ -1033,6 +1033,19 @@ a.check-line:hover { background: #f2b8b8; }
 	user-select: none;
 }
 .lml-src { white-space: pre; }
+.lml-src[contenteditable="true"] {
+	outline: none;
+	cursor: text;
+	display: inline-block;
+	min-width: 4px;
+}
+.lml-src[contenteditable="true"]:hover { background: #eef4ff; }
+.lml-src[contenteditable="true"]:focus { background: #fff; box-shadow: 0 0 0 1px #0056b3; }
+.edit-hint {
+	margin: 10px 0 0;
+	color: #666;
+	font-size: 0.88rem;
+}
 .lml-bad {
 	background: #fbdcdc;
 	box-shadow: 0 0 0 1px #e08b8b;
