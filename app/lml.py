@@ -73,6 +73,11 @@ KNOWN_TAGS = _load_known_tags()
 ### rare in this content, and a job for a real tokenizer later.
 _TAG_RE = re.compile(r"<\s*(/?)\s*([A-Za-z][\w.-]*)([^<>]*?)(/?)\s*>")
 
+### an XML declaration or comment -- not a real tag, and not content
+### either, for the purposes of "is there anything outside the root
+### <section>?"
+_NONCONTENT_RE = re.compile(r"<\?.*?\?>|<!--.*?-->", re.DOTALL)
+
 
 def strip_xinfo_attrs(text):
     """Return `text` with xinfo attributes stripped except on the first
@@ -582,25 +587,56 @@ def check_sections(text):
 
     The checker intentionally keeps the output focused on the actionable
     issues that interns are likely to hit when pasting Paligo source-view
-    fragments into this app: missing or misplaced section titles and
-    content that appears after a nested section starts.
+    fragments into this app: missing or misplaced section titles, content
+    that appears after a nested section starts (at any depth), and
+    content that sits outside the root <section> altogether -- before it
+    opens, between it and a second top-level <section>, or after it
+    closes.
     """
     findings = []
     stack = []
+    root_seen = False       # the first top-level <section> has opened
+    root_closed = False     # ...and it has since closed
+    outside_reported = {"before": False, "after": False}
+    last_end = 0
+
+    def report_outside(line, phase):
+        if outside_reported[phase]:
+            return
+        outside_reported[phase] = True
+        where = ("before the topic's <section> root" if phase == "before"
+                 else "after the topic's <section> root closes")
+        findings.append({
+            "line": line,
+            "message": f"Content sits {where}; a topic is exactly one <section>.",
+        })
 
     for match in _TAG_RE.finditer(text):
         name = match.group(2).lower()
         is_close = match.group(1) == "/"
         is_self = match.group(4) == "/" and not is_close
-        line = _line_of(text, match.start())
+        start = match.start()
+        line = _line_of(text, start)
+
+        if not stack:
+            gap = _NONCONTENT_RE.sub("", text[last_end:start])
+            if gap.strip():
+                report_outside(_line_of(text, last_end),
+                               "after" if root_closed else "before")
+        last_end = match.end()
 
         if name == "section":
             if is_self:
                 continue
             if not is_close:
+                if not stack and root_seen:
+                    # a second top-level <section> -- itself "outside"
+                    report_outside(line, "after")
+                if not stack:
+                    root_seen = True
                 stack.append({
                     "line": line,
-                    "open_start": match.start(),
+                    "open_start": start,
                     "nested": False,
                     "reported": False,
                     "first_sub_start": None,
@@ -612,7 +648,7 @@ def check_sections(text):
                     parent = stack[-2]
                     parent["nested"] = True
                     if parent["first_sub_start"] is None:
-                        parent["first_sub_start"] = match.start()
+                        parent["first_sub_start"] = start
             else:
                 if stack:
                     frame = stack.pop()
@@ -634,9 +670,13 @@ def check_sections(text):
                             "tag": "title",
                             "message": "<section> has more than one <title>; keep exactly one.",
                         })
+                    if not stack:
+                        root_closed = True
             continue
 
         if not stack:
+            if not is_close:
+                report_outside(line, "after" if root_closed else "before")
             continue
 
         frame = stack[-1]
@@ -670,6 +710,12 @@ def check_sections(text):
                 },
             })
             frame["reported"] = True
+
+    if not stack:                          # trailing text after the last tag
+        gap = _NONCONTENT_RE.sub("", text[last_end:])
+        if gap.strip():
+            report_outside(_line_of(text, last_end),
+                           "after" if root_closed else "before")
 
     findings.sort(key=lambda f: f["line"] or 0)
     return findings

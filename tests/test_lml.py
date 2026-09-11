@@ -342,3 +342,45 @@ def test_formal_table_with_caption_is_recognized_and_clean():
 def test_missing_table_close_names_the_right_tag():
     msgs = " ".join(f["message"] for f in check_tables("<table><tbody><tr><td>1</td></tr></tbody>"))
     assert "no </table>" in msgs
+
+
+# --- content outside the root <section> -------------------------------
+def test_prolog_before_root_is_not_flagged():
+    src = '<?xml version="1.0"?><section><title>x</title><para>y</para></section>'
+    assert check_sections(src) == []
+
+
+def test_tag_before_root_is_flagged():
+    src = "<para>stray</para><section><title>x</title><para>y</para></section>"
+    msgs = " ".join(f["message"] for f in check_sections(src))
+    assert "before the topic's <section> root" in msgs
+
+
+def test_tag_after_root_is_flagged():
+    src = "<section><title>x</title><para>y</para></section><para>stray</para>"
+    msgs = " ".join(f["message"] for f in check_sections(src))
+    assert "after the topic's <section> root closes" in msgs
+
+
+def test_bare_text_trailing_after_root_is_flagged():
+    src = "<section><title>x</title><para>y</para></section>stray bare text"
+    msgs = " ".join(f["message"] for f in check_sections(src))
+    assert "after the topic's <section> root closes" in msgs
+
+
+def test_second_top_level_section_is_flagged():
+    src = ("<section><title>x</title><para>y</para></section>"
+           "<section><title>z</title><para>w</para></section>")
+    msgs = " ".join(f["message"] for f in check_sections(src))
+    assert "after the topic's <section> root closes" in msgs
+
+
+def test_outside_root_is_reported_once_per_side():
+    src = "<section><title>x</title></section><para>a</para><para>b</para>"
+    findings = check_sections(src)
+    assert len(findings) == 1
+
+
+def test_well_formed_single_topic_is_clean():
+    src = "<section><title>x</title><para>y</para></section>"
+    assert check_sections(src) == []
