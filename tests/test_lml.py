@@ -183,8 +183,7 @@ def test_stray_content_in_row_is_reported():
         "</tbody></informaltable>"
     )
     msgs = " ".join(f["message"] for f in check_tables(src))
-    assert "before the first <td> or <th>" in msgs
-    assert "after the last <td> or <th>" in msgs
+    assert msgs.count("sits directly inside <tr>; it must be inside a <td> or <th>") == 2
 
 
 def test_finding_carries_a_line_number():
@@ -303,3 +302,43 @@ def test_unclosed_list_is_reported():
 def test_list_with_no_items_is_reported():
     msgs = " ".join(f["message"] for f in check_lists("<itemizedlist></itemizedlist>"))
     assert "has no <listitem> elements" in msgs
+
+
+def test_text_between_thead_and_tr_is_reported():
+    src = "<informaltable><thead>stray<tr><th>H</th></tr></thead><tbody><tr><td>1</td></tr></tbody></informaltable>"
+    msgs = " ".join(f["message"] for f in check_tables(src))
+    assert "directly inside <thead>; it must be inside a <tr>" in msgs
+
+
+def test_tag_between_tbody_and_tr_is_reported():
+    src = "<informaltable><tbody><note/><tr><td>1</td></tr></tbody></informaltable>"
+    msgs = " ".join(f["message"] for f in check_tables(src))
+    assert "directly inside <tbody>; it must be inside a <tr>" in msgs
+
+
+def test_text_between_cells_is_reported():
+    src = "<informaltable><tbody><tr><td>1</td> stray <td>2</td></tr></tbody></informaltable>"
+    msgs = " ".join(f["message"] for f in check_tables(src))
+    assert "directly inside <tr>; it must be inside a <td> or <th>" in msgs
+
+
+def test_content_after_last_cell_before_row_close_is_reported():
+    src = "<informaltable><tbody><tr><td>1</td>stray</tr></tbody></informaltable>"
+    msgs = " ".join(f["message"] for f in check_tables(src))
+    assert "directly inside <tr>; it must be inside a <td> or <th>" in msgs
+
+
+def test_formal_table_with_caption_is_recognized_and_clean():
+    src = (
+        "<table frame=\"box\" rules=\"all\">"
+        "<caption>Parts</caption>"
+        "<thead><tr><th>Part</th></tr></thead>"
+        "<tbody><tr><td><para>1</para></td></tr></tbody>"
+        "</table>"
+    )
+    assert check_tables(src) == []
+
+
+def test_missing_table_close_names_the_right_tag():
+    msgs = " ".join(f["message"] for f in check_tables("<table><tbody><tr><td>1</td></tr></tbody>"))
+    assert "no </table>" in msgs

@@ -183,9 +183,39 @@ def check_tags(text):
 ###     cell closed by the wrong tag (<th> ended with </td>)
 ########################################################################
 
-_TABLE_TAG = "informaltable"
+###
+### Every table in these books is an <informaltable> (or a captioned,
+### "formal" <table>) with a strict nesting discipline: at each level
+### exactly one kind of child is allowed, and NOTHING else -- text or a
+### tag -- may sit in the gaps around it. That covers all of: content
+### between <thead>/<tbody> and its first <tr>, between two <tr>s,
+### between <tr> and its first cell, between two cells, and after the
+### last cell before </tr>. This walks the whole table as a nested
+### frame stack ("containers") and reports:
+###   * a missing </informaltable> (or </table>)
+###   * content sitting directly in <informaltable>/<table>/<colgroup>/
+###     <thead>/<tbody>/<tr> instead of inside its one allowed child
+###   * no rows, or a row with no cells
+###   * rows whose column counts don't all match (colspan/rowspan/
+###     colgroup aware)
+###   * a <tr> or a cell with a missing or doubled closing tag, or a
+###     cell closed by the wrong tag (<th> ended with </td>)
+########################################################################
+
+_TABLE_TAGS = frozenset({"informaltable", "table"})
 _ROW_TAG = "tr"
 _CELL_TAGS = frozenset({"td", "th"})
+
+### container tag -> plain-language clause for "content must be inside ___"
+_CONTAINER_EXPECT = {
+    "informaltable": "a <thead> or <tbody>",
+    "table": "a <thead> or <tbody>",
+    "colgroup": "a <col>",
+    "thead": "a <tr>",
+    "tbody": "a <tr>",
+    "tr": "a <td> or <th>",
+}
+_TABLE_ROOT_ALLOWED = frozenset({"title", "caption", "colgroup", "thead", "tbody"})
 
 
 def _line_of(text, pos):
@@ -202,8 +232,8 @@ def _attr_int(attrs, name, default=1):
 
 def check_tables(text):
     """Return a list of {"line": int, "message": str[, "tag"]} findings
-    for every <informaltable> in `text`. Empty list == no table problems
-    (or no tables).
+    for every <informaltable>/<table> in `text`. Empty list == no table
+    problems (or no tables).
 
     Column counts are computed as a grid: each cell's colspan is added,
     and a cell's rowspan reserves that many columns in the rows below it,
@@ -213,7 +243,9 @@ def check_tables(text):
     """
     findings = []
     seen = set()
-    stack = []   # open <informaltable> contexts, innermost last
+    stack = []        # open <informaltable>/<table> contexts, innermost last
+    containers = []    # nesting-discipline frames: {"tag", "allow" or None}
+    last_end = 0
 
     def add(line, message, tag=None, fix=None):
         key = (line, message, tag)
@@ -227,27 +259,47 @@ def check_tables(text):
             finding["fix"] = fix
         findings.append(finding)
 
+    def check_placement(name, line):
+        """Is `name` allowed to open directly inside the current
+        container? If not, report it -- covers every "wrong slot" case
+        uniformly (thead/tbody-to-tr, tr-to-cell, the table root)."""
+        top = containers[-1] if containers else None
+        if top and top["allow"] is not None and name not in top["allow"]:
+            add(line, f"<{name}> sits directly inside <{top['tag']}>; it must "
+                      f"be inside {_CONTAINER_EXPECT[top['tag']]}.", tag=name)
+
     for match in _TAG_RE.finditer(text):
         name = match.group(2).lower()
         attrs = match.group(3) or ""
         is_close = match.group(1) == "/"
         is_self = match.group(4) == "/" and not is_close
-        line = _line_of(text, match.start())
+        start = match.start()
+        line = _line_of(text, start)
 
-        if name == _TABLE_TAG:
+        ### bare text sitting directly in a disciplined container
+        top = containers[-1] if containers else None
+        if top and top["allow"] is not None and text[last_end:start].strip():
+            add(_line_of(text, last_end),
+                f"Text sits directly inside <{top['tag']}>; it must be "
+                f"inside {_CONTAINER_EXPECT[top['tag']]}.")
+        last_end = match.end()
+
+        if name in _TABLE_TAGS:
             if is_self:
                 continue
             if is_close:
-                if stack:
+                if stack and containers and containers[-1]["tag"] == name:
+                    containers.pop()
                     _finalize_table(stack.pop(), add)
                 else:
-                    add(line, "</informaltable> with no opening tag.", tag="informaltable")
+                    add(line, f"</{name}> with no opening tag.", tag=name)
             else:
+                check_placement(name, line)
                 stack.append({
-                    "line": line, "rows": [], "row": None,
-                    "colgroup_cols": 0, "in_colgroup": False,
-                    "carry": [],           # [cols, rows_left] from rowspans
+                    "tag": name, "line": line, "rows": [], "row": None,
+                    "colgroup_cols": 0, "carry": [],   # [cols, rows_left] from rowspans
                 })
+                containers.append({"tag": name, "allow": _TABLE_ROOT_ALLOWED})
             continue
 
         if not stack:
@@ -255,71 +307,110 @@ def check_tables(text):
         table = stack[-1]
 
         if name == "colgroup":
-            table["in_colgroup"] = not is_close and not is_self
+            if is_close:
+                if containers and containers[-1]["tag"] == "colgroup":
+                    containers.pop()
+            elif not is_self:
+                check_placement(name, line)
+                containers.append({"tag": "colgroup", "allow": frozenset({"col"})})
             continue
+
         if name == "col":
-            if not is_close and table["row"] is None:   # in the colgroup, not a row
+            if not is_close and containers and containers[-1]["tag"] == "colgroup":
                 table["colgroup_cols"] += _attr_int(attrs, "span", 1)
+            elif not is_close and not is_self:
+                check_placement(name, line)
+            continue
+
+        if name in ("thead", "tbody"):
+            if is_close:
+                if containers and containers[-1]["tag"] == name:
+                    containers.pop()
+            elif not is_self:
+                check_placement(name, line)
+                containers.append({"tag": name, "allow": frozenset({"tr"})})
             continue
 
         if name == _ROW_TAG:
             if is_self:
                 continue
             if is_close:
-                if table["row"] is None:
-                    add(line, "</tr> with no matching <tr>.")
-                else:
+                if table["row"] is not None:
                     _end_row(table)
+                    if containers and containers[-1]["tag"] == "tr":
+                        containers.pop()
+                else:
+                    add(line, "</tr> with no matching <tr>.")
             else:
                 if table["row"] is not None:
                     _close_dangling_row(table, add)
+                    if containers and containers[-1]["tag"] == "tr":
+                        containers.pop()
+                check_placement(name, line)
                 carried = sum(cols for cols, left in table["carry"] if left > 0)
                 table["row"] = {"line": line, "cells": 0, "span_cols": carried,
                                 "open_cell": None, "pending_rowspans": []}
+                containers.append({"tag": "tr", "allow": _CELL_TAGS})
             continue
 
         if name in _CELL_TAGS:
             if is_self:
                 continue
             row = table["row"]
+            if is_close:
+                if row is not None and row["open_cell"] is not None:
+                    if row["open_cell"] != name:
+                        add(line, f"</{name}> closes a <{row['open_cell']}> cell.", tag=name)
+                    row["open_cell"] = None
+                    if containers and containers[-1]["tag"] in _CELL_TAGS:
+                        containers.pop()
+                else:
+                    add(line, f"</{name}> with no matching open cell.", tag=name)
+                continue
             if row is None:
                 add(line, f"<{name}> outside any <tr>.", tag=name)
                 continue
-            if is_close:
-                if row["open_cell"] is None:
-                    add(line, f"</{name}> with no matching open cell.", tag=name)
-                elif row["open_cell"] != name:
-                    add(line, f"</{name}> closes a <{row['open_cell']}> cell.", tag=name)
-                    row["open_cell"] = None
-                else:
-                    row["open_cell"] = None
-            else:
-                if row["open_cell"] is not None:
-                    add(line, f"<{row['open_cell']}> (line {row['line']}) "
-                              f"has no closing tag before the next cell.", tag=row["open_cell"])
-                colspan = _attr_int(attrs, "colspan", 1)
-                rowspan = _attr_int(attrs, "rowspan", 1)
-                row["open_cell"] = name
-                row["cells"] += 1
-                row["span_cols"] += colspan
-                if rowspan > 1:
-                    row["pending_rowspans"].append([colspan, rowspan - 1])
+            check_placement(name, line)
+            if row["open_cell"] is not None:
+                add(line, f"<{row['open_cell']}> (line {row['line']}) "
+                          f"has no closing tag before the next cell.", tag=row["open_cell"])
+                if containers and containers[-1]["tag"] in _CELL_TAGS:
+                    containers.pop()
+            colspan = _attr_int(attrs, "colspan", 1)
+            rowspan = _attr_int(attrs, "rowspan", 1)
+            row["open_cell"] = name
+            row["cells"] += 1
+            row["span_cols"] += colspan
+            if rowspan > 1:
+                row["pending_rowspans"].append([colspan, rowspan - 1])
+            containers.append({"tag": name, "allow": None})   # leaf: cell content is unchecked here
             continue
 
-        ### any other element directly inside a <tr> but not in a cell
-        row = table["row"]
-        if row is not None and not table["in_colgroup"]:
-            if is_close or is_self:
+        if name in ("title", "caption"):
+            if is_self:
                 continue
-            if row["open_cell"] is None:
-                where = "before the first" if row["cells"] == 0 else "after the last"
-                add(line, f"<{name}> appears {where} <td> or <th> in a row; "
-                          f"move it into a cell.", tag=name)
+            if is_close:
+                if containers and containers[-1]["tag"] == name:
+                    containers.pop()
+                continue
+            if containers and containers[-1]["tag"] in _TABLE_TAGS:
+                containers.append({"tag": name, "allow": None})   # leaf: bare text/inline is fine
+                continue
+            # a <title>/<caption> anywhere else inside the table (e.g. a
+            # <section> nested in a cell) -- not our concern here
+            continue
+
+        ### anything else: only policed if it tries to open in a
+        ### disciplined container. A self-closed stray tag still counts
+        ### as "opening" here (it has no children to worry about, but
+        ### its mere presence in the wrong slot is still the violation).
+        if not is_close:
+            check_placement(name, line)
 
     for table in stack:                  # never closed
         add(table["line"],
-            f"<informaltable> (line {table['line']}) has no </informaltable>.",
-            tag="informaltable")
+            f"<{table['tag']}> (line {table['line']}) has no </{table['tag']}>.",
+            tag=table["tag"])
         _finalize_table(table, add)
 
     findings.sort(key=lambda f: f["line"] or 0)
@@ -354,8 +445,8 @@ def _finalize_table(table, add):
         _close_dangling_row(table, add)
 
     if not table["rows"]:
-        add(table["line"], f"<informaltable> (line {table['line']}) has no rows.",
-            tag="informaltable")
+        add(table["line"], f"<{table['tag']}> (line {table['line']}) has no rows.",
+            tag=table["tag"])
         return
 
     for row in table["rows"]:
@@ -371,12 +462,11 @@ def _finalize_table(table, add):
         add(table["line"],
             f"Rows have different column counts ({detail}), counting colspan "
             f"and rowspan. Every row should span the same width.",
-            tag="informaltable")
+            tag=table["tag"])
     elif table["colgroup_cols"] and widths and next(iter(widths)) != table["colgroup_cols"]:
         add(table["line"],
             f"<colgroup> declares {table['colgroup_cols']} columns but the "
             f"rows span {next(iter(widths))}.", tag="colgroup")
-
 
 ########################################################################
 ### LIST STRUCTURE CHECK
