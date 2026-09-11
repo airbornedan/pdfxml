@@ -131,6 +131,17 @@ _The growing `{parent → allowed children}` table._
 
 ### Table borders and column widths
 
+- **[open question, not a rule]** Whether a captioned `<table>` should
+  ever be allowed at all (2026-09-11). dan's instinct: if a table's
+  content is significant enough to caption, it should be promoted to
+  its own `<section>` with a real heading instead; if it isn't, it
+  should just be a plain uncaptioned `<informaltable>` inline with the
+  text — so a formal `<table>` never actually belongs either way. Not
+  settled: dan is the only trained technical writer at SurePoint, but
+  someone else also authors docs, and their conventions may differ.
+  Needs more docs surveyed before this becomes a rule. **Deliberately
+  not encoded in `lml_rules.json`** — do not add a caution/rule for
+  this without dan revisiting it.
 - **[known]** Structure: `<informaltable>` › optional bare-text
   `<title>` › optional `<thead><tr><th>…</th></tr></thead>` ›
   `<tbody><tr><td>…</td></tr></tbody>`.
