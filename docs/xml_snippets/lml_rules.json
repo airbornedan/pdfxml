@@ -57,9 +57,11 @@
       "description": "Every <orderedlist> or <itemizedlist> must contain at least one <listitem>; each list item must have real content."
     },
     {
-      "id": "listitem-first-para",
+      "id": "listitem-content",
       "kind": "structure",
-      "description": "A <listitem> is valid when its first child is a <para> or it contains a valid nested list or media object."
+      "description": "A <listitem> may contain only <para>, <mediaobject>, and nested <orderedlist>/<itemizedlist> elements as direct children -- no bare text and nothing else directly inside it. At least one of these is required; multiple are allowed (for example a <para> followed by a sublist). Treated as the complete allowed set for now -- covers the cases interns actually hit.",
+      "allowed_children": ["para", "mediaobject", "orderedlist", "itemizedlist"],
+      "min_children": 1
     },
     {
       "id": "imageobject-mediaobject",
