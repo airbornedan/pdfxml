@@ -47,6 +47,7 @@ def check_xml():
             + lml.check_lists(src)
             + lml.check_mediaobjects(src)
             + lml.check_sections(src)
+            + lml.check_paragraphs(src)
         )
 
         seen = set()

@@ -112,10 +112,10 @@ from app.lml import check_tables
 
 _GOOD = (
     "<informaltable frame=\"box\" rules=\"all\">\n"
-    "  <thead><tr><th>A</th><th>B</th></tr></thead>\n"
+    "  <thead><tr><th><para>A</para></th><th><para>B</para></th></tr></thead>\n"
     "  <tbody>\n"
-    "    <tr><td>1</td><td>2</td></tr>\n"
-    "    <tr><td>3</td><td>4</td></tr>\n"
+    "    <tr><td><para>1</para></td><td><para>2</para></td></tr>\n"
+    "    <tr><td><para>3</para></td><td><para>4</para></td></tr>\n"
     "  </tbody>\n"
     "</informaltable>"
 )
@@ -177,9 +177,9 @@ def test_cell_closed_by_wrong_tag_is_reported():
 
 def test_stray_content_in_row_is_reported():
     src = (
-        "<informaltable><tbody>"
-        "<tr><para>oops</para><td>1</td></tr>"
-        "<tr><td>2</td><para>still oops</para></tr>"
+        "<informaltable><tbody>\n"
+        "<tr><para>oops</para><td><para>1</para></td></tr>\n"
+        "<tr><td><para>2</para></td><para>still oops</para></tr>\n"
         "</tbody></informaltable>"
     )
     msgs = " ".join(f["message"] for f in check_tables(src))
@@ -332,10 +332,30 @@ def test_formal_table_with_caption_is_recognized_and_clean():
     src = (
         "<table frame=\"box\" rules=\"all\">"
         "<caption>Parts</caption>"
-        "<thead><tr><th>Part</th></tr></thead>"
+        "<thead><tr><th><para>Part</para></th></tr></thead>"
         "<tbody><tr><td><para>1</para></td></tr></tbody>"
         "</table>"
     )
+    assert check_tables(src) == []
+
+
+def test_bare_text_in_cell_is_reported():
+    src = "<informaltable><tbody><tr><td>bare text, no para</td></tr></tbody></informaltable>"
+    msgs = " ".join(f["message"] for f in check_tables(src))
+    assert "directly inside <td>; wrap it in a <para>" in msgs
+
+
+def test_para_wrapped_cell_is_clean():
+    src = "<informaltable><tbody><tr><td><para>fine</para></td></tr></tbody></informaltable>"
+    assert check_tables(src) == []
+
+
+def test_list_in_a_cell_is_clean():
+    # real layout pattern: a cell can hold a <para> AND a sublist
+    src = ("<informaltable><tbody><tr><td>"
+           "<para>Steps:</para>"
+           "<orderedlist><listitem><para>one</para></listitem></orderedlist>"
+           "</td></tr></tbody></informaltable>")
     assert check_tables(src) == []
 
 
@@ -384,3 +404,53 @@ def test_outside_root_is_reported_once_per_side():
 def test_well_formed_single_topic_is_clean():
     src = "<section><title>x</title><para>y</para></section>"
     assert check_sections(src) == []
+
+
+# --- check_paragraphs ---------------------------------------------------
+from app.lml import check_paragraphs
+
+
+def test_clean_para_with_inline_markup_only():
+    src = ('<para>Use the <guilabel>Home</guilabel> screen and press '
+           '<guibutton>OK</guibutton>. <emphasis role="bold">Note:</emphasis> '
+           'plain <emphasis>text</emphasis>.</para>')
+    assert check_paragraphs(src) == []
+
+
+def test_list_inside_para_is_reported():
+    src = "<para>text <orderedlist><listitem><para>x</para></listitem></orderedlist></para>"
+    findings = check_paragraphs(src)
+    assert len(findings) == 1
+    assert findings[0]["tag"] == "orderedlist"
+    assert "sits directly inside a <para>" in findings[0]["message"]
+
+
+def test_table_inside_para_is_reported():
+    src = "<para>text <informaltable><tbody><tr><td><para>x</para></td></tr></tbody></informaltable></para>"
+    findings = check_paragraphs(src)
+    assert len(findings) == 1
+    assert findings[0]["tag"] == "informaltable"
+
+
+def test_mediaobject_inside_para_is_reported():
+    src = '<para>text <mediaobject><imageobject><imagedata fileref="x"/></imageobject></mediaobject></para>'
+    findings = check_paragraphs(src)
+    assert len(findings) == 1
+    assert findings[0]["tag"] == "mediaobject"
+
+
+def test_para_inside_para_is_reported():
+    findings = check_paragraphs("<para>outer <para>inner</para></para>")
+    assert len(findings) == 1
+    assert "can't contain a paragraph" in findings[0]["message"]
+
+
+def test_para_content_check_ignores_content_outside_any_para():
+    # a list/table elsewhere in the document is not this checker's job
+    src = "<section><orderedlist><listitem><para>x</para></listitem></orderedlist></section>"
+    assert check_paragraphs(src) == []
+
+
+def test_indexterm_and_xref_are_allowed_in_para():
+    src = '<para>See <xref xlink:href="x"/> and <indexterm><primary>x</primary></indexterm>.</para>'
+    assert check_paragraphs(src) == []

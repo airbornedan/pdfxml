@@ -281,12 +281,19 @@ def check_tables(text):
         start = match.start()
         line = _line_of(text, start)
 
-        ### bare text sitting directly in a disciplined container
+        ### bare text sitting directly in a disciplined container, or
+        ### directly in a cell (which allows several element types but
+        ### never bare text -- it must be wrapped in a <para>)
         top = containers[-1] if containers else None
-        if top and top["allow"] is not None and text[last_end:start].strip():
+        gap = text[last_end:start]
+        if top and top["allow"] is not None and gap.strip():
             add(_line_of(text, last_end),
                 f"Text sits directly inside <{top['tag']}>; it must be "
                 f"inside {_CONTAINER_EXPECT[top['tag']]}.")
+        elif top and top["tag"] in _CELL_TAGS and gap.strip():
+            add(_line_of(text, last_end),
+                f"Text sits directly inside <{top['tag']}>; wrap it in a <para>.",
+                tag=top["tag"])
         last_end = match.end()
 
         if name in _TABLE_TAGS:
@@ -405,12 +412,20 @@ def check_tables(text):
             # <section> nested in a cell) -- not our concern here
             continue
 
-        ### anything else: only policed if it tries to open in a
-        ### disciplined container. A self-closed stray tag still counts
-        ### as "opening" here (it has no children to worry about, but
-        ### its mere presence in the wrong slot is still the violation).
-        if not is_close:
-            check_placement(name, line)
+        ### anything else: policed if it tries to open in a disciplined
+        ### container (a self-closed stray tag still counts as
+        ### "opening" -- it has no children to worry about, but its
+        ### mere presence in the wrong slot is still the violation). A
+        ### paired tag (<para>, <mediaobject>, ...) pushes its own leaf
+        ### frame so ITS children -- text included -- attribute to it,
+        ### not to whatever cell/row happens to be further up.
+        if is_close:
+            if containers and containers[-1]["tag"] == name:
+                containers.pop()
+            continue
+        check_placement(name, line)
+        if not is_self:
+            containers.append({"tag": name, "allow": None})
 
     for table in stack:                  # never closed
         add(table["line"],
@@ -577,6 +592,68 @@ def check_mediaobjects(text):
             else:
                 add(line, "<imagedata> must be inside a <mediaobject>.", tag="imagedata")
             continue
+
+    findings.sort(key=lambda f: f["line"] or 0)
+    return findings
+
+
+### the only elements that appear as direct children of <para> anywhere
+### in the corpus (real_paligo_docbook.xml included): emphasis (bare/
+### italic, role="bold", role="strong"), guilabel, guibutton, xref,
+### indexterm. Anything else -- a list, a table, a media object,
+### another <para>, a whole <section> -- is block content that has no
+### business inside a paragraph; it means a cursor landed mid-sentence.
+_PARA_INLINE = frozenset({"emphasis", "guilabel", "guibutton", "xref", "indexterm"})
+
+
+def check_paragraphs(text):
+    """Report block-level content sitting directly inside a <para> --
+    the cursor-misplacement break where a pasted list/table/media
+    object (or a whole extra <para>) lands mid-paragraph instead of
+    beside it. Findings carry a "fix" payload so it can be moved out."""
+    findings = []
+    seen = set()
+    stack = []   # [(tag, line)], innermost last -- generic, any element
+
+    def add(line, message, tag=None, fix=None):
+        key = (line, message, tag)
+        if key in seen:
+            return
+        seen.add(key)
+        finding = {"line": line, "message": message}
+        if tag is not None:
+            finding["tag"] = tag
+        if fix is not None:
+            finding["fix"] = fix
+        findings.append(finding)
+
+    for match in _TAG_RE.finditer(text):
+        name = match.group(2).lower()
+        is_close = match.group(1) == "/"
+        is_self = match.group(4) == "/" and not is_close
+        start = match.start()
+        line = _line_of(text, start)
+
+        top = stack[-1][0] if stack else None
+        if top == "para" and not is_close and name not in _PARA_INLINE:
+            if name == "para":
+                add(line, "<para> sits directly inside another <para>; a "
+                          "paragraph can't contain a paragraph.", tag="para",
+                    fix={"kind": "unwrap-from-para", "el_start": start})
+            else:
+                add(line, f"<{name}> sits directly inside a <para>; only text "
+                          f"and inline markup belong in a <para> -- move it out.",
+                    tag=name, fix={"kind": "unwrap-from-para", "el_start": start})
+
+        if is_self:
+            continue
+        if is_close:
+            depth = next((i for i in range(len(stack) - 1, -1, -1)
+                         if stack[i][0] == name), None)
+            if depth is not None:
+                del stack[depth:]   # lenient: robust to unrelated broken tags
+            continue
+        stack.append((name, line))
 
     findings.sort(key=lambda f: f["line"] or 0)
     return findings
