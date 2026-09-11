@@ -11,6 +11,8 @@
       "itemizedlist",
       "listitem",
       "informaltable",
+      "table",
+      "caption",
       "thead",
       "tbody",
       "tr",
@@ -106,6 +108,12 @@
       ],
       "on_mismatch": "warning",
       "on_missing": "caution"
+    },
+    {
+      "id": "table-formal-vs-informal",
+      "kind": "structure",
+      "confidence": "~90%, confirmed once -- verify against a second captioned table",
+      "description": "A table's root element depends on whether it has a caption, matching real DocBook semantics: no <caption> -> <informaltable> (the norm); has a <caption> -> a formal <table>. Both use the identical tr/th/td content model -- this is not CALS, and a bare <table> should not be treated as a mistake. A generated <xml:id> on the table (e.g. so it can be targeted by an <xref> from another topic via Paligo's \"Generate ID\" action) is normal and not itself a sign of a bad paste."
     },
     {
       "id": "admonitions-para",

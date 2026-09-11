@@ -107,7 +107,7 @@ _The growing `{parent → allowed children}` table._
 | `para` | text + inline: `emphasis` (`role="bold"`), `guilabel` | **[known]** these two inline tags cover nearly everything we see |
 | `orderedlist` / `itemizedlist` | `listitem` **only** | **[known]** nothing loose between the list tags — every child is a `<listitem>...</listitem>`. Bare `<para>` here is the canonical break. `<title>` on a list: **[?]** |
 | `listitem` | `para` (+ nested `orderedlist` / `itemizedlist`) | **[known]** text must be wrapped in `<para>...</para>`, never bare |
-| `informaltable` | `title` (optional, bare text), `thead` (optional), `tbody` | **[known]** all our books use `informaltable`, never `table` / CALS |
+| `informaltable` / `table` | `caption` (only on `table`), `colgroup` (optional), `thead` (optional), `tbody` | **[known, ~90%]** same `tr`/`th`/`td` model either way, not CALS. Paligo appears to pick the root element on whether the table has a caption: no caption → `<informaltable>` (the norm); has a `<caption>` → **formal** `<table>` (real DocBook semantics — `table` requires a title/caption, `informaltable` has none). Confirmed once, in `real_paligo_docbook.xml` — a `<table frame="box" rules="all" xml:id="...">` with an empty `<caption xinfo:text="…"/>`, nested inside a `<listitem>`. Confirm against a second captioned table before fully trusting it. |
 | `thead` | `tr` | **[known]** header rows |
 | `tbody` | `tr` | **[known]** body rows |
 | `tr` | `th` (in `thead`), `td` (in `tbody`) | **[known]** |
@@ -180,7 +180,11 @@ _Does the source view use `xmlns`? Processing instructions for Paligo
 metadata? Profiling attributes (`audience`, `os`, custom)? Whitespace
 handling oddities?_
 
-- TBD
+- **[known]** A generated-looking `xml:id` (e.g. `table-id135692988737306`)
+  on an element is legitimate, not a paste artifact. Paligo's LML view has
+  a "Generate ID for this element" action that stamps an `xml:id` so the
+  element can be targeted by `<xref>` from another topic via the GUI link
+  tool. Don't treat an odd `xml:id` alone as a sign of a bad paste.
 
 ### "Fix Problems" deletion behavior
 
