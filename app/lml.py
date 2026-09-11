@@ -159,6 +159,11 @@ def check_tags(text):
             entry["message"] = (
                 f"<{entry['tag']}> is never closed -- add a </{entry['tag']}>."
             )
+            if entry["tag"] == "para":
+                entry["fix"] = {
+                    "kind": "insert-close", "tag": "para",
+                    "open_start": entry["start"], "open_end": entry["end"],
+                }
             findings.append(entry)
 
     findings.sort(key=lambda f: (f["line"], f["start"]))
@@ -210,7 +215,7 @@ def check_tables(text):
     seen = set()
     stack = []   # open <informaltable> contexts, innermost last
 
-    def add(line, message, tag=None):
+    def add(line, message, tag=None, fix=None):
         key = (line, message, tag)
         if key in seen:
             return
@@ -218,6 +223,8 @@ def check_tables(text):
         finding = {"line": line, "message": message}
         if tag is not None:
             finding["tag"] = tag
+        if fix is not None:
+            finding["fix"] = fix
         findings.append(finding)
 
     for match in _TAG_RE.finditer(text):
@@ -403,7 +410,7 @@ def check_mediaobjects(text):
     seen = set()
     stack = []
 
-    def add(line, message, tag=None):
+    def add(line, message, tag=None, fix=None):
         key = (line, message, tag)
         if key in seen:
             return
@@ -411,6 +418,8 @@ def check_mediaobjects(text):
         finding = {"line": line, "message": message}
         if tag is not None:
             finding["tag"] = tag
+        if fix is not None:
+            finding["fix"] = fix
         findings.append(finding)
 
     for match in _TAG_RE.finditer(text):
@@ -438,18 +447,21 @@ def check_mediaobjects(text):
             continue
 
         if name == "imageobject":
+            wrap_fix = {"kind": "wrap-in-mediaobject", "el_start": match.start()}
             if is_self:
                 if stack:
                     stack[-1]["imageobject_count"] += 1
                 else:
-                    add(line, "<imageobject/> must be inside a <mediaobject>.", tag="imageobject")
+                    add(line, "<imageobject/> must be inside a <mediaobject>.",
+                        tag="imageobject", fix=wrap_fix)
                 continue
             if is_close:
                 continue
             if stack:
                 stack[-1]["imageobject_count"] += 1
             else:
-                add(line, "<imageobject> must be inside a <mediaobject>.", tag="imageobject")
+                add(line, "<imageobject> must be inside a <mediaobject>.",
+                    tag="imageobject", fix=wrap_fix)
             continue
 
         if name == "imagedata":
@@ -664,7 +676,8 @@ def check_lists(text):
                     add(line, f"<{name}/> sits directly inside a list; it must "
                               f"be inside a <listitem>.", tag=name)
                 elif name == "imageobject" and not in_mediaobject():
-                    add(line, f"<{name}/> must be inside a <mediaobject>.", tag=name)
+                    add(line, f"<{name}/> must be inside a <mediaobject>.", tag=name,
+                        fix={"kind": "wrap-in-mediaobject", "el_start": start})
                 elif name == "mediaobject":
                     note_content("mediaobject")
             continue
@@ -695,7 +708,8 @@ def check_lists(text):
                         fix={"kind": "loose-block-in-list", "el_start": start,
                              "list_tag": cont["tag"], "list_start": cont["open_start"]})
                 elif name == "imageobject" and not in_mediaobject():
-                    add(line, f"<{name}> must be inside a <mediaobject>.", tag=name)
+                    add(line, f"<{name}> must be inside a <mediaobject>.", tag=name,
+                        fix={"kind": "wrap-in-mediaobject", "el_start": start})
                 elif name in ("para", "mediaobject"):
                     note_content(name)
                 stack.append({"tag": name, "line": line, "kind": "other"})

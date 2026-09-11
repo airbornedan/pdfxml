@@ -15,16 +15,22 @@
 			<button type="button" class="btn" id="clear-btn">Clear</button>
 		</p>
 	</form>
-	{% else %}
-	<p class="lml-summary {{ 'lml-summary--bad' if findings else 'lml-summary--ok' }}">{{ summary }}</p>
 
-	{% if findings %}
+	{% elif not findings %}
+	<p class="lml-summary lml-summary--ok">{{ summary }}</p>
+	<label class="field-label" for="xml-out">Your fixed LML &mdash; copy this back into Paligo's source view</label>
+	<p><button type="button" class="btn" id="copy-btn">Copy all</button></p>
+	<textarea class="xml-io" id="xml-out" rows="18" readonly>{{ src }}</textarea>
+	<p><a class="btn" href="{{ url_for('normalize.check_xml') }}">Check another</a></p>
+
+	{% else %}
+	<p class="lml-summary lml-summary--bad">{{ summary }}</p>
+
 	<ul class="check-findings">
 		{% for f in findings %}
 		<li>{% if f.line %}<a class="check-line" href="#L{{ f.line }}">line {{ f.line }}</a> {% endif %}{{ f.message }}</li>
 		{% endfor %}
 	</ul>
-	{% endif %}
 
 	<div class="lml-report">
 		{% for ln in lines %}
@@ -43,9 +49,8 @@
 					<form method="post" class="fix-opt">
 						<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 						<textarea name="xml" hidden>{{ fx.new_text }}</textarea>
-						<div class="fix-head"><strong>{{ fx.label }}</strong><button type="submit" class="btn-reset fix-apply">Apply</button></div>
-						<pre class="fix-diff"><span class="fix-was">{{ fx.before }}</span>
-<span class="fix-now">{{ fx.after }}</span></pre>
+						<span class="fix-label">{{ fx.label }}</span>
+						<button type="submit" class="btn-reset fix-apply">Apply</button>
 					</form>
 					{% endfor %}
 				</details>
@@ -68,6 +73,24 @@ if (clearBtn) {
 			input.value = "";
 			input.focus();
 		}
+	});
+}
+const copyBtn = document.getElementById("copy-btn");
+if (copyBtn) {
+	const out = document.getElementById("xml-out");
+	out.addEventListener("focus", () => out.select());
+	copyBtn.addEventListener("click", async () => {
+		out.focus();
+		out.select();
+		let ok = false;
+		try {
+			await navigator.clipboard.writeText(out.value);
+			ok = true;
+		} catch {
+			ok = document.execCommand("copy");
+		}
+		copyBtn.textContent = ok ? "Copied" : "Copy failed";
+		setTimeout(() => { copyBtn.textContent = "Copy all"; }, 1500);
 	});
 }
 </script>

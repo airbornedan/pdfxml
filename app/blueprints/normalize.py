@@ -39,6 +39,7 @@ def check_xml():
     summary, findings, lines = (None, [], [])
 
     if submitted:
+        src = src.replace("\r\n", "\n").replace("\r", "\n")
         src = lml.strip_xinfo_attrs(src)
         findings = (
             lml.check_tags(src)

@@ -71,7 +71,7 @@ def test_empty_listitem_two_fixes():
     finding = _finding_with_fix(check_lists(_EMPTY), "empty-listitem")
     fixes = suggest_fixes(_EMPTY, finding)
     assert [f["label"] for f in fixes] == [
-        "Add an empty <para> to fill in",
+        "Add an empty paragraph",
         "Delete the empty list item",
     ]
     add_para = fixes[0]["new_text"]
@@ -128,7 +128,7 @@ def test_content_after_subsection_three_fixes():
     assert [f["label"] for f in fixes] == [
         "Move it into the previous subsection",
         "Move it above the subsections",
-        "Wrap it in its own new subsection (rename the title)",
+        "Put it in a new subsection",
     ]
     for fix in fixes:
         assert fx._guard(_AFTER_SUB, fix["new_text"])   # no input word lost
@@ -158,3 +158,57 @@ def test_wrap_in_new_subsection_is_valid_with_placeholder_title():
     wrap = fixes[-1]["new_text"]
     assert "<title>Untitled section</title>" in wrap
     assert check_sections(wrap) == []   # structurally clean; title is the to-do
+
+
+# --- unclosed <para> -----------------------------------------------------
+def test_unclosed_para_close_before_next_block():
+    src = "<listitem>\n  <para>Mount the ECU.\n</listitem>"
+    finding = _finding_with_fix(check_tags(src), "insert-close")
+    fixes = suggest_fixes(src, finding)
+    assert len(fixes) == 1
+    new = fixes[0]["new_text"]
+    assert new == "<listitem>\n  <para>Mount the ECU.</para>\n</listitem>"
+    assert check_tags(new) == []
+
+
+def test_unclosed_para_before_sibling_para():
+    src = "<td><para>First\n<para>Second.</para></td>"
+    finding = _finding_with_fix(check_tags(src), "insert-close")
+    fixes = suggest_fixes(src, finding)
+    assert len(fixes) == 1                       # not a duplicate (text between)
+    new = fixes[0]["new_text"]
+    assert new == "<td><para>First</para>\n<para>Second.</para></td>"
+    assert check_tags(new) == []
+
+
+def test_duplicate_para_opener_offers_delete():
+    src = "<listitem><para><para>Only text.</para></listitem>"
+    finding = _finding_with_fix(check_tags(src), "insert-close")
+    labels = [f["label"] for f in suggest_fixes(src, finding)]
+    assert labels == ["Delete the extra opening tag", "Close the paragraph here"]
+    delete = suggest_fixes(src, finding)[0]["new_text"]
+    assert delete == "<listitem><para>Only text.</para></listitem>"
+    assert check_tags(delete) == []
+
+
+# --- imageobject outside a mediaobject ------------------------------
+from app.lml import check_mediaobjects
+
+
+def test_wrap_imageobject_in_mediaobject():
+    src = (
+        "<section>\n"
+        "  <title>x</title>\n"
+        "  <imageobject>\n"
+        '    <imagedata fileref="UUID-abc"/>\n'
+        "  </imageobject>\n"
+        "</section>"
+    )
+    finding = _finding_with_fix(check_mediaobjects(src), "wrap-in-mediaobject")
+    fixes = suggest_fixes(src, finding)
+    assert [f["label"] for f in fixes] == ["Wrap it in a mediaobject"]
+    new = fixes[0]["new_text"]
+    assert "<mediaobject>" in new and "</mediaobject>" in new
+    assert 'fileref="UUID-abc"' in new
+    assert _words(new) == _words(src)                 # nothing lost
+    assert check_mediaobjects(new) == []              # cascades clean
