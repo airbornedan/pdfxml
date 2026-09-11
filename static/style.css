@@ -999,6 +999,12 @@ a.check-line {
 }
 a.check-line:hover { background: #f2b8b8; }
 
+.recheck-form {
+	margin-top: 24px;
+	padding-top: 16px;
+	border-top: 1px solid #ccc;
+}
+
 .lml-report {
 	margin-top: 8px;
 	border: 1px solid #ccc;

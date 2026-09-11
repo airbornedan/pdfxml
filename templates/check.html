@@ -61,6 +61,13 @@
 		{% endfor %}
 	</div>
 
+	<form method="post" class="recheck-form">
+		<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+		<label class="field-label" for="xml-edit">Your code &mdash; edit directly if a suggested fix doesn't match your intent</label>
+		<textarea class="xml-io" id="xml-edit" name="xml" rows="16" spellcheck="false">{{ src }}</textarea>
+		<p><button type="submit" class="btn">Check again</button></p>
+	</form>
+
 	<p><a class="btn" href="{{ url_for('normalize.check_xml') }}">Check another</a></p>
 	{% endif %}
 </div>
