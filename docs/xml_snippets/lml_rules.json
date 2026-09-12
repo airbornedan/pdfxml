@@ -54,12 +54,6 @@
       "description": "Each <section> requires exactly one <title>, and that title must be the first non-whitespace child."
     },
     {
-      "id": "section-not-empty",
-      "kind": "structure",
-      "severity": "caution",
-      "description": "A <section> with only a <title> and nothing else -- no paragraphs, lists, tables, media, or subsections -- is nonsensical. Not otherwise invalid, so flagged as a caution rather than blocked."
-    },
-    {
       "id": "lists-content",
       "kind": "structure",
       "description": "Every <orderedlist> or <itemizedlist> must contain at least one <listitem>; each list item must have real content."
@@ -78,12 +72,6 @@
       "description": "A <listitem> must not be empty (no content at all)."
     },
     {
-      "id": "listitem-empty-para",
-      "kind": "structure",
-      "severity": "caution",
-      "description": "A <listitem> should not contain an empty <para> (a <para> with no text or inline content). Softer than a warning -- structurally valid, but worth flagging."
-    },
-    {
       "id": "imageobject-mediaobject",
       "kind": "media",
       "description": "Every <imageobject> must be nested inside a <mediaobject>."
@@ -99,28 +87,10 @@
       "description": "A table must contain <tbody>, each row must be a <tr> with <td> or <th> cells, and bare text inside a cell is not allowed."
     },
     {
-      "id": "table-border-pairing",
-      "kind": "structure",
-      "description": "An <informaltable>'s frame and rules attributes, when present, must be one of exactly two paired combinations: frame=\"box\" rules=\"all\" (a bordered table) or frame=\"void\" rules=\"none\" (a borderless layout table, e.g. image-and-text side by side). No mixing -- box with none, void with all, or any other combination is invalid; pick one type per table. The attributes are not required, but a table with neither is worth a nudge -- a real data table (one with a <thead>) usually wants borders.",
-      "allowed_pairs": [
-        {"frame": "box", "rules": "all"},
-        {"frame": "void", "rules": "none"}
-      ],
-      "on_mismatch": "warning",
-      "on_missing": "caution"
-    },
-    {
       "id": "table-formal-vs-informal",
       "kind": "structure",
       "confidence": "~90%, confirmed once -- verify against a second captioned table",
       "description": "A table's root element depends on whether it has a caption, matching real DocBook semantics: no <caption> -> <informaltable> (the norm); has a <caption> -> a formal <table>. Both use the identical tr/th/td content model -- this is not CALS, and a bare <table> should not be treated as a mistake. A generated <xml:id> on the table (e.g. so it can be targeted by an <xref> from another topic via Paligo's \"Generate ID\" action) is normal and not itself a sign of a bad paste."
-    },
-    {
-      "id": "admonitions-para",
-      "kind": "admonitions",
-      "description": "An admonition (<note>, <warning>, <caution>) may contain only <para> elements as direct children -- nothing else (no lists, tables, or media) is allowed directly inside it. At least one <para> is required; multiple are allowed. Inline/block content within those <para> tags follows the normal <para> content rules.",
-      "allowed_children": ["para"],
-      "min_children": 1
     },
     {
       "id": "inline-only",
@@ -130,17 +100,18 @@
     {
       "id": "error-conditions",
       "kind": "errors",
-      "description": "Current error conditions include missing titles, misplaced titles, missing list items, missing mediaobject/imageobject/imagedata, raw text in cells, and missing paragraph content in admonitions."
+      "description": "Current error conditions include missing titles, misplaced titles, missing list items, missing mediaobject/imageobject/imagedata, and raw text in cells."
     },
     {
       "id": "warning-conditions",
       "kind": "warnings",
-      "description": "Current warning conditions include unknown elements, empty paras, empty notes, empty list items, inconsistent table column counts, multiple title elements in the same section, and unknown inline role values."
+      "description": "Current warning conditions include unknown elements, empty paras, empty list items, inconsistent table column counts, multiple title elements in the same section, and unknown inline role values."
     }
   ],
   "notes": [
     "This JSON file is the source of truth for the rule catalog -- rules are written directly here, not in a separate prose doc.",
     "Severity scale (rules opt in via a \"severity\" field; absent means treat as an error for now): error (blocks save / structurally broken) > warning (real problem, not fatal) > caution (structurally valid, still worth flagging).",
-    "xref/indexterm/primary/secondary are recognized (tags.inline) but deliberately have no dedicated rules: what interns paste in always traces back to PDF-extracted content, which never produces indexing or cross-references. Kept in the vocabulary only so they don't false-flag as unknown elements in real topics that already use them."
+    "xref/indexterm/primary/secondary are recognized (tags.inline) but deliberately have no dedicated rules: what interns paste in always traces back to PDF-extracted content, which never produces indexing or cross-references. Kept in the vocabulary only so they don't false-flag as unknown elements in real topics that already use them.",
+    "Dropped rules, 2026-09-11 -- admonitions-para, table-border-pairing, section-not-empty, listitem-empty-para. Same reasoning as xref/indexterm above, plus scope: this tool's job is catching PDF-extracted content pasted into the wrong spot, not every theoretically-invalid document. The Extract tool never produces admonitions, and always emits the one correct frame/rules pair on every table it makes -- so neither failure mode can actually happen via a bad paste. section-not-empty/listitem-empty-para are real but merely cosmetic (still saveable, just thin) and not the paste-corruption class this tool exists for. note/warning/caution stay in tags.admonitions so an already-authored admonition elsewhere in the topic doesn't false-flag as unknown -- only the dedicated content-model rule for them is gone."
   ]
 }

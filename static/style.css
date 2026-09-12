@@ -570,7 +570,7 @@ textarea.xml-output {
 	box-sizing: border-box;
 }
 
-/* Fix XML tool: paste-in / result boxes */
+/* Check XML: paste-in / result boxes */
 textarea.xml-io {
 	width: 100%;
 	font-family: monospace;

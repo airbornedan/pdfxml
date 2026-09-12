@@ -154,24 +154,3 @@ def test_output_matches_docbook_builders_byte_for_byte():
     ref = wrap_list("itemizedlist", [_serialize(li)])
     out, _, _ = _norm("<ul><li>one</li></ul>")
     assert out == ref
-
-
-# --- route ---
-
-def test_fix_xml_page_renders(client):
-    r = client.get("/normalize")
-    assert r.status_code == 200
-    assert b"Fix XML for Paligo" in r.data
-
-
-def test_fix_xml_post_returns_normalized(client):
-    r = client.post("/normalize", data={"xml": "<ul><li>a</li></ul>"})
-    assert r.status_code == 200
-    body = r.data.decode()
-    assert "&lt;itemizedlist&gt;" in body
-    assert "Normalized 1 list." in body
-
-
-def test_fix_xml_card_on_index(client):
-    body = client.get("/").data.decode()
-    assert ">Fix XML<" in body and "/normalize" in body

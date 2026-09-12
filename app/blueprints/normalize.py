@@ -1,47 +1,33 @@
 ########################################################################
-### NORMALIZE -- paste any DocBook / HTML list or table, get it back in
-### the exact form Paligo's XML source view accepts. app/paligo.py does
-### the work; this is just the page. Shown on both deployment profiles.
+### NORMALIZE -- paste an existing Paligo topic, get told what's wrong
+### and where, with a content-preserving fix offered when one applies.
 ###
-### /check is the first piece of the "why won't this validate" tool:
-### app/lml.py pairs opening/closing tags of known elements and marks
-### the unmatched ones. No content-model checks, no editing yet.
+### Two passes before app/lml.py's structural checks ever run:
+###   1. app/dialect.py -- translate tags that mean the same thing as
+###      one of Paligo's own but aren't (HTML lists/tables, CALS tables,
+###      HTML bold/italic), the shape a topic comes back in after a trip
+###      through an AI chat.
+###   2. app/lml.py -- nesting/pairing/emptiness checks for content
+###      pasted into the wrong spot (the Extract-tool failure mode).
 ########################################################################
 from flask import Blueprint, render_template, request, url_for
 
-from app import fixes as fixes_mod
-from app import lml, paligo
+from app import dialect, fixes as fixes_mod, lml
 
 bp = Blueprint("normalize", __name__)
-
-
-@bp.route("/normalize", methods=["GET", "POST"])
-def fix_xml():
-    src = request.form.get("xml", "") if request.method == "POST" else ""
-    output, changed, diagnostic = (None, False, None)
-    if request.method == "POST":
-        output, changed, diagnostic = paligo.normalize(src)
-
-    return render_template(
-        "normalize.html",
-        breadcrumbs=[("Home", url_for("extract.index")), ("Fix XML", "")],
-        src=src,
-        output=output,
-        changed=changed,
-        diagnostic=diagnostic,
-    )
 
 
 @bp.route("/check", methods=["GET", "POST"])
 def check_xml():
     src = request.form.get("xml", "") if request.method == "POST" else ""
     submitted = request.method == "POST"
-    summary, findings, lines = (None, [], [])
+    summary, findings, lines, translated = (None, [], [], [])
 
     if submitted:
         src = src.replace("\r\n", "\n").replace("\r", "\n")
         src = lml.strip_xinfo_attrs(src)
-        findings = (
+        src, translated, findings = dialect.translate(src)
+        findings = findings + (
             lml.check_tags(src)
             + lml.check_tables(src)
             + lml.check_lists(src)
@@ -75,4 +61,5 @@ def check_xml():
         summary=summary,
         findings=findings,
         lines=lines,
+        translated=translated,
     )

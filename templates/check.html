@@ -3,7 +3,7 @@
 <div class="page-container wide">
 	{% include "_breadcrumbs.html" %}
 	<h1>Check XML</h1>
-	<p class="subtitle">Paste the LML from Paligo's source view (select all, copy). Nothing is changed &mdash; this points at what's wrong and where.</p>
+	<p class="subtitle">Paste your source from Paligo's source view (select all, copy). Nothing is lost &mdash; this points at what's wrong and where, and translates any tags an AI tool left behind.</p>
 
 	{% if not submitted %}
 	<form method="post">
@@ -18,13 +18,15 @@
 
 	{% elif not findings %}
 	<p class="lml-summary lml-summary--ok">{{ summary }}</p>
-	<label class="field-label" for="xml-out">Your fixed LML &mdash; copy this back into Paligo's source view</label>
+	{% if translated %}<p class="edit-hint">{{ translated | join(" ") }}</p>{% endif %}
+	<label class="field-label" for="xml-out">Your fixed source &mdash; copy this back into Paligo's source view</label>
 	<p><button type="button" class="btn" id="copy-btn">Copy all</button></p>
 	<textarea class="xml-io" id="xml-out" rows="18" readonly>{{ src }}</textarea>
 	<p><a class="btn" href="{{ url_for('normalize.check_xml') }}">Check another</a></p>
 
 	{% else %}
 	<p class="lml-summary lml-summary--bad">{{ summary }}</p>
+	{% if translated %}<p class="edit-hint">{{ translated | join(" ") }}</p>{% endif %}
 
 	<ul class="check-findings">
 		{% for f in findings %}
