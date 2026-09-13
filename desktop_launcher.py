@@ -15,8 +15,8 @@ multiprocessing.freeze_support()
 ### app.extensions is imported below.
 os.environ.setdefault("PDFXML_TRUSTED_NETWORK", "1")
 
-from app import create_app  # noqa: E402
-from app.extensions import PORT  # noqa: E402
+from app import create_app
+from app.extensions import PORT
 
 app = create_app()
 

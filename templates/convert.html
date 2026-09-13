@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-container wide">
+	{% include "_breadcrumbs.html" %}
+	<h1>Convert HTML</h1>
+	<p class="subtitle">Paste your HTML here for conversion to Paligo-compliant source.</p>
+
+	{% if not submitted %}
+	<form method="post">
+		<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+		<label class="field-label" for="html-in">Your pasted HTML</label>
+		<textarea class="xml-io" id="html-in" name="html" rows="16" spellcheck="false" autofocus>{{ src }}</textarea>
+		<p>
+			<button type="submit" class="btn">Convert</button>
+			<button type="button" class="btn" id="clear-btn">Clear</button>
+		</p>
+	</form>
+
+	{% else %}
+	<p class="lml-summary{{ ' lml-summary--ok' if changed else '' }}">{{ diagnostic }}</p>
+
+	<label class="field-label" for="html-out">Result &mdash; copy this into Paligo</label>
+	<p><button type="button" class="btn" id="copy-btn">Copy all</button></p>
+	<textarea class="xml-io" id="html-out" rows="18" readonly>{{ output }}</textarea>
+
+	<p><a class="btn" href="{{ url_for('convert.convert_html') }}">Convert another</a></p>
+	{% endif %}
+</div>
+<script nonce="{{ g.csp_nonce }}">
+const clearBtn = document.getElementById("clear-btn");
+if (clearBtn) {
+	clearBtn.addEventListener("click", () => {
+		const input = document.getElementById("html-in");
+		if (input) {
+			input.value = "";
+			input.focus();
+		}
+	});
+}
+const copyBtn = document.getElementById("copy-btn");
+if (copyBtn) {
+	const out = document.getElementById("html-out");
+	out.addEventListener("focus", () => out.select());
+	copyBtn.addEventListener("click", async () => {
+		out.focus();
+		out.select();
+		let ok = false;
+		try {
+			await navigator.clipboard.writeText(out.value);
+			ok = true;
+		} catch {
+			ok = document.execCommand("copy");
+		}
+		copyBtn.textContent = ok ? "Copied" : "Copy failed";
+		setTimeout(() => { copyBtn.textContent = "Copy all"; }, 1500);
+	});
+}
+</script>
+{% endblock %}

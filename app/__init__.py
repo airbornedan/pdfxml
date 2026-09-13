@@ -5,12 +5,17 @@ import os
 import secrets
 
 from flask import Flask, g, render_template, request, url_for
-from flask_wtf.csrf import CSRFProtect, CSRFError
+from flask_wtf.csrf import CSRFError, CSRFProtect
 from werkzeug.exceptions import HTTPException
 from werkzeug.middleware.proxy_fix import ProxyFix
 
 from app.extensions import (
-    FLASK_SECRET_KEY, MAX_UPLOAD_BYTES, PROJECT_DIR, TRUSTED_NETWORK, logger, sweep_old_uploads,
+    FLASK_SECRET_KEY,
+    MAX_UPLOAD_BYTES,
+    PROJECT_DIR,
+    TRUSTED_NETWORK,
+    logger,
+    sweep_old_uploads,
 )
 
 csrf = CSRFProtect()
@@ -94,10 +99,12 @@ def create_app():
             version = 0
         return url_for("static", filename=filename, v=version)
 
+    from app.blueprints.convert import bp as convert_bp
     from app.blueprints.extract import bp as extract_bp
     from app.blueprints.imagecrop import bp as imagecrop_bp
-    from app.blueprints.screenshot import bp as screenshot_bp
     from app.blueprints.normalize import bp as normalize_bp
+    from app.blueprints.screenshot import bp as screenshot_bp
+    app.register_blueprint(convert_bp)
     app.register_blueprint(extract_bp)
     app.register_blueprint(imagecrop_bp)
     app.register_blueprint(screenshot_bp)

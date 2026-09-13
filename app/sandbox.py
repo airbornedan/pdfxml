@@ -12,7 +12,10 @@ import time
 
 from app import pdfops
 from app.extensions import (
-    SANDBOX_CPU_SECONDS, SANDBOX_MEMORY_MB, SANDBOX_TIMEOUT_SECONDS, logger,
+    SANDBOX_CPU_SECONDS,
+    SANDBOX_MEMORY_MB,
+    SANDBOX_TIMEOUT_SECONDS,
+    logger,
 )
 
 ENABLED = (

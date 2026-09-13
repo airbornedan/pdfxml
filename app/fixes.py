@@ -105,6 +105,33 @@ def _loose_block_in_list(text, finding):
     return options
 
 
+def _table_in_listitem(text, finding):
+    """A <table>/<informaltable> landed as a direct child of a <listitem>
+    -- not valid listitem content, and wrapping it in a fresh <listitem>
+    (loose_block_in_list's move) wouldn't fix that either. The only
+    valid spot is all the way out, as a sibling of the whole list."""
+    spec = finding["fix"]
+    el_start = spec["el_start"]
+    _, el_end = _element_span(text, el_start)
+    element = text[el_start:el_end]
+
+    line_start = text.rfind("\n", 0, el_start) + 1
+    line_end = el_end + 1 if text[el_end:el_end + 1] == "\n" else el_end
+
+    end_tag = f"</{spec['list_tag']}>"
+    list_close = text.find(end_tag, el_end)
+    if list_close == -1:
+        return []
+    close_end = list_close + len(end_tag)
+    list_indent = _indent_of(text, list_close)
+
+    return [{
+        "label": "Move it out below the list",
+        "new_text": (text[:line_start] + text[line_end:close_end]
+                     + f"\n{list_indent}{element}" + text[close_end:]),
+    }]
+
+
 def _delete_stray_close(text, finding):
     start, end = finding.get("start"), finding.get("end")
     if start is None or end is None:
@@ -279,9 +306,10 @@ _ANY_TAG = re.compile(r"<\s*(/?)\s*([A-Za-z][\w.-]*)[^<>]*?(/?)\s*>")
 
 
 def _insert_close(text, finding):
-    """An unclosed <para>: put the </para> just before the first
-    block-level tag after it. If that tag is a second <para> opening with
-    nothing between, the first was a stray duplicate -- offer to drop it."""
+    """An unclosed <para> or <title>: put the closing tag just before the
+    first block-level tag after it. If that tag is a second opening of
+    the same tag with nothing between, the first was a stray duplicate --
+    offer to drop it."""
     spec = finding["fix"]
     tag = spec["tag"]
     open_start, open_end = spec["open_start"], spec["open_end"]
@@ -316,8 +344,9 @@ def _insert_close(text, finding):
             "new_text": text[:cut_start] + text[cut_end:],
         })
 
+    display = "paragraph" if tag == "para" else tag
     options.append({
-        "label": "Close the paragraph here",
+        "label": f"Close the {display} here",
         "new_text": text[:insert_at] + f"</{tag}>" + text[insert_at:],
     })
     return options
@@ -388,8 +417,44 @@ def _move_inside_root(text, finding):
     return [{"label": "Move it inside the section", "new_text": new_text}]
 
 
+def _close_section(text, finding):
+    """A <section> never closed. Unlike <para>/<title>, it can
+    legitimately contain more structure -- so a later <section> in the
+    text might be a real nested subsection (this one's true close
+    belongs at the very end, after everything nested inside it) or a
+    sibling that should only have started once this one closed. The tag
+    stream alone can't tell those apart, so this doesn't pick one --
+    both candidate spots are offered, a person decides."""
+    spec = finding["fix"]
+    open_start, open_end = spec["open_start"], spec["open_end"]
+
+    end_at = len(text.rstrip())
+    indent = _indent_of(text, open_start)
+    options = [{
+        "label": "Close it here, at the end",
+        "new_text": text[:end_at] + f"\n{indent}</section>" + text[end_at:],
+    }]
+
+    next_open = None
+    for tag in _SECTION_TAG.finditer(text, open_end):
+        if tag.group(1) or tag.group(2):
+            continue                       # a close or self-close -- skip
+        next_open = tag.start()
+        break
+    if next_open is not None:
+        line_start = text.rfind("\n", 0, next_open) + 1
+        next_indent = _indent_of(text, next_open)
+        options.append({
+            "label": "Close it before the next <section>",
+            "new_text": text[:line_start] + f"{next_indent}</section>\n" + text[line_start:],
+        })
+
+    return options
+
+
 _BUILDERS = {
     "loose-block-in-list": _loose_block_in_list,
+    "table-in-listitem": _table_in_listitem,
     "delete-stray-close": _delete_stray_close,
     "empty-listitem": _empty_listitem,
     "bare-text-in-list": _bare_text_in_list,
@@ -397,4 +462,5 @@ _BUILDERS = {
     "insert-close": _insert_close,
     "wrap-in-mediaobject": _wrap_in_mediaobject,
     "move-inside-root": _move_inside_root,
+    "close-section": _close_section,
 }

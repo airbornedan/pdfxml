@@ -11,7 +11,13 @@ from collections import namedtuple
 
 from lxml import etree
 
-from app.docbook import _merge_tokens, _para_element, _serialize, validate_fragment, wrap_list
+from app.docbook import (
+    _merge_tokens,
+    _para_element,
+    _serialize,
+    validate_fragment,
+    wrap_list,
+)
 from app.extensions import logger
 
 
@@ -61,6 +67,9 @@ def normalize(src):
         logger.info("paligo.normalize failed: %s: %s", type(e).__name__, e)
         return src, False, "Couldn't make sense of this XML -- check for unclosed or mismatched tags."
 
+    if len(root) == 0:
+        return src, False, "This doesn't appear to be HTML -- paste something with tags in it."
+
     if not n_lists and not n_tables:
         return src, False, "No list or table found here -- nothing to change."
 
@@ -92,7 +101,7 @@ def _strip_envelope(s):
 
 def _parse(s):
     try:
-        root = etree.fromstring(f"<_paligo_root_>{s}</_paligo_root_>".encode("utf-8"), _PARSER)
+        root = etree.fromstring(f"<_paligo_root_>{s}</_paligo_root_>".encode(), _PARSER)
     except etree.XMLSyntaxError:
         root = None
     if root is None or (len(root) == 0 and not (root.text or "").strip()):

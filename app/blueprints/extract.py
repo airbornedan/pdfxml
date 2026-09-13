@@ -3,15 +3,33 @@
 ########################################################################
 import json
 
-from flask import Blueprint, render_template, request, redirect, url_for, session, Response, abort
-
-from app.extensions import (
-    pdf_processing_limit, save_upload, upload_path, delete_upload,
-    save_result, load_result, sweep_old_uploads,
-    PREVIEW_ZOOM, IMAGE_ZOOM, THUMBNAIL_ZOOM, PAGE_GRID_ZOOM,
-    MAX_RENDER_MEGAPIXELS, WATERMARK_TEXT,
+from flask import (
+    Blueprint,
+    Response,
+    abort,
+    redirect,
+    render_template,
+    request,
+    session,
+    url_for,
 )
+
 from app import docbook, pdfops, ratelimit, sandbox
+from app.extensions import (
+    IMAGE_ZOOM,
+    MAX_RENDER_MEGAPIXELS,
+    PAGE_GRID_ZOOM,
+    PREVIEW_ZOOM,
+    THUMBNAIL_ZOOM,
+    WATERMARK_TEXT,
+    delete_upload,
+    load_result,
+    pdf_processing_limit,
+    save_result,
+    save_upload,
+    sweep_old_uploads,
+    upload_path,
+)
 
 bp = Blueprint("extract", __name__)
 
@@ -72,6 +90,8 @@ def choose_pdf():
     if session.get("pdf_token") and upload_path(session["pdf_token"]) is None:
         _clear_pdf()
         error = "Your previous upload expired -- please upload again."
+    elif request.args.get("pdf_error"):
+        error = "That PDF could not be processed -- please upload again."
 
     return render_template(
         "upload.html",
@@ -111,7 +131,7 @@ def upload():
     ### an untrusted file -- through the sandbox like every PDF op.
     try:
         page_count = sandbox.run(pdfops.page_count, upload_path(token))
-    except Exception:
+    except sandbox.SandboxError:
         delete_upload(token)
         return render_template(
             "upload.html",
@@ -137,8 +157,9 @@ def choose_page():
         return redirect(url_for("extract.index"))
     try:
         page_count = sandbox.run(pdfops.page_count, path)
-    except Exception:
-        return redirect(url_for("extract.index"))
+    except sandbox.SandboxError:
+        _clear_pdf()
+        return redirect(url_for("extract.choose_pdf", pdf_error="1"))
 
     error = None
     if request.method == "POST":
@@ -427,7 +448,7 @@ def thumbnail():
         abort(404)
     try:
         png = sandbox.run(pdfops.render_page_png, path, 0, THUMBNAIL_ZOOM, MAX_RENDER_MEGAPIXELS)
-    except Exception:
+    except sandbox.SandboxError:
         abort(500)
     return _png_response(png)
 
@@ -450,8 +471,6 @@ def page_thumbnail():
         png = sandbox.run(pdfops.render_page_png, path, page_number - 1, PAGE_GRID_ZOOM, MAX_RENDER_MEGAPIXELS)
     except sandbox.SandboxError:
         abort(404)
-    except Exception:
-        abort(500)
     ### grid thumbnails are the heavy repeat request -- let the browser
     ### keep them so scrolling back doesn't re-render (see the ?v= URL).
     return _png_response(png, max_age=1800)
@@ -468,7 +487,7 @@ def page_image():
     ### a giant MediaBox hits the worker's RLIMIT_AS -> 500, not an OOM.
     try:
         png = sandbox.run(pdfops.render_page_png, path, session["page_number"] - 1, PREVIEW_ZOOM, None)
-    except Exception:
+    except sandbox.SandboxError:
         abort(500)
     return _png_response(png)
 
@@ -494,7 +513,7 @@ def extracted_image():
             MAX_RENDER_MEGAPIXELS,
             result_data.get("erase_rects") or [],
         )
-    except Exception:
+    except sandbox.SandboxError:
         abort(500)
     return _png_response(png)
 

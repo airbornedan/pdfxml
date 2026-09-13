@@ -608,19 +608,28 @@ textarea.xml-io {
 
 /* PROCESS/TROUBLESHOOTING -- JSON-backed tabs, viewer + editor, */
 /* ported from old_pdf_xml's process.html/process_edit.html */
+/* Tabs wrap across rows once they don't fit, so nothing goes off-screen.
+   That breaks the classic file-folder look (only the row touching the
+   panel would read as "attached", regardless of which tab is active) --
+   so tabs are a detached pill row instead, with a gap before the panel
+   below. Nothing is ever drawn as physically joined to the content. */
 .tab-list {
 	display: flex;
-	gap: 4px;
-	overflow-x: auto;
-	margin-bottom: 0;
-	border-bottom: 1px solid #b8c2cc;
+	flex-wrap: wrap;
+	gap: 6px;
+	margin-bottom: 12px;
+}
+
+/* forces a line break ahead of schedule -- see balanceTabRows() */
+.tab-break {
+	flex-basis: 100%;
+	height: 0;
 }
 
 .tab-button {
 	padding: 10px 16px;
 	border: 1px solid #b8c2cc;
-	border-bottom: none;
-	border-radius: 6px 6px 0 0;
+	border-radius: 6px;
 	background: #e9eef3;
 	color: #43515d;
 	cursor: pointer;
@@ -646,8 +655,7 @@ textarea.xml-io {
 	display: none;
 	padding: 16px;
 	border: 1px solid #b8c2cc;
-	border-top: none;
-	border-radius: 0 0 6px 6px;
+	border-radius: 6px;
 	line-height: 1.5;
 }
 

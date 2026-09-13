@@ -100,7 +100,9 @@ def worker_entry(conn, rlimit_as, rlimit_cpu, func, args):
     except BaseException as exc:  # noqa: BLE001 -- report anything, MemoryError included
         try:
             conn.send((False, f"{type(exc).__name__}: {exc}"))
-        except Exception:
+        except Exception:  # noqa: BLE001, S110 -- pipe already dead (parent
+            # gone); nothing to do but let finally close us out. The parent
+            # sees this as EOFError and logs "worker died" on its side.
             pass
     finally:
         conn.close()

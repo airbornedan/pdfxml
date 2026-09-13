@@ -164,9 +164,19 @@ def check_tags(text):
             entry["message"] = (
                 f"<{entry['tag']}> is never closed -- add a </{entry['tag']}>."
             )
-            if entry["tag"] == "para":
+            if entry["tag"] in ("para", "title"):
+                ### both are leaf-ish -- inline content only, never a
+                ### <section> nested inside -- so _insert_close's generic
+                ### "next tag, skipping inline" boundary already lands in
+                ### the right place. A <section> is different: it can
+                ### legitimately contain more structure, handled below.
                 entry["fix"] = {
-                    "kind": "insert-close", "tag": "para",
+                    "kind": "insert-close", "tag": entry["tag"],
+                    "open_start": entry["start"], "open_end": entry["end"],
+                }
+            elif entry["tag"] == "section":
+                entry["fix"] = {
+                    "kind": "close-section",
                     "open_start": entry["start"], "open_end": entry["end"],
                 }
             findings.append(entry)
@@ -861,6 +871,15 @@ def check_lists(text):
                 return True
         return False
 
+    def enclosing_list():
+        """(tag, open_start) of the nearest enclosing <orderedlist>/
+        <itemizedlist>, or None if there isn't one (shouldn't happen --
+        a <listitem> outside any list is already caught separately)."""
+        for frame in reversed(stack):
+            if frame["kind"] == "list":
+                return frame["tag"], frame["open_start"]
+        return None
+
     for match in _TAG_RE.finditer(text):
         name = match.group(2).lower()
         is_close = match.group(1) == "/"
@@ -921,6 +940,20 @@ def check_lists(text):
                               f"be inside a <listitem>.", tag=name,
                         fix={"kind": "loose-block-in-list", "el_start": start,
                              "list_tag": cont["tag"], "list_start": cont["open_start"]})
+                elif cont and cont["kind"] == "li" and name in _TABLE_TAGS:
+                    ### not a valid listitem child (lml_rules.json's
+                    ### listitem-content rule), and unlike a loose <para>
+                    ### it can't be fixed by wrapping it in its own
+                    ### <listitem> either -- a table's still not valid
+                    ### listitem content once wrapped. The only place it
+                    ### can go is all the way out, past the whole list.
+                    outer = enclosing_list()
+                    fix = None
+                    if outer is not None:
+                        fix = {"kind": "table-in-listitem", "el_start": start,
+                               "list_tag": outer[0], "list_start": outer[1]}
+                    add(line, f"<{name}> sits directly inside a <listitem>; "
+                              f"move it out of the list.", tag=name, fix=fix)
                 elif name == "imageobject" and not in_mediaobject():
                     add(line, f"<{name}> must be inside a <mediaobject>.", tag=name,
                         fix={"kind": "wrap-in-mediaobject", "el_start": start})

@@ -244,6 +244,26 @@ def test_listitem_with_only_a_mediaobject_is_ok():
     assert check_lists(src) == []
 
 
+def test_table_directly_in_listitem_is_reported():
+    src = ("<orderedlist><listitem><para>a</para>"
+           "<informaltable><tbody><tr><td>x</td></tr></tbody></informaltable>"
+           "</listitem></orderedlist>")
+    findings = check_lists(src)
+    msgs = " ".join(f["message"] for f in findings)
+    assert "directly inside a <listitem>" in msgs
+    assert any(f.get("fix", {}).get("kind") == "table-in-listitem" for f in findings)
+
+
+def test_table_as_sibling_of_listitem_is_not_flagged_by_check_lists():
+    # already caught as the more general "sits directly inside a list" case
+    src = ("<orderedlist><listitem><para>a</para></listitem>"
+           "<informaltable><tbody><tr><td>x</td></tr></tbody></informaltable>"
+           "</orderedlist>")
+    msgs = " ".join(f["message"] for f in check_lists(src))
+    assert "directly inside a list" in msgs
+    assert "directly inside a <listitem>" not in msgs
+
+
 def test_imageobject_outside_mediaobject_is_reported():
     src = "<itemizedlist><listitem><imageobject/></listitem></itemizedlist>"
     msgs = " ".join(f["message"] for f in check_lists(src))

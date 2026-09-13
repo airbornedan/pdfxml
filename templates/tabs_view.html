@@ -26,5 +26,28 @@ document.querySelectorAll(".tab-button").forEach((button) => {
 		document.querySelectorAll(".tab-panel").forEach((p) => p.classList.toggle("active", p.id === button.dataset.tabTarget));
 	});
 });
+
+// flex-wrap has no "min items on the last row" -- it wraps purely by
+// width, so a count that doesn't divide evenly can strand one lone
+// button on its own row. If that happens, force a line break before
+// the second-to-last button instead, so the last row always gets (at
+// least) two.
+function balanceTabRows(list) {
+	list.querySelectorAll(".tab-break").forEach((el) => el.remove());
+	const buttons = Array.from(list.querySelectorAll(".tab-button"));
+	if (buttons.length < 3) return;
+	const tops = buttons.map((b) => b.offsetTop);
+	const lastRowStart = tops.indexOf(Math.max(...tops));
+	if (lastRowStart === 0 || buttons.length - lastRowStart !== 1) return;
+	buttons[buttons.length - 2].before(Object.assign(document.createElement("span"), { className: "tab-break" }));
+}
+
+const tabLists = document.querySelectorAll(".tab-list");
+let resizeTimer;
+window.addEventListener("resize", () => {
+	clearTimeout(resizeTimer);
+	resizeTimer = setTimeout(() => tabLists.forEach(balanceTabRows), 100);
+});
+tabLists.forEach(balanceTabRows);
 </script>
 {% endblock %}

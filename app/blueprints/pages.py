@@ -7,7 +7,7 @@
 import os
 
 import mistune
-from flask import abort, Blueprint, current_app, render_template, url_for
+from flask import Blueprint, abort, current_app, render_template, url_for
 
 from app.extensions import PROJECT_DIR
 

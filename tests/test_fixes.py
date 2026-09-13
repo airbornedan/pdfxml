@@ -53,6 +53,91 @@ def test_loose_block_move_out_leaves_list_clean():
     assert check_lists(moved) == []
 
 
+# --- table directly inside a listitem ---------------------------------
+_TABLE_IN_LI = (
+    "<orderedlist>\n"
+    "  <listitem>\n"
+    "    <para>Step one.</para>\n"
+    "  </listitem>\n"
+    "  <listitem>\n"
+    "    <para>Step two.</para>\n"
+    "    <informaltable><tbody><tr><td><para>a</para></td></tr></tbody></informaltable>\n"
+    "  </listitem>\n"
+    "</orderedlist>"
+)
+
+
+def test_table_in_listitem_offers_one_fix():
+    finding = _finding_with_fix(check_lists(_TABLE_IN_LI), "table-in-listitem")
+    fixes = suggest_fixes(_TABLE_IN_LI, finding)
+    assert [f["label"] for f in fixes] == ["Move it out below the list"]
+    assert _words(fixes[0]["new_text"]) == _words(_TABLE_IN_LI)   # nothing lost
+
+
+def test_table_in_listitem_move_out_leaves_list_clean():
+    finding = _finding_with_fix(check_lists(_TABLE_IN_LI), "table-in-listitem")
+    moved = suggest_fixes(_TABLE_IN_LI, finding)[0]["new_text"]
+    # the table now sits after the list closes, not inside the listitem
+    assert moved.index("</orderedlist>") < moved.index("<informaltable>")
+    assert check_lists(moved) == []
+
+
+# --- unclosed <title> (shares insert-close with <para>) ----------------
+def test_unclosed_title_gets_its_own_label_and_closes_before_next_tag():
+    src = "<section>\n  <title>Setup\n  <para>text</para>\n</section>"
+    finding = _finding_with_fix(check_tags(src), "insert-close")
+    fixes = suggest_fixes(src, finding)
+    assert [f["label"] for f in fixes] == ["Close the title here"]
+    assert fixes[0]["new_text"] == "<section>\n  <title>Setup</title>\n  <para>text</para>\n</section>"
+    assert check_tags(fixes[0]["new_text"]) == []
+
+
+def test_unclosed_para_still_says_paragraph():
+    # regression: generalizing insert-close's label to the tag name must
+    # not turn "Close the paragraph here" into "Close the para here"
+    src = "<para>x<para>y</para>"
+    finding = _finding_with_fix(check_tags(src), "insert-close")
+    fixes = suggest_fixes(src, finding)
+    assert fixes[-1]["label"] == "Close the paragraph here"
+
+
+# --- unclosed <section> -------------------------------------------------
+def test_unclosed_section_with_no_sibling_offers_one_fix():
+    src = "<section>\n  <title>Setup</title>\n  <para>text</para>\n"
+    finding = _finding_with_fix(check_tags(src), "close-section")
+    fixes = suggest_fixes(src, finding)
+    assert [f["label"] for f in fixes] == ["Close it here, at the end"]
+    assert fixes[0]["new_text"].rstrip().endswith("</section>")
+    assert check_tags(fixes[0]["new_text"]) == []
+
+
+def test_unclosed_section_with_a_later_section_offers_both_fixes():
+    # ambiguous on purpose: the later <section> could be a real nested
+    # subsection (real close at the end) or a sibling that should have
+    # started only once this one closed (real close right before it) --
+    # the tag stream alone can't tell, so both are offered
+    src = (
+        "<section>\n  <title>A</title>\n  <para>intro</para>\n"
+        "<section>\n  <title>B</title>\n  <para>sub</para>\n</section>"
+    )
+    finding = _finding_with_fix(check_tags(src), "close-section")
+    fixes = suggest_fixes(src, finding)
+    assert [f["label"] for f in fixes] == [
+        "Close it here, at the end",
+        "Close it before the next <section>",
+    ]
+    for fix in fixes:
+        assert _words(fix["new_text"]) == _words(src)          # nothing lost
+        assert check_tags(fix["new_text"]) == []                # both fully close
+
+    as_nested = fixes[0]["new_text"]                            # "at the end"
+    assert as_nested.count("</section>") == 2
+    assert as_nested.rindex("</section>") > as_nested.rindex("<section>", 1)
+
+    as_siblings = fixes[1]["new_text"]                          # "before next"
+    assert as_siblings.index("</section>") < as_siblings.index("<section>", 1)
+
+
 # --- stray closing tag ---------------------------------------------------
 def test_stray_close_delete():
     src = "<para>x</para></para>"

@@ -1,6 +1,10 @@
 ########################################################################
-### NORMALIZE -- paste an existing Paligo topic, get told what's wrong
-### and where, with a content-preserving fix offered when one applies.
+### FIX XML (blueprint name "normalize", unchanged since the rename --
+### see TODO.md) -- paste an existing Paligo topic, get told what's
+### wrong and where, with a content-preserving fix offered when one
+### applies. Assumes the paste is basically one Paligo <section> topic
+### already; a wholesale foreign document (raw HTML, no <section> at
+### all) is app/blueprints/convert.py's job instead, not this one's.
 ###
 ### Two passes before app/lml.py's structural checks ever run:
 ###   1. app/dialect.py -- translate tags that mean the same thing as
@@ -12,7 +16,8 @@
 ########################################################################
 from flask import Blueprint, render_template, request, url_for
 
-from app import dialect, fixes as fixes_mod, lml
+from app import dialect, lml
+from app import fixes as fixes_mod
 
 bp = Blueprint("normalize", __name__)
 
@@ -55,7 +60,7 @@ def check_xml():
 
     return render_template(
         "check.html",
-        breadcrumbs=[("Home", url_for("extract.index")), ("Check XML", "")],
+        breadcrumbs=[("Home", url_for("extract.index")), ("Fix XML", "")],
         src=src,
         submitted=submitted,
         summary=summary,

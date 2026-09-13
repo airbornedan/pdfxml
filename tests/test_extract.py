@@ -1,6 +1,6 @@
 """Full extraction wizard against a generated PDF (sandbox runs for real)."""
-import io
 import html
+import io
 import json
 
 import pytest

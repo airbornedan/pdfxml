@@ -10,9 +10,10 @@ def test_bold_and_italic_become_emphasis_anywhere():
 
 
 def test_strong_and_em_are_also_recognized():
-    out, translated, _ = translate("<para><strong>a</strong><em>b</em></para>")
+    out, translated, problems = translate("<para><strong>a</strong><em>b</em></para>")
     assert '<emphasis role="strong">a</emphasis>' in out
     assert "<emphasis>b</emphasis>" in out
+    assert translated and not problems
 
 
 def test_empty_bold_tag_is_dropped():

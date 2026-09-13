@@ -1,8 +1,8 @@
 """app/paligo.py -- tag soup -> the dialect docbook.py emits / Paligo accepts."""
 import re
 
-from app.paligo import normalize
 from app.docbook import validate_fragment
+from app.paligo import normalize
 
 
 def _norm(src):
@@ -139,6 +139,16 @@ def test_no_list_or_table_is_left_alone():
     assert "No list or table" in diag
 
 
+def test_plain_text_with_no_tags_gets_a_distinct_message():
+    # distinct from "No list or table found" -- there's no tag here at
+    # all, HTML or otherwise, not just an absent list/table
+    src = "Just some plain prose, no tags in it whatsoever."
+    out, changed, diag = _norm(src)
+    assert changed is False and out == src
+    assert "doesn't appear to be HTML" in diag
+    assert "No list or table" not in diag
+
+
 def test_unparseable_bails_with_original():
     out, changed, diag = _norm("<<< not xml at all >>>")
     assert changed is False and out == "<<< not xml at all >>>"
@@ -147,8 +157,9 @@ def test_unparseable_bails_with_original():
 
 def test_output_matches_docbook_builders_byte_for_byte():
     # the golden reference: paligo output must equal what wrap_list produces
-    from app.docbook import wrap_list, _serialize, _para_element
     from lxml import etree
+
+    from app.docbook import _para_element, _serialize, wrap_list
     li = etree.Element("listitem")
     li.append(_para_element([("one", False, False)]))
     ref = wrap_list("itemizedlist", [_serialize(li)])

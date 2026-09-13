@@ -5,20 +5,29 @@
 ### happens to a topic that gets "fixed" by round-tripping through an
 ### AI chat -- the structure survives but the tags come back generic.
 ###
-### Runs as a pass BEFORE app/lml.py's structural checks, so Check XML
+### Runs as a pass BEFORE app/lml.py's structural checks, so Fix XML
 ### catches this failure mode too, not just Extract-pasted-in-the-
 ### wrong-spot. Reuses app/paligo.py's real (lxml-based) converters, but
 ### only on the exact foreign span found in the text -- spliced back in
 ### place, never by reparsing/reformatting the whole document. Anything
 ### already in Paligo's own dialect (orderedlist/itemizedlist/listitem,
-### informaltable/table with tr/td/th) is left completely alone; Check
-### XML's own checks are what look at those.
+### informaltable/table with tr/td/th) is left completely alone; Fix
+### XML's own checks are what look at those. A paste with no <section>
+### at all -- raw HTML off a page or an AI chat, not a Paligo topic --
+### isn't this module's job; that's app/blueprints/convert.py.
 ########################################################################
 import re
 
-from app.fixes import _indent_of
-from app.paligo import _Bail, _drop_comments, _norm_list, _norm_table, _parse, _strip_namespaces
 from app.docbook import _serialize
+from app.fixes import _indent_of
+from app.paligo import (
+    _Bail,
+    _drop_comments,
+    _norm_list,
+    _norm_table,
+    _parse,
+    _strip_namespaces,
+)
 
 _TAG_RE = re.compile(r"<\s*(/?)\s*([A-Za-z][\w.-]*)([^<>]*?)(/?)\s*>")
 _BOLD_TAGS = {"b", "strong"}
@@ -33,7 +42,7 @@ def translate(text):
     quiet "translated N things" note) -- empty if nothing foreign found.
     problems: list[{"line", "message"}], one per foreign-looking spot
     that couldn't be translated automatically -- ready to merge straight
-    into Check XML's findings.
+    into Fix XML's findings.
     """
     translated = []
     problems = []

@@ -1,5 +1,4 @@
 """Unit-level checks that don't need a full request."""
-from pathlib import Path
 
 import pytest
 
@@ -95,7 +94,7 @@ def test_sandbox_runs_and_wraps_errors(sample_pdf):
 # --- docbook: page-ref flagging + list-marker stripping --------------
 def test_page_refs_flagged_in_preview_not_removed():
     """Preview flags "(see page N)"; the XML keeps it verbatim."""
-    from app.docbook import _tokens_html, _para_element, _serialize
+    from app.docbook import _para_element, _serialize, _tokens_html
 
     tokens = [("check the module (see page 40) before starting", False, False)]
     html = _tokens_html(tokens)
@@ -160,9 +159,12 @@ def test_list_marker_glyph_stripped_even_as_its_own_span():
 # --- markdown Process pages --------------------------------------------
 def test_trusted_process_renders_the_surepoint_tabs(trusted_client):
     body = trusted_client.get("/process").data.decode()
-    for label in ("Begin", "Extract text", "Extract tables", "Extract images", "Extract lists"):
+    for label in (
+        "Begin", "Extract text", "Extract tables", "Extract images", "Extract lists",
+        "Screenshot", "Fix XML", "Convert HTML",
+    ):
         assert f">{label}<" in body
-    assert body.count('class="tab-panel') == 5
+    assert body.count('class="tab-panel') == 8
 
 
 def test_public_process_renders_the_generic_guide(client):
