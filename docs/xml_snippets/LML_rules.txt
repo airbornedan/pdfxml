@@ -1,0 +1,106 @@
+Topic root is always <section>
+section requires exactly one title
+title must be first non-whitespace child
+
+Observed children of section:
+
+title
+para
+section
+orderedlist
+itemizedlist
+mediaobject
+informaltable
+informalfigure
+note
+warning
+caution
+indexterm
+
+<title> cannot be empty
+
+<para>
+Allowed inline content:
+
+guilabel
+xref
+indexterm
+emphasis
+text
+
+Lists
+orderedlist must contain at least one listitem
+itemizedlist must contain at least one listitem
+listitem must contain content; a direct mediaobject is valid as the sole element
+
+Allowed children
+para
+mediaobject
+note
+warning
+caution
+orderedlist
+itemizedlist
+informaltable
+informalfigure
+
+Adminitions
+note must contain one or more para elements
+warning must contain one or more para elements
+caution must contain one or more para elements
+admonitions cannot contain bare text or non-para child elements directly
+
+Images
+mediaobject
+imageobject
+imagedata
+
+imagedata allowed attributes
+width
+contentwidth
+contentdepth
+
+Tables
+informaltable allowed children
+colgroup (allowed children <col>
+thead (allowed children <tr>)--only one th per table
+tbody(allowed children <tr>)
+
+tbody required
+tr allowed children: td,th
+
+td allowed children:
+para
+orderedlist
+itemizedlist
+mediaobject
+informalfigure
+note
+
+bare text prohibited inside td/th
+
+
+Inline only elements
+<emphasis role="bold">
+<guilabel>
+
+ERROR CONDITIONS:
+section without title
+section with title not first
+listitem without para first
+orderedlist without listitem
+itemizedlist without listitem
+mediaobject without imageobject
+imageobject without imagedata
+imagedata without fileref
+td/th containing raw text
+note/warning/caution without para
+
+WARNING CONDITIONS:
+unknown element
+empty para
+empty note
+empty listitem
+table row with inconsistent column count
+multiple title elements in same section
+unknown role value

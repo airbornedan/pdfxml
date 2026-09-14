@@ -31,13 +31,13 @@
 			<img class="card-icon" src="{{ url_for('static', filename='images/discombobulate.svg') }}" alt="">
 			<span class="card-title">Fix XML</span>
 			<hr class="card-divider">
-			<span class="card-desc">Fix a Paligo paste</span>
+			<span class="card-desc">XML repair validation</span>
 		</a>
 		<a href="{{ url_for('convert.convert_html') }}" class="card">
 			<img class="card-icon" src="{{ url_for('static', filename='images/beaker.svg') }}" alt="">
 			<span class="card-title">Convert HTML</span>
 			<hr class="card-divider">
-			<span class="card-desc">Turn pasted HTML into Paligo markup</span>
+			<span class="card-desc">HTML to XML converter</span>
 		</a>
 		{% if trusted_network %}
 		<a href="{{ url_for('pages.troubleshooting') }}" class="card">
