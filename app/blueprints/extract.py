@@ -144,6 +144,10 @@ def upload():
     session["pdf_token"] = token
     session["pdf_filename"] = file.filename
     session["page_count"] = page_count
+    if page_count == 1:
+        session["page_number"] = 1
+        session.pop("continue_type", None)
+        return redirect(url_for("extract.select_region"))
     session.pop("page_number", None)
     return redirect(url_for("extract.choose_page"))
 
@@ -160,6 +164,10 @@ def choose_page():
     except sandbox.SandboxError:
         _clear_pdf()
         return redirect(url_for("extract.choose_pdf", pdf_error="1"))
+
+    if page_count == 1:
+        session["page_number"] = 1
+        return redirect(url_for("extract.select_region"))
 
     error = None
     if request.method == "POST":

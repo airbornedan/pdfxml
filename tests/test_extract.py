@@ -3,6 +3,7 @@ import html
 import io
 import json
 
+import fitz
 import pytest
 
 
@@ -23,6 +24,25 @@ def test_upload_rejects_non_pdf(client):
                     content_type="multipart/form-data", follow_redirects=True)
     assert r.status_code == 200
     assert b"valid PDF" in r.data
+
+
+def test_single_page_upload_skips_choose_page(client, tmp_path):
+    path = tmp_path / "single.pdf"
+    doc = fitz.open()
+    page = doc.new_page(width=612, height=792)
+    page.insert_text((72, 100), "Only one page.", fontsize=12)
+    doc.save(str(path))
+    doc.close()
+
+    with open(path, "rb") as f:
+        data = f.read()
+
+    r = client.post("/upload", data={"pdf": (io.BytesIO(data), "single.pdf")},
+                    content_type="multipart/form-data", follow_redirects=True)
+
+    assert r.status_code == 200
+    assert b"Draw a region" in r.data
+    assert b"Which page?" not in r.data
 
 
 def test_render_routes(loaded):
