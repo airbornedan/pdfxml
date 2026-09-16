@@ -27,7 +27,7 @@ def test_screenshot_upload_returns_fixed_crop(client, tmp_path):
     match = re.search(rb'data:image/png;base64,([^" ]+)', response.data)
     assert match
     cropped = fitz.Pixmap(base64.b64decode(match.group(1)))
-    assert (cropped.width, cropped.height) == (1178, 1072)
+    assert (cropped.width, cropped.height) == (1154, 1048)
     assert b"onclick=" not in response.data
 
 

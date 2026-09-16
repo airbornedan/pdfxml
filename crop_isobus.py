@@ -4,9 +4,9 @@ from pathlib import Path
 
 import fitz
 
-# Bounds measured from tests/sample.png. The right and bottom values are
-# exclusive, as required by PyMuPDF's clip rectangle.
-ISOBUS_RECT = fitz.Rect(371, 4, 1549, 1076)
+# Bounds measured from the supplied screen crop. The right and bottom values
+# are exclusive, as required by PyMuPDF's clip rectangle.
+ISOBUS_RECT = fitz.Rect(383, 16, 1537, 1064)
 CORNER_RADIUS = 20
 
 
