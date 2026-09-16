@@ -6,6 +6,8 @@ import json
 import fitz
 import pytest
 
+from app.pdfops import _redact_watermark
+
 
 @pytest.fixture
 def loaded(client, sample_pdf):
@@ -258,6 +260,20 @@ def test_extract_image_erase_rects_changes_output(loaded):
     assert r2.status_code == 204
     erased = loaded.get("/extract/image").data
     assert erased != baseline
+
+
+def test_watermark_redaction_keeps_other_text_on_matching_line():
+    document = fitz.open()
+    page = document.new_page(width=612, height=792)
+    page.insert_text((72, 120), "BODY BEFORE SurePoint Ag Systems BODY AFTER", fontsize=18)
+
+    _redact_watermark(page, "SurePoint Ag Systems")
+
+    remaining = page.get_text("text")
+    assert "BODY BEFORE" in remaining
+    assert "BODY AFTER" in remaining
+    assert "SurePoint Ag Systems" not in remaining
+    document.close()
 
 
 def test_extract_image_erase_rects_malformed_json_is_400(loaded):

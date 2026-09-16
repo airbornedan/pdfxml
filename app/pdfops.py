@@ -32,19 +32,28 @@ def render_page_png(pdf_path, page_index, zoom, max_megapixels):
         return page.get_pixmap(matrix=fitz.Matrix(zoom, zoom)).tobytes("png")
 
 
-### per-character quads, not one for the rotated line -- redaction tests
-### bounding boxes, so a wide quad would erase unrelated content.
+### redact only the matching characters, not every character on a matching
+### line. recover_quad keeps each rotated glyph tight instead of turning its
+### axis-aligned bbox into a larger rectangle.
 def _redact_watermark(page, watermark_text):
     if not watermark_text:  # no text set -> redaction off
         return
     for block in page.get_text("rawdict")["blocks"]:
         for line in block.get("lines", []):
             line_text = "".join(c["c"] for s in line["spans"] for c in s["chars"])
-            if watermark_text not in line_text:
+            match_start = line_text.find(watermark_text)
+            if match_start < 0:
                 continue
+            match_end = match_start + len(watermark_text)
+            char_index = 0
             for span in line["spans"]:
                 for ch in span["chars"]:
-                    page.add_redact_annot(fitz.Rect(ch["bbox"]).quad, fill=None)
+                    next_index = char_index + 1
+                    if match_start <= char_index < match_end:
+                        char_span = {**span, "bbox": ch["bbox"], "origin": ch["origin"]}
+                        quad = fitz.recover_quad(line["dir"], char_span)
+                        page.add_redact_annot(quad, fill=None)
+                    char_index = next_index
     page.apply_redactions(images=_REDACT_IMAGES, graphics=_REDACT_GRAPHICS)
 
 
