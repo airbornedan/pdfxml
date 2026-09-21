@@ -237,6 +237,15 @@
 	const applyName = () => {
 		download.download = (baseFrom(nameField.value) || DEFAULT_NAME) + ".png";
 	};
+	const showImageError = () => {
+		clearMasks();
+		modalImg.removeAttribute("src");
+		modalImg.classList.add("is-hidden");
+		download.removeAttribute("href");
+		modalError.textContent = "The image preview could not be rendered. The PDF watermark could not be removed safely.";
+		modalError.classList.remove("is-hidden");
+	};
+	modalImg.addEventListener("error", showImageError);
 	const closeModal = () => {
 		modal.classList.add("is-hidden");
 		modalImg.removeAttribute("src");
@@ -266,6 +275,7 @@
 		}
 		pageError.classList.add("is-hidden");
 		modalError.classList.add("is-hidden");
+		modalImg.classList.remove("is-hidden");
 		cleanUrl = IMAGE_URL + "?t=" + Date.now();
 		modalImg.addEventListener("load", clearMasks, { once: true }); // baked render supersedes the overlays
 		modalImg.src = cleanUrl;
