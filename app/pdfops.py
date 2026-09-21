@@ -3,10 +3,18 @@
 ### Path + plain data in, plain data out; no fitz objects cross the
 ### process boundary. fitz-only at import; docbook/resource lazy.
 ########################################################################
+import os
+import re
+import tempfile
+from contextlib import contextmanager
+
 import fitz
 
 _REDACT_IMAGES = fitz.PDF_REDACT_IMAGE_NONE
 _REDACT_GRAPHICS = fitz.PDF_REDACT_LINE_ART_NONE
+_WATERMARK_DIRECTION_TOLERANCE = 0.01
+_PDF_STRING_RE = re.compile(rb"\((?:\\.|[^\\)])*\)|<[0-9A-Fa-f\s]+>")
+_PDF_SHOW_RE = re.compile(rb"(\[[^\]]*\]|\((?:\\.|[^\\)])*\)|<[0-9A-Fa-f\s]+>)\s*T[Jj]")
 
 
 ### mirror of app.extensions.clamp_zoom, kept fitz-only. Keep in step.
@@ -30,6 +38,130 @@ def render_page_png(pdf_path, page_index, zoom, max_megapixels):
         page = doc[page_index]
         zoom = _clamp_zoom(page.rect.width, page.rect.height, zoom, max_megapixels)
         return page.get_pixmap(matrix=fitz.Matrix(zoom, zoom)).tobytes("png")
+
+
+def _inspect_page_streams(doc, page):
+    """Return page content streams as immutable xref/bytes records."""
+    records = []
+    for xref in page.get_contents() or []:
+        stream = doc.xref_stream(xref)
+        if stream is not None:
+            records.append({"xref": xref, "stream": bytes(stream)})
+    return records
+
+
+def _pdf_string_bytes(token):
+    if token.startswith(b"<"):
+        return bytes.fromhex(re.sub(rb"\s+", b"", token[1:-1]).decode())
+    value = token[1:-1]
+    return re.sub(rb"\\([\\()\\])", rb"\1", value)
+
+
+def _stream_text_bytes(stream):
+    return b"".join(_pdf_string_bytes(token) for token in _PDF_STRING_RE.findall(stream))
+
+
+def _watermark_lines(page, watermark_text, direction=None):
+    if not watermark_text:
+        return []
+    matches = []
+    for block in page.get_text("rawdict").get("blocks", []):
+        for line in block.get("lines", []):
+            line_text = "".join(
+                char["c"] for span in line.get("spans", []) for char in span.get("chars", [])
+            )
+            if line_text != watermark_text:
+                continue
+            line_direction = tuple(line.get("dir", (1.0, 0.0)))
+            if direction is not None and any(
+                abs(actual - expected) > _WATERMARK_DIRECTION_TOLERANCE
+                for actual, expected in zip(line_direction, direction)
+            ):
+                continue
+            matches.append({"text": line_text, "dir": line_direction, "bbox": tuple(line["bbox"])})
+    return matches
+
+
+def _watermark_object_ids(doc, page, watermark_text, direction=None):
+    """Return content-stream xrefs that contain a verified watermark line."""
+    if not _watermark_lines(page, watermark_text, direction):
+        return []
+    encoded = watermark_text.encode("latin-1")
+    return [
+        record["xref"]
+        for record in _inspect_page_streams(doc, page)
+        if encoded in _stream_text_bytes(record["stream"])
+    ]
+
+
+class WatermarkMappingError(ValueError):
+    """The watermark cannot be mapped to one unambiguous text sequence."""
+
+
+def _show_operand_text(operand):
+    return b"".join(_pdf_string_bytes(token) for token in _PDF_STRING_RE.findall(operand))
+
+
+def _watermark_operator_spans(stream, watermark_text):
+    encoded = watermark_text.encode("latin-1")
+    candidates = []
+    for block in re.finditer(rb"\bBT\b(.*?)\bET\b", stream, flags=re.DOTALL):
+        operators = list(_PDF_SHOW_RE.finditer(block.group(1)))
+        for start in range(len(operators)):
+            text = b""
+            for end in range(start, len(operators)):
+                text += _show_operand_text(operators[end].group(1))
+                if text == encoded:
+                    candidates.append(tuple(
+                        (block.start(1) + operators[index].start(), block.start(1) + operators[index].end())
+                        for index in range(start, end + 1)
+                    ))
+                    break
+                if not encoded.startswith(text):
+                    break
+    return candidates
+
+
+def _rewrite_watermark_stream(stream, watermark_text):
+    candidates = _watermark_operator_spans(stream, watermark_text)
+    if len(candidates) != 1:
+        raise WatermarkMappingError(
+            f"Watermark text maps to {len(candidates)} content-stream sequences; expected exactly one."
+        )
+    rewritten = stream
+    for start, end in reversed(candidates[0]):
+        rewritten = rewritten[:start] + rewritten[end:]
+    return rewritten
+
+
+@contextmanager
+def _temporary_watermark_document(pdf_path, page_index, watermark_text, direction=None):
+    fd, temp_path = tempfile.mkstemp(suffix=".pdf")
+    os.close(fd)
+    os.unlink(temp_path)
+    try:
+        with fitz.open(pdf_path) as doc:
+            page = doc[page_index]
+            lines = _watermark_lines(page, watermark_text, direction)
+            if len(lines) > 1:
+                raise WatermarkMappingError(
+                    f"Watermark text appears in {len(lines)} matching lines; expected exactly one."
+                )
+            if lines:
+                xrefs = _watermark_object_ids(doc, page, watermark_text, direction)
+                if len(xrefs) != 1:
+                    raise WatermarkMappingError(
+                        f"Watermark text maps to {len(xrefs)} content streams; expected exactly one."
+                    )
+                stream = doc.xref_stream(xrefs[0])
+                doc.update_stream(xrefs[0], _rewrite_watermark_stream(stream, watermark_text))
+            doc.save(temp_path)
+        yield temp_path
+    finally:
+        try:
+            os.unlink(temp_path)
+        except FileNotFoundError:
+            pass
 
 
 ### redact only the matching characters, not every character on a matching
@@ -63,13 +195,13 @@ def _redact_watermark(page, watermark_text):
 ### rectangle without hand-editing the source PDF.
 def render_region_png(pdf_path, page_index, rect, zoom, watermark_text, max_megapixels, erase_rects=None):
     clip = fitz.Rect(*rect)
-    with fitz.open(pdf_path) as doc:
-        page = doc[page_index]
-        _redact_watermark(page, watermark_text)
-        for er in (erase_rects or []):
-            page.draw_rect(fitz.Rect(*er), color=(1, 1, 1), fill=(1, 1, 1), width=0)
-        zoom = _clamp_zoom(clip.width, clip.height, zoom, max_megapixels)
-        return page.get_pixmap(clip=clip, matrix=fitz.Matrix(zoom, zoom)).tobytes("png")
+    with _temporary_watermark_document(pdf_path, page_index, watermark_text) as working_path:
+        with fitz.open(working_path) as doc:
+            page = doc[page_index]
+            for er in (erase_rects or []):
+                page.draw_rect(fitz.Rect(*er), color=(1, 1, 1), fill=(1, 1, 1), width=0)
+            zoom = _clamp_zoom(clip.width, clip.height, zoom, max_megapixels)
+            return page.get_pixmap(clip=clip, matrix=fitz.Matrix(zoom, zoom)).tobytes("png")
 
 
 ### raw extraction only; emptiness + validation stay in the parent.
