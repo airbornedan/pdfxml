@@ -41,9 +41,11 @@ def render_page_png(pdf_path, page_index, zoom, max_megapixels):
 
 
 def _inspect_page_streams(doc, page):
-    """Return page content streams as immutable xref/bytes records."""
+    """Return page and referenced form streams as immutable xref/bytes records."""
     records = []
-    for xref in page.get_contents() or []:
+    xrefs = list(page.get_contents() or [])
+    xrefs.extend(xref for xref, _, _, _ in page.get_xobjects())
+    for xref in dict.fromkeys(xrefs):
         stream = doc.xref_stream(xref)
         if stream is not None:
             records.append({"xref": xref, "stream": bytes(stream)})
@@ -86,11 +88,10 @@ def _watermark_object_ids(doc, page, watermark_text, direction=None):
     """Return content-stream xrefs that contain a verified watermark line."""
     if not _watermark_lines(page, watermark_text, direction):
         return []
-    encoded = watermark_text.encode("latin-1")
     return [
         record["xref"]
         for record in _inspect_page_streams(doc, page)
-        if encoded in _stream_text_bytes(record["stream"])
+        if _watermark_operator_spans(record["stream"], watermark_text)
     ]
 
 

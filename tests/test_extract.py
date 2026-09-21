@@ -191,15 +191,20 @@ def test_rotated_watermark_render_keeps_crossed_body_text(tmp_path):
 
 
 def test_real_pdf_fixture_renders_without_text_loss():
-    path = "tests/VBA-20-10206-ARE.pdf"
+    path = "tests/test.pdf"
     with fitz.open(path) as original:
-        source_text = original[0].get_text()
-        source_rect = tuple(original[0].rect)
+        page_number = 19
+        source_text = original[page_number].get_text()
+        source_rect = tuple(original[page_number].rect)
+        assert "SurePoint Ag Systems" in source_text
+        assert "Row Monitoring Installation" in source_text
 
-    with _temporary_watermark_document(path, 0, "SurePoint Ag Systems") as rewritten:
+    with _temporary_watermark_document(path, page_number, "SurePoint Ag Systems") as rewritten:
         with fitz.open(rewritten) as copied:
-            assert copied[0].get_text() == source_text
-            png = copied[0].get_pixmap(clip=fitz.Rect(*source_rect), matrix=fitz.Matrix(0.5, 0.5)).tobytes("png")
+            cleaned_text = copied[page_number].get_text()
+            assert "SurePoint Ag Systems" not in cleaned_text
+            assert "Row Monitoring Installation" in cleaned_text
+            png = copied[page_number].get_pixmap(clip=fitz.Rect(*source_rect), matrix=fitz.Matrix(0.5, 0.5)).tobytes("png")
 
     assert png.startswith(b"\x89PNG\r\n\x1a\n")
 
