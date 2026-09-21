@@ -60,7 +60,7 @@ def normalize(src):
         _strip_namespaces(root)
         _drop_comments(root)
         _unwrap_roots(root)
-        fragments, n_lists, n_tables = _transform(root)
+        fragments, n_lists, n_tables, n_paras = _transform(root)
     except _Bail as e:
         return src, False, str(e)
     except Exception as e:  # noqa: BLE001 -- never surface a traceback
@@ -70,7 +70,7 @@ def normalize(src):
     if len(root) == 0:
         return src, False, "This doesn't appear to be HTML -- paste something with tags in it."
 
-    if not n_lists and not n_tables:
+    if not n_lists and not n_tables and not n_paras:
         return src, False, "No list or table found here -- nothing to change."
 
     out = "\n".join(fragments)
@@ -86,6 +86,8 @@ def normalize(src):
         parts.append(f"{n_lists} list{'s' if n_lists != 1 else ''}")
     if n_tables:
         parts.append(f"{n_tables} table{'s' if n_tables != 1 else ''}")
+    if n_paras:
+        parts.append(f"{n_paras} paragraph{'s' if n_paras != 1 else ''}")
     return out, True, "Normalized " + " and ".join(parts) + "."
 
 
@@ -148,10 +150,10 @@ def _unwrap_roots(root):
 ### TOP-LEVEL TRANSFORM
 
 def _transform(root):
-    """-> (fragment_strings, n_lists, n_tables). Lists go through
+    """-> (fragment_strings, n_lists, n_tables, n_paras). Lists go through
     docbook.wrap_list so the output is byte-identical to the Extract
     tool's; tables and pass-through nodes are serialized directly."""
-    n_lists = n_tables = 0
+    n_lists = n_tables = n_paras = 0
     frags = []
 
     if (root.text or "").strip():
@@ -166,12 +168,15 @@ def _transform(root):
         elif tag in _TABLE_TAGS:
             frags.extend(_serialize(e) for e in _norm_table(el))
             n_tables += 1
+        elif tag == "p":
+            frags.append(_serialize(_para_from_element(el)))
+            n_paras += 1
         else:
             frags.append(_serialize(el))  # pass through untouched
         if (el.tail or "").strip():
             frags.append(_serialize(_bare_text_para(el.tail)))
 
-    return frags, n_lists, n_tables
+    return frags, n_lists, n_tables, n_paras
 
 
 def _bare_text_para(text):

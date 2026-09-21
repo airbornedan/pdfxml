@@ -62,6 +62,23 @@ def test_html_table_thead_td_cells_become_th_para():
     assert validate_fragment(out)[0]
 
 
+def test_standalone_html_paragraphs_become_para_with_table():
+    out, changed, _ = _norm(
+        "<p>Lead in with <strong>emphasis</strong>.</p>"
+        "<table><tr><td>value</td></tr></table>"
+    )
+    assert changed
+    assert out.startswith("<para>Lead in with <emphasis role=\"strong\">emphasis</emphasis>.</para>")
+    assert "<p>" not in out
+    assert validate_fragment(out)[0]
+
+
+def test_standalone_html_paragraph_is_normalized_without_list_or_table():
+    out, changed, _ = _norm("<p>Only paragraph</p>")
+    assert changed
+    assert out == "<para>Only paragraph</para>"
+
+
 def test_leading_all_th_row_is_promoted_to_thead():
     out, _, _ = _norm("<table><tr><th>Name</th><th>Qty</th></tr><tr><td>Bolt</td><td>4</td></tr></table>")
     assert "<thead>" in out and out.count("<th>") == 2
