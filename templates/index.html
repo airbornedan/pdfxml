@@ -7,25 +7,13 @@
 			<img class="card-icon" src="{{ url_for('static', filename='images/process.svg') }}" alt="">
 			<span class="card-title">Process</span>
 			<hr class="card-divider">
-			<span class="card-desc">{% if trusted_network %}Convert PDF to Paligo{% else %}How to use these tools{% endif %}</span>
+			<span class="card-desc">Conversion instructions</span>
 		</a>
 		<a href="{{ url_for('extract.choose_pdf') }}" class="card">
 			<img class="card-icon" src="{{ url_for('static', filename='images/extract.svg') }}" alt="">
 			<span class="card-title">Extract</span>
 			<hr class="card-divider">
 			<span class="card-desc">Text, lists, tables, or images</span>
-		</a>
-		<a href="{{ url_for('imagecrop.image_crop') }}" class="card">
-			<img class="card-icon" src="{{ url_for('static', filename='images/crop.svg') }}" alt="">
-			<span class="card-title">Crop</span>
-			<hr class="card-divider">
-			<span class="card-desc">Crop an image.</span>
-		</a>
-		<a href="{{ url_for('screenshot.screenshot') }}" class="card">
-			<img class="card-icon" src="{{ url_for('static', filename='images/screenshot.svg') }}" alt="">
-			<span class="card-title">Screenshot</span>
-			<hr class="card-divider">
-			<span class="card-desc">Crop G5 screenshot</span>
 		</a>
 		<a href="{{ url_for('normalize.check_xml') }}" class="card">
 			<img class="card-icon" src="{{ url_for('static', filename='images/discombobulate.svg') }}" alt="">
@@ -38,6 +26,18 @@
 			<span class="card-title">Convert HTML</span>
 			<hr class="card-divider">
 			<span class="card-desc">HTML to XML converter</span>
+		</a>
+		<a href="{{ url_for('screenshot.screenshot') }}" class="card">
+			<img class="card-icon" src="{{ url_for('static', filename='images/screenshot.svg') }}" alt="">
+			<span class="card-title">Screenshot</span>
+			<hr class="card-divider">
+			<span class="card-desc">Crop G5 screenshot</span>
+		</a>
+		<a href="{{ url_for('imagecrop.image_crop') }}" class="card">
+			<img class="card-icon" src="{{ url_for('static', filename='images/crop.svg') }}" alt="">
+			<span class="card-title">Crop</span>
+			<hr class="card-divider">
+			<span class="card-desc">Crop an image.</span>
 		</a>
 		{% if trusted_network %}
 		<a href="{{ url_for('pages.troubleshooting') }}" class="card">
