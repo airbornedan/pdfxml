@@ -231,6 +231,7 @@ def test_extract_paragraph(loaded):
     assert b"plain paragraph of body text" in r.data
     assert b"&lt;para&gt;" in r.data
     assert r.data.count(b"&lt;para&gt;") == 1
+    assert b'<textarea class="xml-output" id="xml-output">' in r.data
 
 
 def test_extract_paragraph_splits_on_gap(loaded):

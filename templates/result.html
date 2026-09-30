@@ -63,7 +63,7 @@
 	</p>
 
 	<p><button type="button" id="select-all-btn" class="btn">Copy all</button></p>
-	<textarea class="xml-output" id="xml-output" readonly onclick="this.select();">{{ result.xml }}</textarea>
+	<textarea class="xml-output" id="xml-output">{{ result.xml }}</textarea>
 	<script nonce="{{ g.csp_nonce }}">
 	document.getElementById("select-all-btn").addEventListener("click", async () => {
 		const button = document.getElementById("select-all-btn");
