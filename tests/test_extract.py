@@ -53,6 +53,15 @@ def test_single_page_upload_skips_choose_page(client, tmp_path):
     assert r.status_code == 200
     assert b"Draw a region" in r.data
     assert b"Which page?" not in r.data
+    assert b"Choose page" not in r.data
+
+
+def test_select_region_breadcrumb_links_back_to_choose_page(loaded):
+    response = loaded.get("/extract/select")
+
+    assert response.status_code == 200
+    assert b'href="/extract/page">Choose page</a>' in response.data
+    assert response.data.index(b"Choose page") < response.data.index(b"Select region")
 
 
 def test_render_routes(loaded):

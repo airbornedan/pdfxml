@@ -55,12 +55,14 @@ def _current_pdf_path():
 
 ### Home -> Extract -> current step, current step omitted on
 ### choose_pdf itself since that IS the wizard's landing page
-def _breadcrumbs(step_label=None):
+def _breadcrumbs(step_label=None, include_choose_page=False):
     items = [("Home", url_for("extract.index"))]
     if step_label is None:
         items.append(("Extract", ""))
     else:
         items.append(("Extract", url_for("extract.choose_pdf")))
+        if include_choose_page:
+            items.append(("Choose page", url_for("extract.choose_page")))
         items.append((step_label, ""))
     return items
 
@@ -247,7 +249,10 @@ def select_region():
     def _page(error):
         return render_template(
             "select_region.html",
-            breadcrumbs=_breadcrumbs(step_label),
+            breadcrumbs=_breadcrumbs(
+                step_label,
+                include_choose_page=session.get("page_count", 1) > 1,
+            ),
             page_number=session["page_number"],
             page_count=session.get("page_count"),
             pdf_filename=session.get("pdf_filename"),
