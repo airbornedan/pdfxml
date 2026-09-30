@@ -418,6 +418,7 @@ button:disabled {
 	position: relative;
 	display: inline-block;
 	border: 1px solid #ccc;
+	touch-action: none; /* let touch/pen drags draw and adjust the region instead of scrolling */
 }
 
 #page-image {
@@ -526,6 +527,36 @@ button:disabled {
 	border: 2px dashed #2f6fed;
 	background: rgba(47, 111, 237, 0.15);
 	display: none;
+	cursor: move;
+}
+
+/* resize grips on the region's corners and edge midpoints -- large on
+   purpose so they're easy to grab */
+.select-handle {
+	position: absolute;
+	width: 18px;
+	height: 18px;
+	box-sizing: border-box;
+	background: #fff;
+	border: 2px solid #2f6fed;
+	border-radius: 3px;
+	transform: translate(-50%, -50%);
+}
+
+.select-handle[data-h="nw"] { left: 0; top: 0; cursor: nwse-resize; }
+.select-handle[data-h="n"] { left: 50%; top: 0; cursor: ns-resize; }
+.select-handle[data-h="ne"] { left: 100%; top: 0; cursor: nesw-resize; }
+.select-handle[data-h="w"] { left: 0; top: 50%; cursor: ew-resize; }
+.select-handle[data-h="e"] { left: 100%; top: 50%; cursor: ew-resize; }
+.select-handle[data-h="sw"] { left: 0; top: 100%; cursor: nesw-resize; }
+.select-handle[data-h="s"] { left: 50%; top: 100%; cursor: ns-resize; }
+.select-handle[data-h="se"] { left: 100%; top: 100%; cursor: nwse-resize; }
+
+/* a bigger invisible grab area around each grip */
+.select-handle::after {
+	content: "";
+	position: absolute;
+	inset: -6px;
 }
 
 .preview-box {
@@ -893,6 +924,15 @@ textarea.xml-io {
 	font-weight: 600;
 	text-align: center;
 }
+.image-save-folder,
+.image-save-status {
+	margin: 0;
+	text-align: center;
+}
+.image-save-folder .link-btn {
+	margin-left: 8px;
+}
+
 .result-modal__actions {
 	display: flex;
 	flex-wrap: wrap;

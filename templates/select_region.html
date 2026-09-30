@@ -63,7 +63,11 @@
 
 	<div id="page-image-wrap">
 		<img id="page-image" src="{{ url_for('extract.page_image') }}" alt="Page {{ page_number }}" draggable="false">
-		<div id="select-box"></div>
+		<div id="select-box">
+			<span class="select-handle" data-h="nw"></span><span class="select-handle" data-h="n"></span><span class="select-handle" data-h="ne"></span>
+			<span class="select-handle" data-h="w"></span><span class="select-handle" data-h="e"></span>
+			<span class="select-handle" data-h="sw"></span><span class="select-handle" data-h="s"></span><span class="select-handle" data-h="se"></span>
+		</div>
 	</div>
 
 	<form method="post" id="select-form" data-busy>
@@ -105,59 +109,111 @@
 	const wrap = document.getElementById("page-image-wrap");
 	const box = document.getElementById("select-box");
 	const extractBtns = document.querySelectorAll(".extract-btn"); // Text/List/Table/Image, above + below the image
-	let startX, startY, dragging = false;
+	const fields = ["x0", "y0", "x1", "y1"].map((id) => document.getElementById(id));
 
+	// the selection, in natural image px -- the preview-px space the
+	// server expects (it divides by PREVIEW_ZOOM). null = no selection.
+	// Kept in that space, not screen px, so the box stays put when the
+	// image rescales with the window.
+	let rect = null;
+	let drag = null; // {mode: "draw"|"move"|"resize", ...} while the pointer is down
+
+	const scale = () => img.clientWidth / img.naturalWidth;
+
+	// pointer -> natural px, clamped to the image
 	function pointerPos(e) {
-		const rect = img.getBoundingClientRect();
-		return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+		const r = img.getBoundingClientRect();
+		const s = scale();
+		return {
+			x: Math.min(Math.max(e.clientX - r.left, 0), r.width) / s,
+			y: Math.min(Math.max(e.clientY - r.top, 0), r.height) / s,
+		};
 	}
 
-	wrap.addEventListener("mousedown", function (e) {
+	// one place that pushes rect to the box, the hidden fields and the buttons
+	function render() {
+		if (!rect) {
+			box.style.display = "none";
+			fields.forEach((f) => f.value = "");
+			extractBtns.forEach((b) => b.disabled = true);
+			return;
+		}
+		const s = scale();
+		box.style.left = rect.x0 * s + "px";
+		box.style.top = rect.y0 * s + "px";
+		box.style.width = (rect.x1 - rect.x0) * s + "px";
+		box.style.height = (rect.y1 - rect.y0) * s + "px";
+		box.style.display = "block";
+		[rect.x0, rect.y0, rect.x1, rect.y1].forEach((v, i) => fields[i].value = v);
+		const hasRegion = (rect.x1 - rect.x0 >= 2 && rect.y1 - rect.y0 >= 2);
+		extractBtns.forEach((b) => b.disabled = drag !== null || !hasRegion);
+	}
+
+	// drag inside the box moves it, a handle resizes it, anywhere else
+	// starts a new one
+	wrap.addEventListener("pointerdown", function (e) {
+		if (e.button !== 0) return;
 		e.preventDefault(); // stop the browser's native image-drag from hijacking the gesture
 		const p = pointerPos(e);
-		startX = p.x;
-		startY = p.y;
-		dragging = true;
-		box.style.left = startX + "px";
-		box.style.top = startY + "px";
-		box.style.width = "0px";
-		box.style.height = "0px";
-		box.style.display = "block";
-		extractBtns.forEach((btn) => btn.disabled = true);
+		const handle = e.target.closest(".select-handle");
+		if (rect && handle) {
+			const h = handle.dataset.h;
+			// the edge(s) opposite the handle stay fixed; dragging past
+			// them just flips the box
+			drag = {
+				mode: "resize",
+				fixX: h.includes("w") ? rect.x1 : h.includes("e") ? rect.x0 : null,
+				fixY: h.includes("n") ? rect.y1 : h.includes("s") ? rect.y0 : null,
+			};
+		} else if (rect && e.target.closest("#select-box")) {
+			drag = { mode: "move", px: p.x, py: p.y, orig: { ...rect } };
+		} else {
+			drag = { mode: "draw", sx: p.x, sy: p.y };
+			rect = { x0: p.x, y0: p.y, x1: p.x, y1: p.y };
+		}
+		wrap.setPointerCapture(e.pointerId);
+		render();
 	});
 
-	wrap.addEventListener("mousemove", function (e) {
-		if (!dragging) return;
+	wrap.addEventListener("pointermove", function (e) {
+		if (!drag) return;
 		const p = pointerPos(e);
-		box.style.left = Math.min(startX, p.x) + "px";
-		box.style.top = Math.min(startY, p.y) + "px";
-		box.style.width = Math.abs(p.x - startX) + "px";
-		box.style.height = Math.abs(p.y - startY) + "px";
+		if (drag.mode === "draw") {
+			rect = { x0: Math.min(drag.sx, p.x), y0: Math.min(drag.sy, p.y),
+				x1: Math.max(drag.sx, p.x), y1: Math.max(drag.sy, p.y) };
+		} else if (drag.mode === "resize") {
+			if (drag.fixX !== null) { rect.x0 = Math.min(drag.fixX, p.x); rect.x1 = Math.max(drag.fixX, p.x); }
+			if (drag.fixY !== null) { rect.y0 = Math.min(drag.fixY, p.y); rect.y1 = Math.max(drag.fixY, p.y); }
+		} else {
+			const o = drag.orig, w = o.x1 - o.x0, h = o.y1 - o.y0;
+			const x0 = Math.min(Math.max(o.x0 + p.x - drag.px, 0), img.naturalWidth - w);
+			const y0 = Math.min(Math.max(o.y0 + p.y - drag.py, 0), img.naturalHeight - h);
+			rect = { x0, y0, x1: x0 + w, y1: y0 + h };
+		}
+		render();
 	});
 
-	wrap.addEventListener("mouseup", function (e) {
-		if (!dragging) return;
-		dragging = false;
-		const p = pointerPos(e);
+	function endDrag() {
+		if (!drag) return;
+		drag = null;
+		// a click without a drag leaves nothing worth keeping
+		if (rect && (rect.x1 - rect.x0 < 2 || rect.y1 - rect.y0 < 2)) rect = null;
+		render();
+	}
+	wrap.addEventListener("pointerup", endDrag);
+	wrap.addEventListener("pointercancel", endDrag);
 
-		// convert from CSS-scaled display size to natural pixel space --
-		// PREVIEW_ZOOM on the server expects that
-		const scaleX = img.naturalWidth / img.clientWidth;
-		const scaleY = img.naturalHeight / img.clientHeight;
+	window.addEventListener("resize", render);
 
-		const x0 = Math.min(startX, p.x) * scaleX;
-		const y0 = Math.min(startY, p.y) * scaleY;
-		const x1 = Math.max(startX, p.x) * scaleX;
-		const y1 = Math.max(startY, p.y) * scaleY;
-
-		document.getElementById("x0").value = x0;
-		document.getElementById("y0").value = y0;
-		document.getElementById("x1").value = x1;
-		document.getElementById("y1").value = y1;
-
-		const hasRegion = (x1 - x0 >= 2 && y1 - y0 >= 2);
-		extractBtns.forEach((btn) => btn.disabled = !hasRegion);
-	});
+	// bring back the last region drawn on this page (after Retry or an
+	// error) so it can be adjusted rather than redrawn
+	const last = {{ last_region|tojson }};
+	function restore() {
+		if (last && !rect) rect = { x0: last[0], y0: last[1], x1: last[2], y1: last[3] };
+		render();
+	}
+	if (img.complete && img.naturalWidth) restore();
+	else img.addEventListener("load", restore, { once: true });
 
 	// no on-screen "Clear selection" button -- Esc drops the current crop
 	// when the image modal isn't up
@@ -165,11 +221,8 @@
 		if (e.key !== "Escape") return;
 		const modal = document.getElementById("image-modal");
 		if (modal && !modal.classList.contains("is-hidden")) return; // modal owns Esc while open
-		box.style.display = "none";
-		box.style.width = "0px";
-		box.style.height = "0px";
-		["x0", "y0", "x1", "y1"].forEach((id) => document.getElementById(id).value = "");
-		extractBtns.forEach((b) => b.disabled = true);
+		rect = null;
+		render();
 	});
 })();
 </script>
@@ -181,6 +234,11 @@
 			<img id="image-modal-img" alt="Extracted image">
 		</div>
 		<p class="error-text is-hidden" id="image-modal-error"></p>
+		<p class="image-save-folder is-hidden" id="image-save-folder">
+			<span id="image-save-folder-name"></span>
+			<button type="button" class="link-btn" id="image-save-folder-change"></button>
+		</p>
+		<p class="image-save-status is-hidden" id="image-save-status" role="status"></p>
 		<div class="result-modal__actions">
 			<span class="result-filename-wrap">
 				<input type="text" id="image-modal-name" class="result-filename" spellcheck="false" autocomplete="off" placeholder="file name" aria-label="File name">
@@ -211,7 +269,8 @@
 	const closeBtn = modal.querySelector('[data-action="close-image-modal"]');
 
 	const baseFrom = (s) => s.replace(/\.[^./\\]+$/, "").replace(SAFE_NAME, "").trim();
-	const DEFAULT_NAME = (baseFrom({{ (pdf_filename or "")|tojson }}) || "image") + "-p{{ page_number }}";
+	const PDF_BASE = baseFrom({{ (pdf_filename or "")|tojson }});
+	const DEFAULT_NAME = (PDF_BASE || "image") + "-p{{ page_number }}";
 	let cleanUrl = IMAGE_URL;   // the un-watermarked server render of the current crop
 	let eraseRects = [];        // [fx0, fy0, fx1, fy1] -- fractions of the crop, order = draw order
 	let maskEls = [];           // the white preview overlays on the modal image
@@ -286,6 +345,8 @@
 	// the page's Image button: fresh extract, clears any prior erasures
 	async function openWithImage() {
 		resetErase();
+		overwriteArmed = null;
+		clearSaveStatus();
 		if (!(await renderImage())) return;
 		nameField.value = DEFAULT_NAME;
 		applyName();
@@ -342,7 +403,7 @@
 
 	clearAreasBtn.addEventListener("click", () => { resetErase(); renderImage(); });
 
-	nameField.addEventListener("input", applyName);
+	nameField.addEventListener("input", () => { applyName(); overwriteArmed = null; clearSaveStatus(); });
 	nameField.addEventListener("keydown", (e) => {
 		if (e.key === "Enter") { e.preventDefault(); download.click(); }
 	});
@@ -373,6 +434,122 @@
 		};
 		original.src = cleanUrl;
 	});
+
+	// --- Save PNG into a folder of the user's choosing ---
+	// Chrome/Edge only (File System Access API): pick a parent folder once,
+	// each PDF's images go in a subfolder named after it. The pick is kept
+	// in IndexedDB so page changes (full reloads) don't ask again. Other
+	// browsers keep the plain <a download>.
+	const SUPPORTS_DIR = "showDirectoryPicker" in window;
+	const SUBDIR = PDF_BASE || "images";
+	const folderLine = document.getElementById("image-save-folder");
+	const folderName = document.getElementById("image-save-folder-name");
+	const folderBtn = document.getElementById("image-save-folder-change");
+	const saveStatus = document.getElementById("image-save-status");
+	let parentDir = null;      // FileSystemDirectoryHandle the user picked
+	let overwriteArmed = null; // file name the user was warned exists -- a second Save replaces it
+
+	function handleStore(mode, fn) {
+		return new Promise((resolve, reject) => {
+			const open = indexedDB.open("pdfxml", 1);
+			open.onupgradeneeded = () => open.result.createObjectStore("handles");
+			open.onerror = () => reject(open.error);
+			open.onsuccess = () => {
+				const tx = open.result.transaction("handles", mode);
+				const req = fn(tx.objectStore("handles"));
+				tx.oncomplete = () => resolve(req.result);
+				tx.onerror = () => reject(tx.error);
+			};
+		});
+	}
+
+	function showFolder() {
+		folderName.textContent = parentDir ? `Saving to ${parentDir.name}/${SUBDIR}/` : "No save folder chosen yet.";
+		folderBtn.textContent = parentDir ? "Change folder" : "Choose folder";
+	}
+	function setSaveStatus(text, isError) {
+		saveStatus.textContent = text;
+		saveStatus.classList.toggle("error-text", !!isError);
+		saveStatus.classList.remove("is-hidden");
+	}
+	function clearSaveStatus() {
+		saveStatus.classList.add("is-hidden");
+	}
+
+	async function pickDir() {
+		parentDir = await window.showDirectoryPicker({ id: "pdfxml-images", mode: "readwrite" });
+		try { await handleStore("readwrite", (st) => st.put(parentDir, "imageDir")); } catch { /* kept for this page only */ }
+		overwriteArmed = null;
+		showFolder();
+	}
+
+	async function hasWriteAccess(dir) {
+		const opts = { mode: "readwrite" };
+		if (await dir.queryPermission(opts) === "granted") return true;
+		return (await dir.requestPermission(opts)) === "granted";
+	}
+
+	// the watermarked image is a data: URL -- decoded here, since the CSP
+	// (connect-src 'self') won't let fetch() read one
+	async function currentBlob() {
+		const href = download.getAttribute("href");
+		if (href.startsWith("data:")) {
+			const bytes = atob(href.slice(href.indexOf(",") + 1));
+			const buf = new Uint8Array(bytes.length);
+			for (let i = 0; i < bytes.length; i++) buf[i] = bytes.charCodeAt(i);
+			return new Blob([buf], { type: "image/png" });
+		}
+		const resp = await fetch(href);
+		if (!resp.ok) throw new Error("the image could not be fetched");
+		return resp.blob();
+	}
+
+	async function saveToFolder() {
+		if (!parentDir) await pickDir();
+		if (!(await hasWriteAccess(parentDir))) {
+			setSaveStatus("No permission to save there -- use Change folder.", true);
+			return;
+		}
+		const dir = await parentDir.getDirectoryHandle(SUBDIR, { create: true });
+		const name = download.download;
+		if (overwriteArmed !== name) {
+			let exists = true;
+			try { await dir.getFileHandle(name); } catch { exists = false; }
+			if (exists) {
+				overwriteArmed = name;
+				setSaveStatus(`${SUBDIR}/${name} already exists -- rename it, or Save again to replace it.`, true);
+				return;
+			}
+		}
+		const blob = await currentBlob();
+		const file = await dir.getFileHandle(name, { create: true });
+		const out = await file.createWritable();
+		await out.write(blob);
+		await out.close();
+		overwriteArmed = null;
+		setSaveStatus(`Saved ${parentDir.name}/${SUBDIR}/${name}`);
+	}
+
+	if (SUPPORTS_DIR) {
+		folderLine.classList.remove("is-hidden");
+		showFolder();
+		handleStore("readonly", (st) => st.get("imageDir"))
+			.then((h) => { if (h && !parentDir) { parentDir = h; showFolder(); } })
+			.catch(() => {});
+		download.addEventListener("click", async (e) => {
+			e.preventDefault();
+			if (!download.getAttribute("href")) return;
+			try {
+				await saveToFolder();
+			} catch (err) {
+				if (err.name === "AbortError") return; // picker cancelled
+				setSaveStatus(`Couldn't save there (${err.message}) -- try Change folder.`, true);
+			}
+		});
+		folderBtn.addEventListener("click", async () => {
+			try { await pickDir(); clearSaveStatus(); } catch { /* cancelled */ }
+		});
+	}
 
 	closeBtn.addEventListener("click", closeModal);
 	modal.addEventListener("pointerdown", (e) => { if (e.target === modal) closeModal(); });

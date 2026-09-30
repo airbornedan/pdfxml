@@ -301,6 +301,34 @@ def test_extract_ordered_list_with_dot_paren_markers(loaded):
     assert body.count("&lt;listitem&gt;") == 3
 
 
+def test_retry_restores_the_last_region(loaded):
+    loaded.post("/extract/select",
+                data={"element_type": "paragraph", "x0": "60", "y0": "60", "x1": "870", "y1": "450"},
+                follow_redirects=True)
+    body = loaded.get("/extract/select").data.decode()
+    assert "const last = [60.0, 60.0, 870.0, 450.0];" in body
+    assert 'class="select-handle" data-h="se"' in body
+
+
+def test_last_region_not_restored_on_another_page(loaded):
+    loaded.post("/extract/select",
+                data={"element_type": "paragraph", "x0": "60", "y0": "60", "x1": "870", "y1": "450"},
+                follow_redirects=True)
+    body = loaded.post("/extract/page/next", follow_redirects=True).data.decode()
+    assert "const last = null;" in body
+    # back on its own page, it returns
+    body = loaded.post("/extract/page/prev", follow_redirects=True).data.decode()
+    assert "const last = [60.0, 60.0, 870.0, 450.0];" in body
+
+
+def test_last_region_not_restored_while_continuing(loaded):
+    loaded.post("/extract/select",
+                data={"element_type": "list", "x0": "60", "y0": "500", "x1": "870", "y1": "1000"},
+                follow_redirects=True)
+    body = loaded.post("/extract/continue-more", follow_redirects=True).data.decode()
+    assert "const last = null;" in body
+
+
 def test_select_more_appends_without_leaving_the_page(loaded):
     # first pass: the 3-item bullet list on page 1
     r = loaded.post("/extract/select",

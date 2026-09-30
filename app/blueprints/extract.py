@@ -79,6 +79,7 @@ def _clear_pdf():
     session.pop("page_count", None)
     session.pop("page_number", None)
     session.pop("continue_type", None)
+    session.pop("last_region", None)
 
 
 @bp.route("/extract/pdf")
@@ -258,6 +259,7 @@ def select_region():
             pdf_filename=session.get("pdf_filename"),
             continue_type=continue_type,
             continuation=continuation,
+            last_region=_last_region(continue_type),
             error=error,
         )
 
@@ -281,6 +283,7 @@ def select_region():
             abort(400)
         if x1 <= x0 or y1 <= y0:
             return _page("Draw a region on the page first.")
+        _remember_region()
 
         try:
             result = _run_extraction(
@@ -295,6 +298,7 @@ def select_region():
             if error:
                 return _page(error)
             save_result(session["pdf_token"], merged)
+            session.pop("last_region", None)  # appended -- the next region is new content
             ### stay in the builder -- continue_type stays armed so the
             ### next region appends too. "Done" (continue_done) ends it.
             return redirect(url_for("extract.select_region"))
@@ -307,6 +311,29 @@ def select_region():
         return redirect(url_for("extract.result"))
 
     return _page(None)
+
+
+### the region drawn last, so Retry (or an error re-render) brings the
+### box back for adjusting instead of redrawing. Kept in preview px (the
+### form's own space) and tied to the PDF + page it was drawn on, so a
+### page change or new upload simply doesn't match.
+def _remember_region():
+    session["last_region"] = {
+        "token": session.get("pdf_token"),
+        "page": session["page_number"],
+        "rect": [float(request.form[k]) for k in ("x0", "y0", "x1", "y1")],
+    }
+
+
+def _last_region(continue_type):
+    region = session.get("last_region")
+    ### not while building a continuation -- the old box would just
+    ### invite adding the same content twice
+    if continue_type or not region:
+        return None
+    if region.get("token") != session.get("pdf_token") or region.get("page") != session.get("page_number"):
+        return None
+    return region["rect"]
 
 
 ### "Select more" on the result page -- arms continue_type so the next
