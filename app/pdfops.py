@@ -135,6 +135,32 @@ def _rewrite_watermark_stream(stream, watermark_text):
     return rewritten
 
 
+def _prepare_watermark_rewrite(doc, page, watermark_text, direction=None):
+    if not watermark_text:
+        return True, None
+    lines = _watermark_lines(page, watermark_text, direction)
+    if not lines:
+        return True, None
+    if len(lines) != 1:
+        return False, None
+    xrefs = _watermark_object_ids(doc, page, watermark_text, direction)
+    if len(xrefs) != 1:
+        return False, None
+    try:
+        rewritten = _rewrite_watermark_stream(doc.xref_stream(xrefs[0]), watermark_text)
+    except WatermarkMappingError:
+        return False, None
+    return True, (xrefs[0], rewritten)
+
+
+def watermark_removal_possible(pdf_path, page_index, watermark_text):
+    with fitz.open(pdf_path) as doc:
+        possible, _ = _prepare_watermark_rewrite(
+            doc, doc[page_index], watermark_text
+        )
+        return possible
+
+
 @contextmanager
 def _temporary_watermark_document(pdf_path, page_index, watermark_text, direction=None):
     fd, temp_path = tempfile.mkstemp(suffix=".pdf")
@@ -143,19 +169,9 @@ def _temporary_watermark_document(pdf_path, page_index, watermark_text, directio
     try:
         with fitz.open(pdf_path) as doc:
             page = doc[page_index]
-            lines = _watermark_lines(page, watermark_text, direction)
-            if len(lines) > 1:
-                raise WatermarkMappingError(
-                    f"Watermark text appears in {len(lines)} matching lines; expected exactly one."
-                )
-            if lines:
-                xrefs = _watermark_object_ids(doc, page, watermark_text, direction)
-                if len(xrefs) != 1:
-                    raise WatermarkMappingError(
-                        f"Watermark text maps to {len(xrefs)} content streams; expected exactly one."
-                    )
-                stream = doc.xref_stream(xrefs[0])
-                doc.update_stream(xrefs[0], _rewrite_watermark_stream(stream, watermark_text))
+            _, rewrite = _prepare_watermark_rewrite(doc, page, watermark_text, direction)
+            if rewrite is not None:
+                doc.update_stream(rewrite[0], rewrite[1])
             doc.save(temp_path)
         yield temp_path
     finally:

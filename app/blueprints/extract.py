@@ -454,6 +454,19 @@ def result():
     result_data = load_result(session.get("pdf_token"))
     if result_data is None:
         return redirect(url_for("extract.index"))
+    watermark_removal_failed = False
+    if result_data["element_type"] == "image":
+        path = _current_pdf_path()
+        if path is not None:
+            try:
+                watermark_removal_failed = not sandbox.run(
+                    pdfops.watermark_removal_possible,
+                    path,
+                    result_data["page_number"] - 1,
+                    WATERMARK_TEXT,
+                )
+            except sandbox.SandboxError:
+                watermark_removal_failed = True
     ### offered for any non-empty list/paragraph -- "Select more" adds
     ### another region (this page or, via the page arrows, a later one).
     can_continue = (
@@ -466,6 +479,7 @@ def result():
         result=result_data,
         element_label=TYPE_LABELS.get(result_data["element_type"], ""),
         can_continue=can_continue,
+        watermark_removal_failed=watermark_removal_failed,
     )
 
 

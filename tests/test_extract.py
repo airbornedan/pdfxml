@@ -8,7 +8,6 @@ import fitz
 import pytest
 
 from app.pdfops import (
-    WatermarkMappingError,
     _inspect_page_streams,
     _redact_watermark,
     render_region_png,
@@ -119,18 +118,21 @@ def test_temporary_watermark_document_rewrites_only_watermark_operators(tmp_path
         assert "SurePoint Ag Systems" in original[0].get_text()
 
 
-def test_temporary_watermark_document_fails_on_ambiguous_lines(tmp_path):
+def test_temporary_watermark_document_keeps_ambiguous_lines(tmp_path):
     path = tmp_path / "ambiguous-watermark.pdf"
     doc = fitz.open()
     page = doc.new_page()
+    page.insert_text((30, 30), "Body text", fontsize=12)
     page.insert_text((30, 60), "SurePoint Ag Systems", fontsize=12)
     page.insert_text((30, 120), "SurePoint Ag Systems", fontsize=12)
     doc.save(str(path))
     doc.close()
 
-    with pytest.raises(WatermarkMappingError, match="matching lines"):
-        with _temporary_watermark_document(str(path), 0, "SurePoint Ag Systems"):
-            pass
+    with _temporary_watermark_document(str(path), 0, "SurePoint Ag Systems") as rewritten:
+        with fitz.open(rewritten) as copied:
+            text = copied[0].get_text()
+            assert "Body text" in text
+            assert text.count("SurePoint Ag Systems") == 2
 
 
 def test_temporary_watermark_document_copies_pages_without_watermark(tmp_path):
@@ -161,6 +163,21 @@ def test_render_region_uses_non_destructive_watermark_path(tmp_path):
     with fitz.open(str(path)) as original:
         assert "Body text" in original[0].get_text()
         assert "SurePoint Ag Systems" in original[0].get_text()
+
+
+def test_render_region_succeeds_when_watermark_cannot_be_mapped(tmp_path, monkeypatch):
+    path = tmp_path / "unmapped-watermark.pdf"
+    doc = fitz.open()
+    page = doc.new_page(width=300, height=200)
+    page.insert_text((30, 60), "Body text", fontsize=12)
+    page.insert_text((30, 120), "SurePoint Ag Systems", fontsize=12)
+    doc.save(str(path))
+    doc.close()
+    monkeypatch.setattr("app.pdfops._watermark_object_ids", lambda *_args: [])
+
+    png = render_region_png(str(path), 0, (0, 0, 300, 200), 1, "SurePoint Ag Systems", 10)
+
+    assert png.startswith(b"\x89PNG\r\n\x1a\n")
 
 
 def test_rotated_watermark_render_keeps_crossed_body_text(tmp_path):
@@ -409,6 +426,20 @@ def test_extract_image_returns_png(loaded):
     assert r.status_code == 200
     img = loaded.get("/extract/image")
     assert img.status_code == 200 and img.mimetype == "image/png"
+
+
+def test_image_result_warns_when_watermark_cannot_be_removed(loaded, monkeypatch):
+    monkeypatch.setattr("app.blueprints.extract.sandbox.run", lambda *_args: False)
+    response = loaded.post(
+        "/extract/select",
+        data={"element_type": "image", "x0": "40", "y0": "40", "x1": "870", "y1": "1000"},
+        follow_redirects=True,
+    )
+
+    body = response.data.decode()
+    assert response.status_code == 200
+    assert "The PDF watermark could not be removed" in body
+    assert 'class="extracted-image"' in body
 
 
 def test_image_button_returns_204_and_saves_without_a_result_page(loaded):
