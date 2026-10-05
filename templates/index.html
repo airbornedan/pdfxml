@@ -55,12 +55,7 @@
 		{% endif %}
 	</div>
 	<p id="ai-scan-status" class="ai-scan-status" role="status" aria-live="polite"></p>
-	<details id="ai-scan-copy-fallback" class="ai-scan-copy-fallback">
-		<summary>Copy prompt manually</summary>
-		<label for="ai-scan-prompt">Prompt to paste into Copilot</label>
-		<textarea id="ai-scan-prompt" rows="2" readonly>{{ ai_prompt }}</textarea>
-		<button id="ai-scan-copy-button" class="btn-reset" type="button">Copy prompt</button>
-	</details>
+	<textarea id="ai-scan-prompt" class="ai-scan-copy-source" rows="1" readonly tabindex="-1" aria-label="AI Scan prompt">{{ ai_prompt }}</textarea>
 </div>
 <script src="{{ static_url('js/ai_scan.js') }}" defer></script>
 {% endblock %}

@@ -12,8 +12,8 @@ def test_ai_scan_card_opens_agent_and_uses_prompt_file(client):
     assert 'href="https://m365.cloud.microsoft/chat/?titleId=T_1c5c4ca0-7f14-1379-ba6c-cd16be44c883&amp;source=agentCenterDialog"' in body
     assert 'data-prompt="Analyze this document"' in body
     assert 'images/ai-scan.svg' in body
-    assert 'id="ai-scan-copy-fallback"' in body
-    assert '<textarea id="ai-scan-prompt" rows="2" readonly>Analyze this document</textarea>' in body
+    assert 'class="ai-scan-copy-source" rows="1" readonly tabindex="-1"' in body
+    assert 'id="ai-scan-copy-fallback"' not in body
     assert body.index(">Convert HTML<") < body.index(">AI Scan<") < body.index(">Screenshot<")
 
 

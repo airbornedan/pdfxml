@@ -1,13 +1,10 @@
 (() => {
 	const link = document.getElementById("ai-scan-link");
 	const status = document.getElementById("ai-scan-status");
-	const fallback = document.getElementById("ai-scan-copy-fallback");
 	const promptField = document.getElementById("ai-scan-prompt");
-	const copyButton = document.getElementById("ai-scan-copy-button");
-	if (!link || !status || !fallback || !promptField || !copyButton) return;
+	if (!link || !status || !promptField) return;
 
 	function selectPrompt() {
-		fallback.open = true;
 		promptField.focus();
 		promptField.select();
 	}
@@ -29,12 +26,8 @@
 
 		status.textContent = copied
 			? "Review prompt copied to clipboard."
-			: "Copy failed. The prompt is selected; press Ctrl+C to copy it.";
+			: "Could not copy the review prompt to the clipboard.";
 	}
 
 	link.addEventListener("click", copyPrompt);
-	copyButton.addEventListener("click", copyPrompt);
-	fallback.addEventListener("toggle", () => {
-		if (fallback.open) promptField.select();
-	});
 })();

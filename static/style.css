@@ -414,26 +414,17 @@ button:disabled {
 	color: #333;
 }
 
-.ai-scan-copy-fallback {
-	margin-top: 16px;
-}
-
-.ai-scan-copy-fallback summary {
-	color: #0056b3;
-	cursor: pointer;
-}
-
-.ai-scan-copy-fallback label,
-.ai-scan-copy-fallback textarea {
-	display: block;
-	margin-top: 8px;
-}
-
-.ai-scan-copy-fallback textarea {
-	box-sizing: border-box;
-	width: min(100%, 480px);
-	padding: 8px;
-	font: inherit;
+.ai-scan-copy-source {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	padding: 0;
+	margin: -1px;
+	overflow: hidden;
+	clip: rect(0, 0, 0, 0);
+	white-space: nowrap;
+	clip-path: inset(50%);
+	border: 0;
 }
 
 #page-image-wrap {
