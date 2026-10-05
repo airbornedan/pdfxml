@@ -1,18 +1,37 @@
 (() => {
 	const link = document.getElementById("ai-scan-link");
 	const status = document.getElementById("ai-scan-status");
-	if (!link || !status) return;
+	const fallback = document.getElementById("ai-scan-copy-fallback");
+	const promptField = document.getElementById("ai-scan-prompt");
+	const copyButton = document.getElementById("ai-scan-copy-button");
+	if (!link || !status || !fallback || !promptField || !copyButton) return;
 
-	link.addEventListener("click", () => {
+	const prompt = link.dataset.prompt || "";
+	function selectPrompt() {
+		fallback.open = true;
+		promptField.focus();
+		promptField.select();
+	}
+
+	async function copyPrompt() {
 		if (!navigator.clipboard?.writeText) {
-			status.textContent = "Copilot opened, but clipboard access is unavailable.";
+			status.textContent = "Clipboard access is unavailable. The prompt is selected; press Ctrl+C to copy it.";
+			selectPrompt();
 			return;
 		}
 
-		navigator.clipboard.writeText(link.dataset.prompt || "").then(() => {
+		try {
+			await navigator.clipboard.writeText(prompt);
 			status.textContent = "Review prompt copied to clipboard.";
-		}).catch(() => {
-			status.textContent = "Copilot opened, but the prompt could not be copied.";
-		});
+		} catch {
+			status.textContent = "Clipboard copy failed. The prompt is selected; press Ctrl+C to copy it.";
+			selectPrompt();
+		}
+	}
+
+	link.addEventListener("click", copyPrompt);
+	copyButton.addEventListener("click", copyPrompt);
+	fallback.addEventListener("toggle", () => {
+		if (fallback.open) promptField.select();
 	});
 })();
