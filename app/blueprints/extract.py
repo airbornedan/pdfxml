@@ -2,9 +2,11 @@
 ### EXTRACT -- UPLOAD, PAGE SELECTION, REGION-SELECT WIZARD
 ########################################################################
 import json
+from pathlib import Path
 
 from flask import (
     Blueprint,
+    current_app,
     Response,
     abort,
     redirect,
@@ -69,7 +71,11 @@ def _breadcrumbs(step_label=None, include_choose_page=False):
 
 @bp.route("/")
 def index():
-    return render_template("index.html")
+    prompt_path = Path(current_app.root_path).parent / "prompts" / "ai_prompt.txt"
+    return render_template(
+        "index.html",
+        ai_prompt=prompt_path.read_text(encoding="utf-8").strip(),
+    )
 
 
 def _clear_pdf():

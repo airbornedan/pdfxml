@@ -7,6 +7,14 @@ def test_core_routes(client):
         assert client.get(path).status_code == 200
 
 
+def test_ai_scan_card_opens_agent_and_uses_prompt_file(client):
+    body = client.get("/").data.decode()
+    assert 'href="https://m365.cloud.microsoft/chat/?titleId=T_1c5c4ca0-7f14-1379-ba6c-cd16be44c883&amp;source=agentCenterDialog"' in body
+    assert 'data-prompt="Analyze this document"' in body
+    assert 'images/ai-scan.svg' in body
+    assert body.index(">Convert HTML<") < body.index(">AI Scan<") < body.index(">Screenshot<")
+
+
 def test_security_headers(client):
     h = client.get("/").headers
     assert h["X-Content-Type-Options"] == "nosniff"

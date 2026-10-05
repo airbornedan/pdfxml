@@ -27,6 +27,12 @@
 			<hr class="card-divider">
 			<span class="card-desc">HTML to XML converter</span>
 		</a>
+		<a href="https://m365.cloud.microsoft/chat/?titleId=T_1c5c4ca0-7f14-1379-ba6c-cd16be44c883&amp;source=agentCenterDialog" class="card" id="ai-scan-link" data-prompt="{{ ai_prompt }}" target="_blank" rel="noopener noreferrer">
+			<img class="card-icon" src="{{ url_for('static', filename='images/ai-scan.svg') }}" alt="">
+			<span class="card-title">AI Scan</span>
+			<hr class="card-divider">
+			<span class="card-desc">Open Copilot and copy the review prompt</span>
+		</a>
 		<a href="{{ url_for('screenshot.screenshot') }}" class="card">
 			<img class="card-icon" src="{{ url_for('static', filename='images/screenshot.svg') }}" alt="">
 			<span class="card-title">Screenshot</span>
@@ -48,5 +54,7 @@
 		</a>
 		{% endif %}
 	</div>
+	<p id="ai-scan-status" class="ai-scan-status" role="status" aria-live="polite"></p>
 </div>
+<script src="{{ static_url('js/ai_scan.js') }}" defer></script>
 {% endblock %}
