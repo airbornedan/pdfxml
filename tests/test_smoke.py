@@ -24,6 +24,7 @@ def test_security_headers(client):
     assert h["Cross-Origin-Resource-Policy"] == "same-origin"
     assert h["Cross-Origin-Opener-Policy"] == "same-origin"
     assert "Permissions-Policy" in h
+    assert "clipboard-write=(self)" in h["Permissions-Policy"]
     assert "X-Permitted-Cross-Domain-Policies" in h
 
 

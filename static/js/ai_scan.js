@@ -12,11 +12,21 @@
 		promptField.focus();
 		promptField.select();
 	}
+	function copyWithLegacyApi() {
+		selectPrompt();
+		try {
+			return document.execCommand("copy");
+		} catch {
+			return false;
+		}
+	}
 
 	async function copyPrompt() {
 		if (!navigator.clipboard?.writeText) {
-			status.textContent = "Clipboard access is unavailable. The prompt is selected; press Ctrl+C to copy it.";
-			selectPrompt();
+			const copied = copyWithLegacyApi();
+			status.textContent = copied
+				? "Review prompt copied using the browser fallback."
+				: `Clipboard API unavailable${window.isSecureContext ? "" : " because this page is not a secure context"}. The prompt is selected; press Ctrl+C to copy it.`;
 			return;
 		}
 
@@ -24,8 +34,10 @@
 			await navigator.clipboard.writeText(prompt);
 			status.textContent = "Review prompt copied to clipboard.";
 		} catch {
-			status.textContent = "Clipboard copy failed. The prompt is selected; press Ctrl+C to copy it.";
-			selectPrompt();
+			const copied = copyWithLegacyApi();
+			status.textContent = copied
+				? "Review prompt copied using the browser fallback."
+				: "Clipboard copy failed. The prompt is selected; press Ctrl+C to copy it.";
 		}
 	}
 

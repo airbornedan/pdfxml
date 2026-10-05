@@ -64,7 +64,8 @@ def create_app():
             "accelerometer=(), autoplay=(), camera=(), display-capture=(), "
             "encrypted-media=(), fullscreen=(), geolocation=(), gyroscope=(), "
             "magnetometer=(), microphone=(), midi=(), payment=(), "
-            "picture-in-picture=(), screen-wake-lock=(), usb=(), xr-spatial-tracking=()"
+            "picture-in-picture=(), screen-wake-lock=(), usb=(), "
+            "clipboard-write=(self), xr-spatial-tracking=()"
         )
         ### getattr -- a CSRF rejection short-circuits before _set_csp_nonce
         ### runs, and a bare g.csp_nonce would turn the 400 into a 500
