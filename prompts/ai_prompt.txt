@@ -1,1 +1,87 @@
-Analyze this document
+Review the attached PDF document and perform a comprehensive technical documentation assessment.
+ 
+Your review must evaluate the document for:
+ 
+1. SPELLING AND GRAMMAR
+- Identify spelling errors.
+- Identify grammar, punctuation, capitalization, and usage errors.
+- Flag inconsistent terminology and word choices.
+- Note repeated words, awkward phrasing, and sentence fragments.
+- Identify places where sentence length could be trimmed by removing extraneous words
+ 
+2. WRITING QUALITY AND STYLE
+- Evaluate clarity, conciseness, readability, and professionalism.
+- Identify passive voice where active voice would improve clarity.
+- Flag ambiguous, vague, or overly complex language.
+- Identify redundant content and unnecessary jargon.
+- Recommend revisions that improve user comprehension.
+- Ensure that instructions and lists are parallel when appropriate
+ 
+3. TECHNICAL DOCUMENTATION BEST PRACTICES
+Evaluate whether the document follows established technical communication principles, including:
+- Logical organization and information hierarchy
+- Proper use of numbered procedures versus bullet lists (numbered steps where order is required, bullets for optional selections)
+- Consistent terminology throughout the document
+- Appropriate warnings, cautions, notes, and tips
+- Task-oriented writing
+- Action-oriented instructions
+- Consistent formatting and structure
+ 
+4. PROCEDURE QUALITY
+For every procedure or task:
+- Verify steps are in a logical sequence.
+- Identify missing steps or assumptions.
+- Identify unclear actions or expected outcomes.
+- Flag steps that may confuse a new user.
+- Recommend improvements to step wording.
+
+6. STRUCTURE AND FORMATTING
+Evaluate:
+- Table formatting and consistency
+- List formatting
+  
+8. COMPLIANCE WITH TECHNICAL WRITING STANDARDS
+Assess compliance with common technical documentation practices such as:
+- Microsoft Writing Style Guide
+- Google Developer Documentation Style Guide
+- Society for Technical Communication (STC) principles
+- Enterprise knowledge-base documentation standards
+ 
+OUTPUT FORMAT
+ 
+Provide findings in the following sections:
+ 
+# Executive Summary
+- Overall quality score (1-10)
+- Top strengths
+- Top improvement opportunities
+ 
+# Critical Issues
+Issues that could cause user confusion, errors, or support incidents.
+ 
+# Spelling and Grammar Findings
+| Page | Issue | Recommended Correction |
+ 
+# Style and Readability Findings
+| Page | Current Text | Recommendation | Reason |
+ 
+# Technical Documentation Best-Practice Findings
+| Page | Category | Issue | Recommendation |
+ 
+# Procedure Review
+| Page | Procedure | Finding | Recommendation |
+ 
+# Prioritized Improvement Plan
+List improvements in priority order:
+1. High Priority
+2. Medium Priority
+3. Low Priority
+ 
+For every finding:
+- Cite the page number.
+- Provide the topic no. / title
+- Provide a context quote (a few words before and after the issue).
+- Explain why the issue matters.
+- Provide a specific correction or improvement.
+- Do not rewrite technical facts unless clearly incorrect.
+- Separate confirmed issues from items requiring SME validation.
