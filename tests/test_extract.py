@@ -316,14 +316,10 @@ def test_extract_list(loaded):
     assert b"first bullet item" in r.data
 
 
-def test_table_falls_back_to_ocr_and_returns_lml(loaded, monkeypatch):
+def test_table_without_glyph_structure_returns_text_best_effort_and_guidance(loaded, monkeypatch):
     monkeypatch.setattr(
         "app.blueprints.extract.sandbox.run",
         lambda func, *args: func(*args),
-    )
-    monkeypatch.setattr(
-        "app.docbook._ocr_table_rows",
-        lambda _page, _rect: ([["Part", "Description"], ["A1", "Bolt"]], True),
     )
 
     response = loaded.post(
@@ -336,14 +332,19 @@ def test_table_falls_back_to_ocr_and_returns_lml(loaded, monkeypatch):
     xml = html.unescape(body)
     compact_xml = "".join(xml.split())
     assert response.status_code == 200
-    assert "OCR was used to reconstruct this table" in body
+    assert "approved online OCR or table-extraction workflow" in body
+    assert "single-cell extraction" in body
     assert '<informaltable frame="box" rules="all">' in xml
-    assert "<th><para>Part</para></th>" in compact_xml
-    assert "<td><para>Bolt</para></td>" in compact_xml
-    assert "validation-pass" in body
+    assert "plainparagraphofbodytext" in compact_xml
+    assert 'alt="Selected region from the source PDF"' in body
+
+    image = loaded.get("/extract/table-region")
+    assert image.status_code == 200
+    assert image.mimetype == "image/png"
+    assert image.data.startswith(b"\x89PNG\r\n\x1a\n")
 
 
-def test_glyph_table_does_not_use_ocr(monkeypatch):
+def test_glyph_table_is_extracted_with_lml():
     document = fitz.open()
     page = document.new_page(width=300, height=200)
     table_rect = fitz.Rect(50, 50, 250, 130)
@@ -357,18 +358,28 @@ def test_glyph_table_does_not_use_ocr(monkeypatch):
         ((160, 115), "Bolt"),
     ):
         page.insert_text(position, text)
-    monkeypatch.setattr(
-        docbook,
-        "_ocr_table_rows",
-        lambda *_args: pytest.fail("OCR should not run when glyph table text is available"),
-    )
-
-    preview, xml, ocr_used = docbook.extract_table_with_ocr(page, table_rect)
+    preview, xml, table_detected = docbook.extract_table(page, table_rect)
 
     document.close()
-    assert not ocr_used
+    assert table_detected
     assert preview["body"]
     assert "Bolt" in xml
+
+
+def test_image_only_table_returns_empty_cell_without_local_ocr():
+    document = fitz.open()
+    page = document.new_page(width=300, height=200)
+    table_rect = fitz.Rect(50, 50, 250, 130)
+    page.draw_rect(table_rect)
+    page.draw_line((150, 50), (150, 130))
+    page.draw_line((50, 90), (250, 90))
+
+    preview, xml, table_detected = docbook.extract_table(page, table_rect)
+
+    document.close()
+    assert not table_detected
+    assert preview == {"header": None, "body": [[""]]}
+    assert '<informaltable frame="box" rules="all">' in xml
 
 
 def test_extract_ordered_list_with_dot_paren_markers(loaded):
