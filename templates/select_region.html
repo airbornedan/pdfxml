@@ -558,4 +558,35 @@
 	});
 })();
 </script>
+{% if ocr_pending %}
+{# a Table selection with no text layer -- warn about the wait, then run OCR #}
+<div class="result-modal" id="ocr-modal" role="alertdialog" aria-modal="true" aria-labelledby="ocr-modal-text">
+	<div class="result-modal__card ocr-wait">
+		<span class="spinner" aria-hidden="true"></span>
+		<p id="ocr-modal-text"><strong>This table is a picture, not text.</strong><br>
+			Reading it with OCR &mdash; this can take up to 30 seconds.</p>
+	</div>
+</div>
+<script nonce="{{ g.csp_nonce }}">
+(async function () {
+	const fd = new FormData();
+	fd.set("csrf_token", "{{ csrf_token() }}");
+	let resp = null;
+	try {
+		resp = await fetch("{{ url_for('extract.ocr_table') }}", { method: "POST", body: fd,
+			headers: { "X-Requested-With": "fetch" } });
+	} catch {
+		resp = null;
+	}
+	if (resp && resp.ok) {
+		window.location.href = "{{ url_for('extract.result') }}";
+		return;
+	}
+	document.getElementById("ocr-modal").classList.add("is-hidden");
+	const err = document.getElementById("image-error");
+	err.textContent = "Couldn't read that table with OCR -- try a different selection.";
+	err.classList.remove("is-hidden");
+})();
+</script>
+{% endif %}
 {% endblock %}

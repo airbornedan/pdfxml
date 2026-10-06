@@ -106,6 +106,12 @@ def _region_lines(page, rect):
     return _filter_lines(page.get_text("dict"), rect)
 
 
+### the region's real text (watermark dropped) -- empty means there's no
+### text layer there, e.g. a table that's only a picture
+def region_lines(page, rect):
+    return _region_lines(page, rect)
+
+
 def _join_lines(lines):
     result = ""
     for line in lines:
@@ -317,6 +323,7 @@ def wrap_list(element_type, items_xml):
 ### _filter_lines() so the watermark filter applies per cell too.
 ### Markup is DocBook 5's HTML table model (tr/th/td), not CALS --
 ### Paligo's XML source view only accepts this form.
+### -> (header row or None, body rows); build_table() makes the XML.
 def extract_table(page, rect):
     finder = page.find_tables(clip=rect)
     if finder.tables:
@@ -329,13 +336,16 @@ def extract_table(page, rect):
         rows = [[whole_text]] if whole_text else [[""]]
         has_header = False
 
-    root = etree.Element("informaltable", frame="box", rules="all")
-
-    header_row = None
-    body_rows = rows
     if has_header:
-        header_row = rows[0]
-        body_rows = rows[1:]
+        return rows[0], rows[1:]
+    return None, rows
+
+
+### preview dict + <informaltable> XML from rows -- shared by the
+### text-layer path and OCR (app/ocr.py), which can't touch fitz
+def build_table(header_row, body_rows):
+    root = etree.Element("informaltable", frame="box", rules="all")
+    if header_row:
         thead = etree.SubElement(root, "thead")
         _append_row(thead, header_row, "th")
 

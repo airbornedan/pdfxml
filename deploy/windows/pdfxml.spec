@@ -4,6 +4,8 @@
 # Output: dist\pdfxml.exe  (see deploy/windows/build_windows.bat)
 import os
 
+from PyInstaller.utils.hooks import collect_data_files
+
 # this spec lives in deploy/windows/ -- everything it bundles is two levels up
 ROOT = os.path.abspath(os.path.join(SPECPATH, "..", ".."))
 
@@ -15,15 +17,16 @@ datas = [
         ("schema", "schema"),
         ("config.toml", "."),
         ("content", "content"),
+        ("models", "models"),   # OCR models (app/ocr.py)
     ]
-]
+] + collect_data_files("rapidocr")   # its config.yaml, read at model load
 
 a = Analysis(
     [os.path.join(ROOT, "desktop_launcher.py")],
     pathex=[ROOT],
     binaries=[],
     datas=datas,
-    hiddenimports=[],
+    hiddenimports=["rapidocr.ch_ppocr_rec"],   # imported lazily by app/ocr.py
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],

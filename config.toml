@@ -24,6 +24,13 @@ timeout_seconds = 25    # wall-clock kill
 memory_mb = 1536        # address-space ceiling (a 600-dpi page needs ~250)
 cpu_seconds = 20        # CPU-time kill -- catches a parser loop
 
+[ocr]
+# tables that are only a picture -- read by app/ocr.py
+# header cells are snapped to the closest of these (OCR'd headers drift: "QiY")
+known_headers = ["ITEM NO.", "PART NUMBER", "DESCRIPTION", "QTY"]
+# "Nut. M16" -> "Nut, M16": both models misread small commas as periods
+period_to_comma = true
+
 [ratelimit]
 # per-IP sliding window; only active when PDFXML_TRUSTED_NETWORK is unset
 upload_per_minute = 10

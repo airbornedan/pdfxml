@@ -16,7 +16,7 @@ from flask import (
     url_for,
 )
 
-from app import docbook, pdfops, ratelimit, sandbox
+from app import docbook, ocr, pdfops, ratelimit, sandbox
 from app.extensions import (
     IMAGE_ZOOM,
     MAX_RENDER_MEGAPIXELS,
@@ -25,6 +25,7 @@ from app.extensions import (
     THUMBNAIL_ZOOM,
     WATERMARK_TEXT,
     delete_upload,
+    logger,
     load_result,
     pdf_processing_limit,
     save_result,
@@ -93,6 +94,7 @@ def _clear_pdf():
     session.pop("page_number", None)
     session.pop("continue_type", None)
     session.pop("last_region", None)
+    session.pop("ocr_pending", None)
 
 
 @bp.route("/extract/pdf")
@@ -233,6 +235,7 @@ def _merge_continuation(token, continue_type, new_result):
         "element_type": continue_type,
         "rect": base["rect"],
         "page_number": base["page_number"],
+        "regions": _regions(base) + _regions(new_result),
         "preview": merged_preview,
         "items": merged_items,
         "xml": xml,
@@ -273,10 +276,12 @@ def select_region():
             continue_type=continue_type,
             continuation=continuation,
             last_region=_last_region(continue_type),
+            ocr_pending=_ocr_pending() is not None,
             error=error,
         )
 
     if request.method == "POST":
+        session.pop("ocr_pending", None)  # a new selection supersedes one not yet read
         element_type = request.form.get("element_type")
         if continue_type:
             ### locked to whatever's being continued -- "list" still
@@ -305,6 +310,16 @@ def select_region():
             )
         except sandbox.SandboxError:
             return _page("Couldn't read that region -- try a different selection.")
+
+        if result.get("needs_ocr"):
+            ### the select page comes back up, shows the OCR wait warning,
+            ### then runs ocr_table() -- see select_region.html
+            session["ocr_pending"] = {
+                "token": session.get("pdf_token"),
+                "page": session["page_number"],
+                "rect": result["rect"],
+            }
+            return redirect(url_for("extract.select_region"))
 
         if continue_type:
             merged, error = _merge_continuation(session["pdf_token"], continue_type, result)
@@ -440,26 +455,121 @@ def _parse_erase_rects(raw):
 ### extracted_image(). rect is PDF points. fitz work is in the worker;
 ### the emptiness check + validation are pure and stay here.
 def _run_extraction(path, page_number, rect, element_type, erase_rects=None):
-    result = {"element_type": element_type, "rect": list(rect), "page_number": page_number}
+    result = {
+        "element_type": element_type,
+        "rect": list(rect),
+        "page_number": page_number,
+        "regions": [{"page": page_number, "rect": list(rect)}],
+    }
     if element_type == "image":
         if erase_rects:
             result["erase_rects"] = erase_rects
         return result
 
     raw = sandbox.run(pdfops.extract_region, path, page_number - 1, rect, element_type)
+    if raw.get("needs_ocr"):
+        result["needs_ocr"] = True
+        return result
     result["element_type"] = raw["element_type"]
     result["preview"] = raw["preview"]
     result["xml"] = raw["xml"]
     if "items" in raw:  # paragraph/list only -- what "Select more" concatenates onto
         result["items"] = raw["items"]
 
+    _set_validity(result)
+    return result
+
+
+def _set_validity(result):
     result["empty"] = _extraction_is_empty(result["element_type"], result["preview"])
     if result["empty"]:
         result["valid"], result["validation_message"] = None, None
     else:
         result["valid"], result["validation_message"] = docbook.validate_fragment(result["xml"])
 
-    return result
+
+### every region a result was built from -- older saved results only
+### carry the one rect
+def _regions(result):
+    return result.get("regions") or [{"page": result["page_number"], "rect": result["rect"]}]
+
+
+########################################################################
+### OCR -- a table region with no text layer. select_region() parks it
+### in session["ocr_pending"]; the page warns about the wait and POSTs
+### here. PDF parsing (pulling the region's pixels) stays in the
+### sandbox; the OCR itself runs on plain pixels in this process
+### (app/ocr.py).
+def _ocr_pending():
+    pending = session.get("ocr_pending")
+    if not pending or pending.get("token") != session.get("pdf_token") \
+            or pending.get("page") != session.get("page_number"):
+        return None
+    return pending
+
+
+@bp.route("/extract/ocr", methods=["POST"])
+@ratelimit.limit("render")
+@pdf_processing_limit
+def ocr_table():
+    pending = _ocr_pending()
+    session.pop("ocr_pending", None)
+    path = _current_pdf_path()
+    if pending is None or path is None:
+        abort(409)
+    page_number, rect = pending["page"], pending["rect"]
+    try:
+        png = sandbox.run(pdfops.region_ocr_png, path, page_number - 1, tuple(rect), MAX_RENDER_MEGAPIXELS)
+        table = ocr.read_table(png)
+    except Exception:  # noqa: BLE001 -- sandbox or OCR, either way the region couldn't be read
+        logger.exception("ocr: page %s failed", page_number)
+        abort(500)
+
+    preview, xml = docbook.build_table(table["header"], table["body"])
+    result = {
+        "element_type": "table",
+        "rect": rect,
+        "page_number": page_number,
+        "regions": [{"page": page_number, "rect": rect}],
+        "preview": preview,
+        "xml": xml,
+        "ocr": {
+            "flags": table["flags"],
+            "fixed": table["fixed"],
+            "grid": table["grid"],
+            "reviewed": not table["flags"],
+        },
+    }
+    _set_validity(result)
+    save_result(session["pdf_token"], result)
+    return ("", 204)
+
+
+### the reviewer's pass over the flagged cells: every one must be ticked
+### (the form enforces it; a tampered post is a 400), edits are applied,
+### and only then does the result page offer the XML.
+MAX_CELL_CHARS = 2000
+
+
+@bp.route("/extract/ocr-review", methods=["POST"])
+def ocr_review():
+    result_data = load_result(session.get("pdf_token"))
+    if result_data is None or not result_data.get("ocr"):
+        abort(400)
+    body = result_data["preview"]["body"]
+    for key in result_data["ocr"]["flags"]:
+        r, c = (int(v) for v in key.split(","))
+        if request.form.get(f"ok-{r}-{c}") != "1":
+            abort(400)
+        value = request.form.get(f"cell-{r}-{c}")
+        if value is None or len(value) > MAX_CELL_CHARS:
+            abort(400)
+        body[r][c] = " ".join(value.split())
+    result_data["preview"], result_data["xml"] = docbook.build_table(result_data["preview"]["header"], body)
+    result_data["ocr"]["reviewed"] = True
+    _set_validity(result_data)
+    save_result(session["pdf_token"], result_data)
+    return redirect(url_for("extract.result"))
 
 
 @bp.route("/extract/result")
@@ -493,6 +603,7 @@ def result():
         element_label=TYPE_LABELS.get(result_data["element_type"], ""),
         can_continue=can_continue,
         watermark_removal_failed=watermark_removal_failed,
+        regions=_regions(result_data),
     )
 
 
@@ -580,6 +691,32 @@ def extracted_image():
             MAX_RENDER_MEGAPIXELS,
             result_data.get("erase_rects") or [],
         )
+    except sandbox.SandboxError:
+        abort(500)
+    return _png_response(png)
+
+
+### the region(s) the current result came from, shown atop the result
+### page to check the extraction against
+REGION_PREVIEW_ZOOM = 2.0
+
+
+@bp.route("/extract/region-image")
+@ratelimit.limit("render")
+@pdf_processing_limit
+def region_image():
+    result_data = load_result(session.get("pdf_token"))
+    path = _current_pdf_path()
+    if result_data is None or path is None:
+        abort(404)
+    regions = _regions(result_data)
+    try:
+        region = regions[int(request.args.get("i", "0"))]
+    except (ValueError, IndexError):
+        abort(404)
+    try:
+        png = sandbox.run(pdfops.render_clip_png, path, region["page"] - 1, tuple(region["rect"]),
+                          REGION_PREVIEW_ZOOM, MAX_RENDER_MEGAPIXELS)
     except sandbox.SandboxError:
         abort(500)
     return _png_response(png)
