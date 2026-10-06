@@ -24,3 +24,10 @@ mistune==3.3.4
 # Resolves a writable per-install data directory for the frozen desktop
 # build, whose own directory may be read-only or inside the bundle.
 platformdirs==4.11.5
+
+# OCR for tables that are only a picture (app/ocr.py): recognition-only
+# ONNX models on CPU. The models are vendored in models/ocr/ -- nothing
+# is downloaded at runtime. rapidocr brings opencv-python + numpy, which
+# app/ocr.py also uses directly.
+rapidocr==3.9.2
+onnxruntime==1.30.0

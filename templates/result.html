@@ -4,6 +4,34 @@
 	{% include "_breadcrumbs.html" %}
 	<h1>{{ element_label }} extracted</h1>
 
+	{% set ocr = result.ocr %}
+	{% if result.element_type != "image" %}
+	<section class="source-region">
+		<p class="source-region__label">Selected region{{ "s" if regions|length > 1 }} &mdash; check the extraction against {{ "these" if regions|length > 1 else "this" }}</p>
+		{% for region in regions %}
+		<img class="source-region__img" src="{{ url_for('extract.region_image', i=loop.index0) }}" alt="Selected region, page {{ region.page }}">
+		{% endfor %}
+	</section>
+	{% endif %}
+
+	{% if ocr %}
+	{% set n_flags = ocr.flags|length %}
+	<div class="ocr-banner" role="status">
+		<p><strong>Read by OCR.</strong> This table is a picture in the PDF, so its text was read by OCR, not copied.</p>
+		{% if not ocr.reviewed %}
+		<p>{{ n_flags }} highlighted cell{{ "s" if n_flags != 1 }} need{{ "s" if n_flags == 1 }} checking against the picture above.
+			Correct any mistakes, tick each one, then confirm &mdash; the XML appears after that.</p>
+		{% elif n_flags %}
+		<p>You checked all {{ n_flags }} highlighted cell{{ "s" if n_flags != 1 }}.</p>
+		{% else %}
+		<p>No cells were flagged, but compare the table with the picture above before using it.</p>
+		{% endif %}
+		{% if ocr.fixed %}
+		<p>{{ ocr.fixed|length }} comma{{ "s" if ocr.fixed|length != 1 }} that OCR read as a period {{ "were" if ocr.fixed|length != 1 else "was" }} corrected automatically (blue cells).</p>
+		{% endif %}
+	</div>
+	{% endif %}
+
 	<div class="actions">
 		{% if can_continue %}
 		<form method="post" action="{{ url_for('extract.continue_more') }}" data-busy="button">
@@ -32,6 +60,34 @@
 		<ol>{% for item in result.preview %}<li>{{ item|safe }}</li>{% endfor %}</ol>
 		{% elif result.element_type == "itemizedlist" %}
 		<ul>{% for item in result.preview %}<li>{{ item|safe }}</li>{% endfor %}</ul>
+		{% elif result.element_type == "table" and ocr and not ocr.reviewed %}
+		<form method="post" action="{{ url_for('extract.ocr_review') }}" id="ocr-review-form" data-busy="button">
+			<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+			<table class="ocr-table">
+				{% if result.preview.header %}
+				<thead>
+					<tr>{% for cell in result.preview.header %}<th>{{ cell }}</th>{% endfor %}</tr>
+				</thead>
+				{% endif %}
+				<tbody>
+					{% for row in result.preview.body %}{% set r = loop.index0 %}
+					<tr>{% for cell in row %}{% set key = r ~ "," ~ loop.index0 %}{% set flag = ocr.flags.get(key) %}
+						{% if flag %}
+						<td class="ocr-flag">
+							{% if flag.crop %}<img class="ocr-crop" src="data:image/png;base64,{{ flag.crop }}" alt="Source pixels for this cell">{% endif %}
+							<input type="text" class="ocr-input" name="cell-{{ r }}-{{ loop.index0 }}" value="{{ cell }}" aria-label="Cell text, row {{ r + 1 }}">
+							<span class="ocr-why">{{ flag.why|join(", ") }}{% if flag.alt %} &middot; other reading: <code>{{ flag.alt }}</code>{% endif %}</span>
+							<label class="ocr-ok"><input type="checkbox" name="ok-{{ r }}-{{ loop.index0 }}" value="1" required> Matches picture</label>
+						</td>
+						{% else %}
+						<td{% if key in ocr.fixed %} class="ocr-fixed" title="Comma restored automatically"{% endif %}>{{ cell }}</td>
+						{% endif %}
+					{% endfor %}</tr>
+					{% endfor %}
+				</tbody>
+			</table>
+			<p><button type="submit" class="btn">Confirm checked cells</button></p>
+		</form>
 		{% elif result.element_type == "table" %}
 		<table>
 			{% if result.preview.header %}
@@ -40,8 +96,8 @@
 			</thead>
 			{% endif %}
 			<tbody>
-				{% for row in result.preview.body %}
-				<tr>{% for cell in row %}<td>{{ cell }}</td>{% endfor %}</tr>
+				{% for row in result.preview.body %}{% set r = loop.index0 %}
+				<tr>{% for cell in row %}<td{% if ocr and (r ~ "," ~ loop.index0) in ocr.fixed %} class="ocr-fixed" title="Comma restored automatically"{% endif %}>{{ cell }}</td>{% endfor %}</tr>
 				{% endfor %}
 			</tbody>
 		</table>
@@ -53,7 +109,7 @@
 		{% endif %}
 	</div>
 
-	{% if result.element_type != "image" %}
+	{% if result.element_type != "image" and not (ocr and not ocr.reviewed) %}
 	<p>
 		{% if result.valid %}
 		<span class="validation-pass">&#10003; Valid</span>

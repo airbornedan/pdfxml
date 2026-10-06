@@ -222,9 +222,86 @@ def extract_region(pdf_path, page_index, rect, element_type):
             xml = docbook.wrap_list(resolved_type, items_xml)
             return {"element_type": resolved_type, "preview": items, "xml": xml, "items": items_xml}
         if element_type == "table":
-            rows, xml = docbook.extract_table(page, r)
+            ### a table that's only a picture -- the parent runs OCR in a
+            ### separate request so the page can warn about the wait first
+            if not docbook.region_lines(page, r) and _best_image(page, r):
+                return {"element_type": "table", "needs_ocr": True}
+            rows, xml = docbook.build_table(*docbook.extract_table(page, r))
             return {"element_type": "table", "preview": rows, "xml": xml}
         raise ValueError(f"unknown element_type {element_type!r}")
+
+
+def _area(rect):
+    return 0.0 if rect.is_empty else rect.width * rect.height
+
+
+### the embedded image most of the region's image area comes from, or
+### None if there's none or it's split across several (then render).
+def _best_image(page, clip):
+    overlaps = []
+    for info in page.get_image_info(xrefs=True):
+        area = _area(fitz.Rect(info["bbox"]) & clip)
+        if area > 0:
+            overlaps.append((area, info))
+    if not overlaps:
+        return None
+    area, info = max(overlaps, key=lambda o: o[0])
+    if area < 0.9 * sum(a for a, _ in overlaps) or area < 0.25 * _area(clip):
+        return None
+    return info
+
+
+### region pixels for OCR, grayscale PNG. The embedded image's own
+### pixels when it's one plain axis-aligned image -- rendering resamples
+### and blurs the thin gaps between text and rules; otherwise a render.
+OCR_RENDER_ZOOM = 300 / 72
+
+
+def region_ocr_png(pdf_path, page_index, rect, max_megapixels):
+    clip = fitz.Rect(*rect)
+    with fitz.open(pdf_path) as doc:
+        page = doc[page_index]
+        info = _best_image(page, clip)
+        pix = _native_crop(doc, info, clip) if info else None
+        if pix is None:
+            zoom = _clamp_zoom(clip.width, clip.height, OCR_RENDER_ZOOM, max_megapixels)
+            pix = page.get_pixmap(clip=clip, matrix=fitz.Matrix(zoom, zoom), colorspace=fitz.csGRAY)
+        return pix.tobytes("png")
+
+
+def _native_crop(doc, info, clip):
+    a, b, c, d, _, _ = info["transform"]
+    xref = info["xref"]
+    ### rotated/flipped placements, soft masks, inline images: render instead
+    if xref <= 0 or abs(b) > 1e-6 or abs(c) > 1e-6 or a <= 0 or d <= 0:
+        return None
+    if doc.xref_get_key(xref, "SMask")[0] != "null":
+        return None
+    pix = fitz.Pixmap(doc, xref)
+    if pix.alpha or pix.n != 1:
+        pix = fitz.Pixmap(fitz.csGRAY, pix)
+    bbox = fitz.Rect(info["bbox"])
+    sx, sy = pix.width / bbox.width, pix.height / bbox.height
+    part = clip & bbox
+    irect = fitz.IRect(
+        int((part.x0 - bbox.x0) * sx), int((part.y0 - bbox.y0) * sy),
+        int((part.x1 - bbox.x0) * sx + 0.5), int((part.y1 - bbox.y0) * sy + 0.5),
+    ) & fitz.IRect(0, 0, pix.width, pix.height)
+    if irect.is_empty:
+        return None
+    out = fitz.Pixmap(fitz.csGRAY, irect)
+    out.copy(pix, irect)
+    out.set_origin(0, 0)
+    return out
+
+
+### plain render of the selected region -- shown atop the result page
+### so the reader can check the extraction against the source.
+def render_clip_png(pdf_path, page_index, rect, zoom, max_megapixels):
+    clip = fitz.Rect(*rect)
+    with fitz.open(pdf_path) as doc:
+        zoom = _clamp_zoom(clip.width, clip.height, zoom, max_megapixels)
+        return doc[page_index].get_pixmap(clip=clip, matrix=fitz.Matrix(zoom, zoom)).tobytes("png")
 
 
 ### app/sandbox.py's Process target -- here, not there, so a worker

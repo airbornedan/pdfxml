@@ -8,6 +8,7 @@ import secrets
 import sys
 import time
 from functools import wraps
+from pathlib import Path
 from threading import BoundedSemaphore
 
 import tomllib
@@ -96,6 +97,12 @@ WATERMARK_TEXT = _cfg("watermark", "text", "SurePoint Ag Systems")
 SANDBOX_TIMEOUT_SECONDS = _cfg("sandbox", "timeout_seconds", 25)
 SANDBOX_MEMORY_MB = _cfg("sandbox", "memory_mb", 1536)
 SANDBOX_CPU_SECONDS = _cfg("sandbox", "cpu_seconds", 20)
+
+### OCR for tables that are only a picture (app/ocr.py). Models are
+### vendored -- the server never downloads anything.
+OCR_MODEL_DIR = Path(PROJECT_DIR) / "models" / "ocr"
+OCR_KNOWN_HEADERS = [h.upper() for h in _cfg("ocr", "known_headers", [])]
+OCR_PERIOD_TO_COMMA = _cfg("ocr", "period_to_comma", True)
 
 ### trusted audience (LAN / AD proxy / desktop). Unset = the hardened,
 ### internet-facing default: no Process pages, rate limiting on, generic
