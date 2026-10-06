@@ -35,6 +35,8 @@ from app.extensions import (
 
 bp = Blueprint("extract", __name__)
 
+DEPLOYED_AT_PATH = Path(__file__).resolve().parents[2] / "deploy" / "iis" / "last_updated.txt"
+
 TYPE_LABELS = {
     "paragraph": "Paragraph",
     "orderedlist": "Ordered list",
@@ -72,9 +74,14 @@ def _breadcrumbs(step_label=None, include_choose_page=False):
 @bp.route("/")
 def index():
     prompt_path = Path(current_app.root_path).parent / "prompts" / "ai_prompt.txt"
+    try:
+        last_updated = DEPLOYED_AT_PATH.read_text(encoding="ascii").strip()
+    except FileNotFoundError:
+        last_updated = None
     return render_template(
         "index.html",
         ai_prompt=prompt_path.read_text(encoding="utf-8").strip(),
+        last_updated=last_updated,
     )
 
 
@@ -296,7 +303,10 @@ def select_region():
                 path, session["page_number"], (x0, y0, x1, y1), element_type,
                 erase_rects=_parse_erase_rects(request.form.get("erase_rects", "")) if element_type == "image" else None,
             )
-        except sandbox.SandboxError:
+        except sandbox.SandboxError as exc:
+            if element_type == "table":
+                current_app.logger.warning("Table/OCR extraction failed: %s", exc)
+                return _page("Couldn't extract that table, including OCR. Try a larger selection or retry.")
             return _page("Couldn't read that region -- try a different selection.")
 
         if continue_type:
@@ -443,6 +453,8 @@ def _run_extraction(path, page_number, rect, element_type, erase_rects=None):
     result["element_type"] = raw["element_type"]
     result["preview"] = raw["preview"]
     result["xml"] = raw["xml"]
+    if "ocr_used" in raw:
+        result["ocr_used"] = raw["ocr_used"]
     if "items" in raw:  # paragraph/list only -- what "Select more" concatenates onto
         result["items"] = raw["items"]
 

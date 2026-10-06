@@ -14,6 +14,10 @@ Flask-WTF==1.3.0
 # no external binaries.
 PyMuPDF==1.26.5
 
+# OCR + table-structure recognition for scanned table regions.
+rapidocr==3.9.2
+rapid-table==3.0.2
+
 # XML fragment construction -- safe escaping/serialization, not string formatting
 lxml>=6.1.3
 

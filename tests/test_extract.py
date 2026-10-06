@@ -7,6 +7,7 @@ import os
 import fitz
 import pytest
 
+from app import docbook
 from app.pdfops import (
     _inspect_page_streams,
     _redact_watermark,
@@ -61,6 +62,17 @@ def test_select_region_breadcrumb_links_back_to_choose_page(loaded):
     assert response.status_code == 200
     assert b'href="/extract/page">Choose page</a>' in response.data
     assert response.data.index(b"Choose page") < response.data.index(b"Select region")
+
+
+def test_home_shows_deployment_timestamp(client, monkeypatch, tmp_path):
+    timestamp_path = tmp_path / "last_updated.txt"
+    timestamp_path.write_text("09:42, 06/10/2026", encoding="ascii")
+    monkeypatch.setattr("app.blueprints.extract.DEPLOYED_AT_PATH", timestamp_path)
+
+    response = client.get("/")
+
+    assert response.status_code == 200
+    assert b'class="last-updated">Last updated: 09:42, 06/10/2026</p>' in response.data
 
 
 def test_render_routes(loaded):
@@ -302,6 +314,61 @@ def test_extract_list(loaded):
     assert r.status_code == 200
     assert b"itemizedlist" in r.data
     assert b"first bullet item" in r.data
+
+
+def test_table_falls_back_to_ocr_and_returns_lml(loaded, monkeypatch):
+    monkeypatch.setattr(
+        "app.blueprints.extract.sandbox.run",
+        lambda func, *args: func(*args),
+    )
+    monkeypatch.setattr(
+        "app.docbook._ocr_table_rows",
+        lambda _page, _rect: ([["Part", "Description"], ["A1", "Bolt"]], True),
+    )
+
+    response = loaded.post(
+        "/extract/select",
+        data={"element_type": "table", "x0": "60", "y0": "60", "x1": "870", "y1": "450"},
+        follow_redirects=True,
+    )
+
+    body = response.data.decode()
+    xml = html.unescape(body)
+    compact_xml = "".join(xml.split())
+    assert response.status_code == 200
+    assert "OCR was used to reconstruct this table" in body
+    assert '<informaltable frame="box" rules="all">' in xml
+    assert "<th><para>Part</para></th>" in compact_xml
+    assert "<td><para>Bolt</para></td>" in compact_xml
+    assert "validation-pass" in body
+
+
+def test_glyph_table_does_not_use_ocr(monkeypatch):
+    document = fitz.open()
+    page = document.new_page(width=300, height=200)
+    table_rect = fitz.Rect(50, 50, 250, 130)
+    page.draw_rect(table_rect)
+    page.draw_line((150, 50), (150, 130))
+    page.draw_line((50, 90), (250, 90))
+    for position, text in (
+        ((60, 75), "Part"),
+        ((160, 75), "Description"),
+        ((60, 115), "A1"),
+        ((160, 115), "Bolt"),
+    ):
+        page.insert_text(position, text)
+    monkeypatch.setattr(
+        docbook,
+        "_ocr_table_rows",
+        lambda *_args: pytest.fail("OCR should not run when glyph table text is available"),
+    )
+
+    preview, xml, ocr_used = docbook.extract_table_with_ocr(page, table_rect)
+
+    document.close()
+    assert not ocr_used
+    assert preview["body"]
+    assert "Bolt" in xml
 
 
 def test_extract_ordered_list_with_dot_paren_markers(loaded):

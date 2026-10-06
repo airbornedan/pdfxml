@@ -7,6 +7,7 @@
 ########################################################################
 import os
 import re
+import threading
 
 import fitz
 from lxml import etree
@@ -51,6 +52,8 @@ _SENTENCE_END_RE = re.compile(r"""[.!?:;)"']\s*$""")
 ### ordinal marker ("1.", "a)", "1.)") vs a bullet glyph -- picks
 ### ordered/unordered from the first marker in the selection.
 _ORDERED_MARKER_RE = re.compile(r"^\s*\(?[a-zA-Z0-9]{1,4}(?:\.\)|[.)])")
+_OCR_LOCK = threading.Lock()
+_OCR_ENGINES = None
 
 
 def _serialize(elem):
@@ -312,30 +315,44 @@ def wrap_list(element_type, items_xml):
 
 
 ########################################################################
-### TABLE -- page.find_tables() scoped to the region, falls back to
-### one single-cell row if nothing's detected. Cell text is rebuilt via
-### _filter_lines() so the watermark filter applies per cell too.
+### TABLE -- use PyMuPDF's glyph-based table detection first. Scanned or
+### otherwise textless tables fall back to OCR + table-structure recognition.
 ### Markup is DocBook 5's HTML table model (tr/th/td), not CALS --
 ### Paligo's XML source view only accepts this form.
 def extract_table(page, rect):
+    preview, xml, _ = extract_table_with_ocr(page, rect)
+    return preview, xml
+
+
+def extract_table_with_ocr(page, rect):
     finder = page.find_tables(clip=rect)
     if finder.tables:
         table = finder.tables[0]
         text_dict = page.get_text("dict")  # fetched once, reused for every cell below
         rows = [_table_row_text(text_dict, row) for row in table.rows]
-        has_header = _has_reliable_header(page, table)
-    else:
+        if any(cell.strip() for row in rows for cell in row):
+            preview, xml = wrap_table(rows, _has_reliable_header(page, table))
+            return preview, xml, False
+
+    rows, has_header = _ocr_table_rows(page, rect)
+    if not any(cell.strip() for row in rows for cell in row):
         whole_text = _join_lines(_region_lines(page, rect))
         rows = [[whole_text]] if whole_text else [[""]]
         has_header = False
+    preview, xml = wrap_table(rows or [[""]], has_header)
+    return preview, xml, True
 
-    root = etree.Element("informaltable", frame="box", rules="all")
 
+def wrap_table(rows, has_header=False):
+    """Build the shared LML preview and markup for table rows."""
     header_row = None
     body_rows = rows
     if has_header:
         header_row = rows[0]
         body_rows = rows[1:]
+
+    root = etree.Element("informaltable", frame="box", rules="all")
+    if header_row is not None:
         thead = etree.SubElement(root, "thead")
         _append_row(thead, header_row, "th")
 
@@ -345,6 +362,99 @@ def extract_table(page, rect):
 
     preview = {"header": header_row, "body": body_rows}
     return preview, _serialize(root)
+
+
+def _ocr_engines():
+    global _OCR_ENGINES
+    if _OCR_ENGINES is None:
+        with _OCR_LOCK:
+            if _OCR_ENGINES is None:
+                from rapid_table import ModelType, RapidTable, RapidTableInput
+                from rapidocr import LangDet, LangRec, ModelType as OCRModelType
+
+                _OCR_ENGINES = RapidTable(
+                    RapidTableInput(
+                        model_type=ModelType.SLANETPLUS,
+                        ocr_params={
+                            "Det.model_type": OCRModelType.MEDIUM,
+                            "Rec.model_type": OCRModelType.MEDIUM,
+                            "Det.lang_type": LangDet.EN,
+                            "Rec.lang_type": LangRec.EN,
+                        },
+                    )
+                )
+    return _OCR_ENGINES
+
+
+def prepare_table_ocr():
+    """Load and cache the OCR and table-structure models."""
+    _ocr_engines()
+
+
+def _ocr_table_rows(page, rect):
+    import numpy as np
+    from lxml import html
+
+    pixmap = page.get_pixmap(clip=rect, matrix=fitz.Matrix(3, 3), alpha=False)
+    image = np.frombuffer(pixmap.samples, dtype=np.uint8).reshape(
+        pixmap.height, pixmap.width, pixmap.n
+    )[:, :, :3][:, :, ::-1].copy()
+
+    table_engine = _ocr_engines()
+    with _OCR_LOCK:
+        table_result = table_engine(image)
+
+    table_html = table_result.pred_htmls[0] if table_result.pred_htmls else ""
+    rows, has_header = _parse_ocr_table_html(table_html, html)
+    if any(cell.strip() for row in rows for cell in row):
+        return rows, has_header
+    with _OCR_LOCK:
+        return _ocr_text_rows(table_engine.ocr_engine(image)), False
+
+
+def _parse_ocr_table_html(table_html, html):
+    if not table_html.strip():
+        return [], False
+
+    root = html.fromstring(table_html)
+    rows = []
+    header_rows = []
+    for row in root.xpath(".//tr"):
+        cells = row.xpath("./th | ./td")
+        if not cells:
+            continue
+        rows.append([" ".join(cell.text_content().split()) for cell in cells])
+        header_rows.append(any(cell.tag.lower() == "th" for cell in cells))
+    return rows, bool(rows and header_rows[0] and len(rows) > 1)
+
+
+def _ocr_text_rows(result):
+    import numpy as np
+
+    if result.boxes is None or not result.txts:
+        return []
+    words = []
+    heights = []
+    for box, text in zip(result.boxes, result.txts):
+        if not text.strip():
+            continue
+        y0 = float(box[:, 1].min())
+        y1 = float(box[:, 1].max())
+        heights.append(y1 - y0)
+        words.append(((y0 + y1) / 2, float(box[:, 0].min()), text.strip()))
+    if not words:
+        return []
+
+    line_tolerance = float(np.median(heights)) * 0.6
+    lines = []
+    for center_y, x0, text in sorted(words):
+        if not lines or center_y - lines[-1][0] > line_tolerance:
+            lines.append([center_y, [(x0, text)]])
+        else:
+            line = lines[-1]
+            line[0] = (line[0] + center_y) / 2
+            line[1].append((x0, text))
+    return [[" ".join(text for _, text in sorted(words_in_line))] for _, words_in_line in lines]
 
 
 def _table_row_text(text_dict, row):

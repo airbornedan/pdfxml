@@ -1,5 +1,7 @@
 """App boots, core routes answer, security headers are intact."""
+import html
 import re
+from pathlib import Path
 
 
 def test_core_routes(client):
@@ -9,8 +11,13 @@ def test_core_routes(client):
 
 def test_ai_scan_card_opens_agent_and_uses_prompt_file(client):
     body = client.get("/").data.decode()
+    prompt = (Path(__file__).resolve().parents[1] / "prompts" / "ai_prompt.txt").read_text(
+        encoding="utf-8"
+    ).strip()
     assert 'href="https://m365.cloud.microsoft/chat/?titleId=T_1c5c4ca0-7f14-1379-ba6c-cd16be44c883&amp;source=agentCenterDialog"' in body
-    assert 'data-prompt="Analyze this document"' in body
+    prompt_attribute = re.search(r'data-prompt="([^"]*)"', body)
+    assert prompt_attribute
+    assert html.unescape(prompt_attribute.group(1)) == prompt
     assert 'images/ai-scan.svg' in body
     assert 'class="ai-scan-copy-source" rows="1" readonly tabindex="-1"' in body
     assert 'id="ai-scan-copy-fallback"' not in body

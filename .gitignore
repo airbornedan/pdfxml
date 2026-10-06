@@ -9,6 +9,7 @@
 
 # Per-session uploaded PDFs -- ephemeral, never committed
 /uploads/
+/deploy/iis/last_updated.txt
 
 # Sample PDFs used for local testing -- real company documents
 *.pdf

@@ -44,6 +44,12 @@ jobs:
         run: |
           & "$env:APP_ROOT\.venv\Scripts\python.exe" -m pip install --quiet -r "$env:APP_ROOT\deploy\iis\requirements-iis.txt"
 
+      - name: Prepare OCR models
+        shell: powershell
+        working-directory: ${{ env.APP_ROOT }}
+        run: |
+          & "$env:APP_ROOT\.venv\Scripts\python.exe" -c "from app.docbook import prepare_table_ocr; prepare_table_ocr()"
+
       # always() so a failed sync/pip step never leaves the site stopped
       - name: Start app
         if: always()
@@ -63,3 +69,9 @@ jobs:
             } catch { Start-Sleep -Seconds 5 }
           }
           if (-not $ok) { throw 'App did not return 200 on http://localhost:5055/ after deploy' }
+
+      - name: Record deployment time
+        shell: powershell
+        run: |
+          Set-Content -Path "$env:APP_ROOT\deploy\iis\last_updated.txt" `
+            -Value (Get-Date -Format 'HH:mm, dd/MM/yyyy') -Encoding ascii

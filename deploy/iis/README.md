@@ -43,5 +43,10 @@ New self-hosted runner).
 - `web.config` (repo root) pins absolute `E:\PDFXML` paths on purpose.
 - Dependencies for this host: `deploy/iis/requirements-iis.txt`
   (core + waitress; gunicorn doesn't run on Windows).
+- OCR runtime dependencies install on deploy with the same requirements.
+  The deploy workflow also downloads the RapidOCR English models and
+  RapidTable structure model into the virtual environment, so the IIS app
+  needs no separate OCR installation or runtime network access. The
+  deployment runner needs outbound HTTPS access to the model host.
 - Keep `requestLimits maxAllowedContentLength` in `web.config` in sync with
   the app's `MAX_UPLOAD_BYTES` (50MB).

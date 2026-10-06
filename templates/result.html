@@ -33,6 +33,7 @@
 		{% elif result.element_type == "itemizedlist" %}
 		<ul>{% for item in result.preview %}<li>{{ item|safe }}</li>{% endfor %}</ul>
 		{% elif result.element_type == "table" %}
+		{% if result.ocr_used %}<p>OCR was used to reconstruct this table. Check the text and cell boundaries before copying.</p>{% endif %}
 		<table>
 			{% if result.preview.header %}
 			<thead>

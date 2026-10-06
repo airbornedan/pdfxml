@@ -57,5 +57,8 @@
 	<p id="ai-scan-status" class="ai-scan-status" role="status" aria-live="polite"></p>
 	<textarea id="ai-scan-prompt" class="ai-scan-copy-source" rows="1" readonly tabindex="-1" aria-label="AI Scan prompt">{{ ai_prompt }}</textarea>
 </div>
+{% if last_updated %}
+<p class="last-updated">Last updated: {{ last_updated }}</p>
+{% endif %}
 <script src="{{ static_url('js/ai_scan.js') }}" defer></script>
 {% endblock %}

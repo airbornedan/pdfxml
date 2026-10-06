@@ -5,7 +5,8 @@ fragments** (or a PNG), ready to paste into a CMS. Built for technical
 writers recovering content from PDFs where the editable source is lost
 or awkward to convert.
 
-- Flask + PyMuPDF, no external binaries.
+- Flask + PyMuPDF, with offline OCR for scanned tables using RapidOCR and
+  RapidTable. OCR models download on the first OCR table extraction.
 - No accounts, no database. An uploaded PDF is processed in an isolated
   sandbox and deleted within ~20 minutes.
 - One codebase, three ways to run.
