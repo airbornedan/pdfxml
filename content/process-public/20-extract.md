@@ -9,10 +9,7 @@
    **Prev / Next page** if a list or table runs across a page break.
 5. Choose what it is: **Text**, **List**, **Table**, or **Image**.
    - *List* detects ordered vs. unordered from the bullets or numbers.
-   - *Table* adds a header row when it can tell the table has one and
-     extracts selectable PDF text only; it does not run OCR. If the
-     selected table is image-based, use an approved online OCR or
-     table-extraction workflow and verify its output externally.
+   - *Table* adds a header row when it can tell the table has one.
    - *Image* renders the selected region as a PNG -- there is no XML
      fragment for an image.
 6. Check the preview, then **Copy all** and paste the XML wherever you

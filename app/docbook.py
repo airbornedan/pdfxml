@@ -312,42 +312,30 @@ def wrap_list(element_type, items_xml):
 
 
 ########################################################################
-### TABLE -- use PyMuPDF's glyph-based table detection. If no table is
-### found, preserve any selectable region text in a single best-effort cell.
+### TABLE -- page.find_tables() scoped to the region, falls back to
+### one single-cell row if nothing's detected. Cell text is rebuilt via
+### _filter_lines() so the watermark filter applies per cell too.
 ### Markup is DocBook 5's HTML table model (tr/th/td), not CALS --
 ### Paligo's XML source view only accepts this form.
 def extract_table(page, rect):
-    rows, has_header = _glyph_table_rows(page, rect)
-    table_found = rows is not None
-    if not table_found:
-        whole_text = _join_lines(_region_lines(page, rect))
-        rows = [[whole_text]] if whole_text else [[""]]
-        has_header = False
-    preview, xml = wrap_table(rows, has_header)
-    return preview, xml, table_found
-
-
-def _glyph_table_rows(page, rect):
     finder = page.find_tables(clip=rect)
     if finder.tables:
         table = finder.tables[0]
         text_dict = page.get_text("dict")  # fetched once, reused for every cell below
         rows = [_table_row_text(text_dict, row) for row in table.rows]
-        if any(cell.strip() for row in rows for cell in row):
-            return rows, _has_reliable_header(page, table)
-    return None, False
+        has_header = _has_reliable_header(page, table)
+    else:
+        whole_text = _join_lines(_region_lines(page, rect))
+        rows = [[whole_text]] if whole_text else [[""]]
+        has_header = False
 
+    root = etree.Element("informaltable", frame="box", rules="all")
 
-def wrap_table(rows, has_header=False):
-    """Build the shared LML preview and markup for table rows."""
     header_row = None
     body_rows = rows
     if has_header:
         header_row = rows[0]
         body_rows = rows[1:]
-
-    root = etree.Element("informaltable", frame="box", rules="all")
-    if header_row is not None:
         thead = etree.SubElement(root, "thead")
         _append_row(thead, header_row, "th")
 

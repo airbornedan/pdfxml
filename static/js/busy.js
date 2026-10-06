@@ -24,18 +24,14 @@
 			overlayEl = document.createElement("div");
 			overlayEl.className = "busy-overlay";
 			overlayEl.innerHTML =
-				'<div class="busy-overlay__content">' +
-				'<span class="spinner" role="status" aria-label="Working"></span>' +
-				'<p class="busy-overlay__message" aria-live="polite"></p>' +
-				'</div>';
+				'<span class="spinner" role="status" aria-label="Working"></span>';
 			document.body.appendChild(overlayEl);
 		}
 		return overlayEl;
 	}
 
-	function show(message) {
+	function show() {
 		var el = overlay();
-		el.querySelector(".busy-overlay__message").textContent = message || "";
 		clearTimeout(overlayTimer);
 		overlayTimer = setTimeout(function () {
 			el.classList.add("is-visible");
@@ -79,10 +75,6 @@
 		if (form.dataset.busyArmed) return;
 		form.dataset.busyArmed = "1";
 		form.addEventListener("submit", function (e) {
-			if (form.dataset.busyBypass) {
-				delete form.dataset.busyBypass;
-				return;
-			}
 			if (form.dataset.busyFired) {   // guard a double submit
 				e.preventDefault();
 				return;

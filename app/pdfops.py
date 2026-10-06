@@ -238,13 +238,8 @@ def extract_region(pdf_path, page_index, rect, element_type):
             xml = docbook.wrap_list(resolved_type, items_xml)
             return {"element_type": resolved_type, "preview": items, "xml": xml, "items": items_xml}
         if element_type == "table":
-            preview, xml, table_detected = docbook.extract_table(page, r)
-            return {
-                "element_type": "table",
-                "preview": preview,
-                "xml": xml,
-                "table_detected": table_detected,
-            }
+            rows, xml = docbook.extract_table(page, r)
+            return {"element_type": "table", "preview": rows, "xml": xml}
         raise ValueError(f"unknown element_type {element_type!r}")
 
 

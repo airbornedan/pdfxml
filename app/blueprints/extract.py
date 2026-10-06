@@ -303,10 +303,7 @@ def select_region():
                 path, session["page_number"], (x0, y0, x1, y1), element_type,
                 erase_rects=_parse_erase_rects(request.form.get("erase_rects", "")) if element_type == "image" else None,
             )
-        except sandbox.SandboxError as exc:
-            if element_type == "table":
-                current_app.logger.warning("Table extraction failed: %s", exc)
-                return _page("Couldn't extract that table. Try a larger selection or retry.")
+        except sandbox.SandboxError:
             return _page("Couldn't read that region -- try a different selection.")
 
         if continue_type:
@@ -453,8 +450,6 @@ def _run_extraction(path, page_number, rect, element_type, erase_rects=None):
     result["element_type"] = raw["element_type"]
     result["preview"] = raw["preview"]
     result["xml"] = raw["xml"]
-    if "table_detected" in raw:
-        result["table_detected"] = raw["table_detected"]
     if "items" in raw:  # paragraph/list only -- what "Select more" concatenates onto
         result["items"] = raw["items"]
 
@@ -586,32 +581,6 @@ def extracted_image():
             result_data.get("erase_rects") or [],
         )
     except sandbox.SandboxError:
-        abort(500)
-    return _png_response(png)
-
-
-@bp.route("/extract/table-region")
-@ratelimit.limit("render")
-@pdf_processing_limit
-def table_region():
-    result_data = load_result(session.get("pdf_token"))
-    if result_data is None or result_data["element_type"] != "table":
-        abort(404)
-    path = _current_pdf_path()
-    if path is None:
-        abort(404)
-    try:
-        png = sandbox.run(
-            pdfops.render_region_png,
-            path,
-            result_data["page_number"] - 1,
-            tuple(result_data["rect"]),
-            3,
-            WATERMARK_TEXT,
-            MAX_RENDER_MEGAPIXELS,
-        )
-    except sandbox.SandboxError:
-        current_app.logger.exception("Could not render selected table region")
         abort(500)
     return _png_response(png)
 

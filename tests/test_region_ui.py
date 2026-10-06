@@ -113,8 +113,6 @@ def test_region_resizes_moves_and_survives_a_round_trip(page):
     assert page.locator(".extract-btn[value='paragraph']").first.is_disabled()
 
 
-
-
 # the native folder picker can't be driven headless -- stand in a folder
 # from the browser's private storage (OPFS), which has the same API
 PICKER_STUB = """

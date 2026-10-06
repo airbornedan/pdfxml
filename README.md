@@ -5,8 +5,7 @@ fragments** (or a PNG), ready to paste into a CMS. Built for technical
 writers recovering content from PDFs where the editable source is lost
 or awkward to convert.
 
-- Flask + PyMuPDF for selectable PDF text and table extraction. Image-based
-  tables require an external OCR or table-extraction workflow.
+- Flask + PyMuPDF, no external binaries.
 - No accounts, no database. An uploaded PDF is processed in an isolated
   sandbox and deleted within ~20 minutes.
 - One codebase, three ways to run.
