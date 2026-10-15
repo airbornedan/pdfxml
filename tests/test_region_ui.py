@@ -121,6 +121,10 @@ def test_handles_shrink_for_small_regions_and_remain_resizable(page):
     grip = page.locator(".select-handle[data-h='se']").bounding_box()
     assert 6 <= grip["width"] < 18
     assert 6 <= grip["height"] < 18
+    radius = page.locator(".select-handle[data-h='se']").evaluate(
+        "(el) => parseFloat(getComputedStyle(el).borderTopLeftRadius)"
+    )
+    assert radius < grip["width"] / 4
 
     # The small visual marker still has a larger hit target.
     hx, hy = _center(page, ".select-handle[data-h='se']")

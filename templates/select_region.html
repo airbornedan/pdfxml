@@ -147,6 +147,7 @@
 		box.style.height = height + "px";
 		const handleSize = Math.max(6, Math.min(18, Math.min(width, height) * 0.35));
 		box.style.setProperty("--handle-size", handleSize + "px");
+		box.style.setProperty("--handle-radius", Math.min(3, handleSize * 0.15) + "px");
 		box.style.display = "block";
 		[rect.x0, rect.y0, rect.x1, rect.y1].forEach((v, i) => fields[i].value = v);
 		const hasRegion = (rect.x1 - rect.x0 >= 2 && rect.y1 - rect.y0 >= 2);

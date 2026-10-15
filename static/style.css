@@ -560,7 +560,7 @@ button:disabled {
 	box-sizing: border-box;
 	background: #fff;
 	border: 2px solid #2f6fed;
-	border-radius: 3px;
+	border-radius: var(--handle-radius, 3px);
 	transform: translate(-50%, -50%);
 }
 
