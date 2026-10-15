@@ -113,6 +113,24 @@ def test_region_resizes_moves_and_survives_a_round_trip(page):
     assert page.locator(".extract-btn[value='paragraph']").first.is_disabled()
 
 
+def test_handles_shrink_for_small_regions_and_remain_resizable(page):
+    img = page.locator("#page-image").bounding_box()
+    ox, oy = img["x"], img["y"]
+    _drag(page, ox + 40, oy + 40, ox + 64, oy + 64)
+
+    grip = page.locator(".select-handle[data-h='se']").bounding_box()
+    assert 6 <= grip["width"] < 18
+    assert 6 <= grip["height"] < 18
+
+    # The small visual marker still has a larger hit target.
+    hx, hy = _center(page, ".select-handle[data-h='se']")
+    before = _fields(page)
+    _drag(page, hx, hy, hx + 30, hy + 30)
+    after = _fields(page)
+    assert after[:2] == pytest.approx(before[:2])
+    assert after[2] > before[2] and after[3] > before[3]
+
+
 # the native folder picker can't be driven headless -- stand in a folder
 # from the browser's private storage (OPFS), which has the same API
 PICKER_STUB = """

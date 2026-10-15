@@ -552,12 +552,11 @@ button:disabled {
 	cursor: move;
 }
 
-/* resize grips on the region's corners and edge midpoints -- large on
-   purpose so they're easy to grab */
+/* resize grips shrink with small regions to keep the selected content visible */
 .select-handle {
 	position: absolute;
-	width: 18px;
-	height: 18px;
+	width: var(--handle-size, 18px);
+	height: var(--handle-size, 18px);
 	box-sizing: border-box;
 	background: #fff;
 	border: 2px solid #2f6fed;
