@@ -1,21 +1,17 @@
 ########################################################################
-### PALIGO -- normalize arbitrary DocBook / HTML tag soup into the exact
-### dialect app/docbook.py emits, which is what Paligo's XML source view
-### accepts. Lists and tables only; everything else passes through
-### unchanged. All-or-nothing: either a fully normalized fragment, or
-### the input returned untouched with a best-guess diagnostic -- never a
-### half-converted mix (interns copy-paste without reading closely).
+### PALIGO -- normalize pasted fragments into the dialect Paligo's source
+### view accepts. Convert uses HTML parsing only for input containing an
+### HTML <table>; the rest keeps the existing XML parser path.
 ########################################################################
 import re
 from collections import namedtuple
 
-from lxml import etree
+from lxml import etree, html
 
 from app.docbook import (
     _merge_tokens,
     _para_element,
     _serialize,
-    validate_fragment,
     wrap_list,
 )
 from app.extensions import logger
@@ -25,11 +21,15 @@ class _Bail(Exception):
     """Can't cleanly normalize -- caller returns the original + this text."""
 
 
-### recover=True tolerates unclosed tags, stray text, bad nesting
+### Keep the XML parser for Fix XML's dialect helpers and non-table input.
+### Convert parses HTML tables to accept common table syntax such as <br>,
+### entities, and omitted cell / row end tags.
 _PARSER = etree.XMLParser(recover=True, resolve_entities=False, no_network=True, load_dtd=False)
+_HTML_PARSER = html.HTMLParser(encoding="utf-8", no_network=True)
 
 _FENCE_RE = re.compile(r"\A\s*```[a-zA-Z0-9]*[ \t]*\r?\n|\r?\n?[ \t]*```\s*\Z")
 _PROLOG_RE = re.compile(r"<\?xml[^>]*\?>|<!DOCTYPE[^>]*>", re.IGNORECASE)
+_HTML_TABLE_RE = re.compile(r"<\s*table(?:\s|>)", re.IGNORECASE)
 
 _LIST_MAP = {"ul": "itemizedlist", "ol": "orderedlist",
              "itemizedlist": "itemizedlist", "orderedlist": "orderedlist"}
@@ -56,10 +56,11 @@ def normalize(src):
     if not stripped:
         return src, False, "Nothing to normalize -- paste some XML first."
     try:
-        root = _parse(stripped)
+        root = _parse_html(stripped) if _HTML_TABLE_RE.search(stripped) else _parse(stripped)
         _strip_namespaces(root)
         _drop_comments(root)
         _unwrap_roots(root)
+        _replace_table_breaks(root)
         fragments, n_lists, n_tables, n_paras = _transform(root)
     except _Bail as e:
         return src, False, str(e)
@@ -74,10 +75,6 @@ def normalize(src):
         return src, False, "No list or table found here -- nothing to change."
 
     out = "\n".join(fragments)
-    ok, msg = validate_fragment(out)
-    if not ok:
-        logger.info("paligo.normalize output did not validate: %s", msg)
-
     if _squash(out) == _squash(stripped):
         return out, False, "Already in the right form -- nothing to change."
 
@@ -111,6 +108,16 @@ def _parse(s):
     return root
 
 
+def _parse_html(s):
+    try:
+        root = html.fragment_fromstring(s, create_parent="_paligo_root_", parser=_HTML_PARSER)
+    except (etree.ParserError, etree.XMLSyntaxError, ValueError):
+        root = None
+    if root is None or (len(root) == 0 and not (root.text or "").strip()):
+        raise _Bail("Couldn't parse this as HTML -- check the pasted markup.")
+    return root
+
+
 def _strip_namespaces(root):
     for el in root.iter():
         if not isinstance(el.tag, str):
@@ -128,6 +135,20 @@ def _drop_comments(root):
         parent = node.getparent()
         if parent is not None:
             parent.remove(node)
+
+
+def _replace_table_breaks(root):
+    for br in root.xpath(".//table//br"):
+        parent = br.getparent()
+        if parent is None:
+            continue
+        tail = " " + (br.tail or "")
+        previous = br.getprevious()
+        if previous is None:
+            parent.text = (parent.text or "") + tail
+        else:
+            previous.tail = (previous.tail or "") + tail
+        parent.remove(br)
 
 
 def _unwrap_roots(root):

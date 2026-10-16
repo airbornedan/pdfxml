@@ -1,5 +1,6 @@
 """app/paligo.py -- tag soup -> the dialect docbook.py emits / Paligo accepts."""
 import re
+from pathlib import Path
 
 from app.docbook import validate_fragment
 from app.paligo import normalize
@@ -77,6 +78,57 @@ def test_standalone_html_paragraph_is_normalized_without_list_or_table():
     out, changed, _ = _norm("<p>Only paragraph</p>")
     assert changed
     assert out == "<para>Only paragraph</para>"
+
+
+def test_html_void_breaks_in_table_cells_become_separating_spaces():
+    out, changed, _ = _norm("<table><tr><td>North<br>South</td></tr></table>")
+    assert changed
+    assert "<para>North South</para>" in out
+
+
+def test_html_entities_and_bare_ampersands_are_preserved():
+    out, changed, _ = _norm("<table><tr><td>A&nbsp;B &copy; AT&T</td></tr></table>")
+    assert changed
+    assert f"<para>A B {chr(169)} AT&amp;T</para>" in out
+
+
+def test_html_table_names_and_optional_cell_end_tags_are_parsed():
+    out, changed, _ = _norm("<TABLE><TR><TH>Head<TH>Other<TR><TD>first<TD>second</TABLE>")
+    assert changed
+    assert out.startswith('<informaltable frame="box" rules="all">')
+    assert out.count("<th>") == 2
+    assert out.count("<td>") == 2
+    assert "<para>first</para>" in out
+    assert "<para>second</para>" in out
+
+
+def test_ai_table_fixture_keeps_all_rows_and_cells():
+    src = (Path(__file__).with_name("broken_html_conversion.txt")
+           .read_text(encoding="utf-8"))
+    out, changed, _ = _norm(src)
+    assert changed
+    assert out.count("<tr>") == 62
+    assert out.count("<td>") + out.count("<th>") == 549
+    assert "Orifice Color (Approx Size)" in out
+    assert "47.56" in out
+
+
+def test_html_unquoted_table_attributes_are_preserved():
+    out, changed, _ = _norm("<table><tr><td colspan=2>wide cell</td></tr></table>")
+    assert changed
+    assert 'colspan="2"' in out
+    assert "<para>wide cell</para>" in out
+
+
+def test_full_html_document_table_is_converted():
+    out, changed, _ = _norm(
+        "<!doctype html><html><head><title>Ignored metadata</title></head>"
+        "<body><table><tr><td>body content</td></tr></table></body></html>"
+    )
+    assert changed
+    assert out.startswith('<informaltable frame="box" rules="all">')
+    assert "<para>body content</para>" in out
+    assert "Ignored metadata" not in out
 
 
 def test_leading_all_th_row_is_promoted_to_thead():
